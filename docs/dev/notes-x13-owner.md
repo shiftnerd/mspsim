@@ -10,7 +10,7 @@ taken before the first edit), "after" is this branch. The tables are also in `do
 | # | Finding | Cause | Fix | Test |
 |---|---|---|---|---|
 | 1 | The scammed-client card's 40% credit cost $2,000 and more, with no price and no `need` | `bec_loss` option 0 took `Incident.credit_amount()` inside `Incident.owner_fx`; the label and `show_card` knew nothing of it. The lawyer ($600) could lose half the loss on top, the insurer the whole credit, also unnamed | Every owner option now has a cost (`OwnerOps.cost`: the least and the most it can take) and the card shows it (`OwnerOps.label`). The credit names its price; a bank that cannot pay it pays it as a **dated bill** over 8 weeks (never greyed); the lawyer's and the insurer's worst case are on the label and are billed the same way when the bank is short | `x13_owner.gd`, `card_costs.gd`, `bec.gd` |
-| 1b | The same defect elsewhere | Scan of every card (`card_costs.gd`, 404 owner options, 81 can take money; 154 service options; the sales beats) | Gambles for money say `(RISK $n)` (11 options, added by `OwnerOps.label`, no text edited); the lawsuit after lost files can be settled in parts; the sales refund card's half month and the brokered discovery name dollars; service had none | `card_costs.gd` |
+| 1b | The same defect elsewhere | Scan of every card (`card_costs.gd`: 406 owner options, 81 can take money; 220 service options; the sales beats) | Gambles for money say `(RISK $n)` (added by `OwnerOps.label`, no text edited); the lawsuit after lost files can be settled in parts; the sales refund card's half month and the brokered discovery name dollars; service had none | `card_costs.gd` |
 | 2 | The shortcut owner was fired on seed 1: with $214 the safe vendor-breach answer ($600) was greyed and the gamble lost | A card whose only cash-free answer is a gamble, or does lasting damage | The vendor breach, the audit and the lawsuit each have an answer no bank balance can grey out, with a real cost that is not cash (a tired crew, reputation, a dated bill). The scan fails on any card that leaves only gambles for money, and on any card whose harmless answers all cost money while the open ones can lose a client, a tech or 3 reputation: that found the rack that fell off the wall (the broke owner's only answer lost the client three times in ten) and the crew's tool complaint (four in ten somebody quits); both have a cash-free answer now | `card_costs.gd`, `x13_owner.gd` |
 | 3 | Careful owner, normal, seed 4: reputation 32 with healthy books | A game gap first, then a bot gap. The week's reputation change is the desk's (closes against missed clocks and tickets left open) and the owner's weekly report showed only money: nothing said why the name was falling | A **SERVICE DESK** row on the weekly report (`DESK OVER CAPACITY` in red when the loose ends outweigh the closes) and, after two such weeks in a row, a card from Morgan with the numbers and three ways out (hire, train, stop taking clients); at most twice a run. The careful bot looks at candidates when she says so and picks the best one instead of the first | `x13_owner.gd`, `layout_audit.gd` |
 | 4 | Sales hard: a careful bot let go on 1 seed of 5 in year 1, 3 of 5 in Year 2 | No single input dial: with the quota at x1.1, the lead quality at normal, the lead flow at normal or the rival at normal the weak seed still misses both quarters. It is the review rule (two misses, however close) meeting the x1.2 quota | New hard-only dial `sales.keep` 0.65: two missed quarters end the job only when the two quarters together came in under 65% of the year's quota. Quota, lead quality, lead flow and rival strength on hard are unchanged; easy and normal are unchanged | `sales_hard.gd`, `difficulty.gd` |
@@ -20,7 +20,110 @@ taken before the first edit), "after" is this branch. The tables are also in `do
 
 ## 2. The numbers, before and after (seeds 1 to 5)
 
-@@NUMBERS@@
+"After" was measured on this branch with `main` merged in (the x13-tech and art merges of Nov 11); the sales cells were also
+measured before that merge and gave the same lines.
+
+### Owner, normal (one process: `bot_run.gd -- owner normal careful,shortcut seeds=5 ts=4`)
+| | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | Cell |
+|---|---|---|---|---|---|---|
+| Careful, before: reputation / value | 97 / $793k | 97 / $756k | 100 / $873k | **32** / $387k | 100 / $832k | 4 good 1 bad, rep 85.2, $728k, nobody fired |
+| Careful, after | 98 / $857k | 98 / $691k | 100 / $698k | **96** / $850k | 100 / $701k | 5 good, rep 98.4, $759k, nobody fired |
+| Shortcut, before | **fired week 15** / $29k | 81 / $300k | 100 / $459k | 23 / $31k | 97 / $165k | fired 1 of 5, $197k, 27% of careful |
+| Shortcut, after | 94 / $198k | 89 / $151k | 99 / $424k | 80 / $78k | 88 / $56k | fired 0 of 5, $182k, 24% of careful |
+
+- Target of X13.3 (careful above reputation 60 on all five seeds): met, lowest 96.
+- Target of X13.2 (shortcut clearly worse, not removed by a greyed option): met, `CHECK owner normal: shortcut value 181503 vs
+  careful 759440 (24%), shortcut fired 0 of 5`. Shortcut seed 5 ends with the bank at -$2,536 and $3,500 still on a dated bill.
+- **What the capacity card is worth, said plainly.** The same cell with Morgan's card switched off (`DESK_WARNINGS` 0, same bot)
+  ends at 98 / 97 / 100 / 100 / 100, value $758k: on this build no seed drowns without it either. The reputation-32 run of
+  before does not come back in either variant; the seeded streams moved (the determinism fix draws the cast's first work legs
+  again) and the bot now reads candidates and the books. So the five seeds do not prove that the card rescues a run. What is
+  proven is that the game now says it: the row is on every weekly report, and the card comes after two weeks over capacity
+  (`x13_owner.gd`); in the traces it is shown on seed 4 in week 5 (answered with the training course) and twice in the runs
+  of seeds 1 to 3 (weeks 8 and 13, answered with a hire).
+- The first version of the capacity rule (hire whenever Morgan asks) bankrupted careful seed 4 in week 15 (two hires for five
+  clients, then net-60 terms accepted with the bank at -$1,523). The bot's final rule reads payroll share and the bank first.
+
+### Owner, hard, careful (`bot_run.gd -- owner hard careful seeds=5 ts=4`)
+| | Seed 1 | Seed 2 | Seed 3 | Seed 4 | Seed 5 | Cell |
+|---|---|---|---|---|---|---|
+| Before | 74 / $687k | **27** / $260k | 87 / $778k | 49 / $218k | 97 / $776k | 3 good 1 mid 1 bad, rep 66.8, $544k |
+| After | 89 / $723k | 96 / $822k | 93 / $634k | 87 / $785k | 83 / $220k | 3 good 2 mid, rep 89.6, $637k, nobody fired |
+
+Hard is still below normal (89.6 against 98.4, $637k against $759k) but the gap is smaller than it was: the careful bot's
+weak seeds on hard were the ones where the desk drowned or the bank was thin. Seed 5 ends at -$178 in the bank.
+
+### The company value week by week (seed 1, normal, careful; `bot_trace.gd`)
+| Week | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Before ($k) | 50 | 40 | 20 | 18 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 41 | 153 | 204 | 290 | 330 | 251 | 592 | 793 |
+| After ($k) | 50 | 40 | 24* | 26* | 27* | 29* | 28* | 37* | 42* | 45* | 47* | 116 | 255 | 398 | 537 | 614 | 498 | 558 | 706 | 857 |
+
+`*` = the contracts' floor (the report says `(CONTRACTS)`). Weeks that read $0: 8 before, 0 after, on all 15 owner runs of the
+after cells. **The end of the run:** every careful run ends "on earnings" (the BOT line says so), so the floor is not in any
+final value: its effect on the end result is 0%. (The final values differ from before for the other reasons in this file.)
+A shortcut run that ends with negative earnings ends on the floor (seed 5: $56k).
+
+**The late jump is not an artefact.** Seed 2 goes from $76k (week 18, on contracts) to $428k and $691k; seed 1 takes 35% of
+its final value in the last two weeks, seed 2 89%. In week 19 Big Cheese's clients come over (7 to 11 clients in one card) at
+nearly full margin, because the fixed costs are already paid; the value is a multiple of the last four weeks' EBITDA, so the
+new clients count for a quarter in week 19 and a half in week 20, and the multiple steps up when margin and payroll share
+cross their marks. The arithmetic already dampens it; what is left is the story's payoff. Not smoothed. `bot_trace.gd` flags
+it as `runaway` on seed 2 (more than x3 in a week) and exits 1 for that: it is a reading aid, not a failure of the game.
+
+### Cards (`bot_trace.gd -- owner normal careful seeds=3 ts=4`)
+| | Before | After |
+|---|---|---|
+| Most repeated decision | 9 x the inbound lead (seed 1), 5 x (seed 3), 3 x (seed 2) | 3 x the marketing budget (weeks 3, 9, 14, by design) |
+| Cards shown more than three times with the same text | the inbound lead | none |
+| Decisions a week | 6.3 | 6.6 |
+
+Other cards at three: "You now know something about Big Cheese" (once per habit learned), one client's late invoice, one
+client's profit review. None is over three, so none was changed.
+
+### Determinism
+| | Before | After |
+|---|---|---|
+| Seed 3 alone | $831,705 | $698,128 |
+| Seed 3 as the third run of a process (after seeds 1 and 2) | $872,920 | $698,128 |
+| `determinism.gd`, owner part | fails (the office differs at frame 1800 of day 1 after seeds 1 and 2; with forced leftovers at frame 900; the cast is not in CAST order) | passes |
+
+### Sales (`bot_run.gd -- sales easy,normal,hard careful,lazy seeds=5 ts=20`, and `... sales hard careful year2`)
+| Cell | Before | After |
+|---|---|---|
+| Easy careful / lazy | 5 good, rep 99.6 / 5 let go, rep 27.8 | the same lines |
+| Normal careful / lazy | 3 good 2 mid, rep 92.8 / 5 let go, rep 19.8 | the same lines |
+| Hard careful, year 1 (Q2 / Q3 per seed) | 100/104, 130/84, **78/63 let go**, 121/100, 136/115 | the same quarters, nobody let go (seed 3 stays: 71% of the year) |
+| Hard careful, Year 2 | 103/89, 82/111, **76/69 let go**, **91/91 let go**, **98/53 let go** | the same quarters, nobody let go (73%, 91%, 78% of the year) |
+| Hard lazy | 4 fired, 1 let go | the same lines |
+
+Which dial: each one alone at a milder value, others at hard (five seeds, year 1 / Year 2 let go):
+
+| Changed alone | Seed 3, year 1 | Let go year 1 | Let go Year 2 |
+|---|---|---|---|
+| nothing (quota x1.2, lead quality -5, third-lead chance 0.3, rival x1.2) | 78 / 63 | 1 | 3 |
+| quota x1.1 | 85 / 69 | 1 | 1 |
+| lead quality 0 (the normal value) | 82 / 83 | 1 | 1 |
+| third-lead chance 0.5 (the normal value) | 91 / 79 | 2 (seed 1 falls to 95 / 89) | 1 |
+| rival x1.0 (the normal value) | 78 / 63 | 1 | 3 |
+| `sales.keep` 0.65, nothing else | 78 / 63, kept | 0 | 0 |
+
+Twenty more hard seeds (6 to 25) with the new rule: nobody let go; two of them (97/91 and 78/89) would have been under the
+old one. The weakest careful year of the 25 seeds is seed 3 (71% of the year); the best lazy year is 42%.
+
+### The scan (`card_costs.gd -- list`)
+406 owner options read, 81 can take money; 220 Service / ServiceArc options, three spend money and all three name dollars.
+Found and fixed: the scammed client's three answers; the lawsuit (`ransom_lost`) and the vendor breach, the audit, the fallen
+rack and the tool complaint (no harmless answer without money); gambles for money that did not name their stake (they read
+`(RISK $n)` now); the sales refund card's half month and the brokered discovery.
+
+### The baseline
+`tests/tiers_balance.gd` was run twice on the merged branch: the same 25 BOT lines both times, `failures=0` both times, and
+`tools/balance_baseline.py` reported 0 drift against the stored baseline (inside its 20-point / 35% tolerance). The baseline was
+then rewritten from that run (`--update --log`). 18 values moved: the tech scores (seed 11: easy 1271 to 1601, normal 1501 to
+1851, hard 1154 to 1482, mixed 1292 to 1516 with reputation 77 to 60) and the service cells (normal careful 100 to 90, hard
+careful 95 to 89, hard lazy 43 to 35) come with the x13-tech merge (the conference trip, days 18 to 20, the longer 1:1 decks)
+and with the cast's first work legs being drawn again at every new game (this branch). The twelve sales cells are unchanged.
 
 ## 3. What was built
 
@@ -72,7 +175,7 @@ Option keys new in owner cards: `pay` (need = the price), `later` (a dated bill 
 | Test | What it proves |
 |---|---|
 | `tests/x13_owner.gd` | the scammed client's prices and the dated bill (pay at once, pay over 8 weeks, the report row, the value, the week 15 of the bot's bankruptcy ends alive); the lawsuit settled in parts; the label rules; the desk row and Morgan's card (two weeks, numbers, hiring, the gap, at most twice, through the real week close); ten lead stories each once, the plain one first, size and catch reach the signed client, the stories are in the strings workflow; the value floor and its text |
-| `tests/card_costs.gd` (`-- list` prints every option that can take money) | the scan: owner static tables and 23 run-time builders through `OwnerOps.cost` / `label`, the directly asked owner cards option by option, the Service / ServiceArc tables, the sales beats. Fails on a cost without dollars on the label, a sure cost that is not greyed without the money (and is not a dated bill), an unnamed worst case, and a card that leaves only gambles for money |
+| `tests/card_costs.gd` (`-- list` prints every option that can take money) | the scan: owner static tables and the run-time builders through `OwnerOps.cost` / `label`, the directly asked owner cards option by option, the Service / ServiceArc tables, the sales beats. Fails on a cost without dollars on the label, a sure cost that is not greyed without the money (and is not a dated bill), an unnamed worst case, and a card that leaves only gambles for money |
 | `tests/determinism.gd` (extended, about 2.5 minutes) | owner seed 3, weeks 1 to 3: the office at three moments of day 1 and the books week by week are the same alone, after seeds 1 and 2, and after the leftovers are forced; seed 2 before and after seed 3; a new game puts the cast in CAST order. On the old code it fails on the office after seeds 1 and 2, on the forced leftovers and on the order |
 | `tests/sales_hard.gd` (about 2 minutes) | hard, seeds 1 to 5: careful not let go in year 1, at most one in Year 2, lazy fails on all five, hard still below normal; the rule itself on hard, normal and easy |
 | `tests/layout_audit.gd` | + the owner report with the DATED BILLS and DESK OVER CAPACITY rows, + the scammed-client card with its long labels (wide, h, v) |

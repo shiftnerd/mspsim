@@ -80,73 +80,73 @@
  "service easy lazy seed 11": {
   "cls": "good",
   "ending": "ops",
-  "rep": 73,
+  "rep": 75,
   "score": 68
  },
  "service hard careful seed 11": {
   "cls": "good",
   "ending": "ops",
-  "rep": 95,
-  "score": 85
+  "rep": 89,
+  "score": 84
  },
  "service hard lazy seed 11": {
   "cls": "bad",
   "ending": "stay",
-  "rep": 43,
-  "score": 58
+  "rep": 35,
+  "score": 56
  },
  "service normal careful seed 11": {
   "cls": "good",
   "ending": "ops",
-  "rep": 100,
-  "score": 92
+  "rep": 90,
+  "score": 87
  },
  "service normal lazy seed 11": {
   "cls": "mid",
   "ending": "rollup_yes",
-  "rep": 55,
+  "rep": 56,
   "score": 67
  },
  "tech easy careful seed 11": {
   "cls": "good",
   "ending": "lead",
   "rep": 100,
-  "score": 1271
+  "score": 1601
  },
  "tech easy lazy seed 11": {
   "cls": "good",
   "ending": "lead",
   "rep": 100,
-  "score": 811
+  "score": 929
  },
  "tech hard careful seed 11": {
   "cls": "good",
   "ending": "lead",
-  "rep": 81,
-  "score": 1154
+  "rep": 75,
+  "score": 1482
  },
  "tech hard lazy seed 11": {
   "cls": "bad",
   "ending": "FIRED",
   "rep": 0,
-  "score": 13
+  "score": 23
  },
  "tech normal careful seed 11": {
   "cls": "good",
   "ending": "lead",
-  "rep": 100,
-  "score": 1501
+  "rep": 98,
+  "score": 1851
  },
  "tech normal lazy seed 11": {
   "cls": "bad",
   "ending": "FIRED",
   "rep": 0,
-  "score": 299
+  "score": 324
  },
  "tech normal mixed seed 11": {
   "cls": "good",
   "ending": "lead",
-  "rep": 77,
-  "score": 1292
+  "rep": 60,
+  "score": 1516
  }
 }
