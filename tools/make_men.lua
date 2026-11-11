@@ -63,6 +63,11 @@ local CHARS = {
     shirt = {"#B89A62", "#927848"}, pants = {"#2B3550", "#1F2840", "#171E32"}, shoes = {"#5A3A22", "#42291A"},
     belt = "#2A2A33", stubble = "#C48E68", lips = "#8A4A2E", goatee = "#8A8A94", cap = {"#2E3A58", "#222C44"},
   },
+  expo_walt = {   -- WSUS_Walt (LabRat Nerds forum, patches everything, never on a Friday): thick glasses, a cream short-sleeve shirt with a logo badge, navy trousers, a grey-brown comb-over
+    skin = {"#EBBA98", "#D09A78", "#AE7A5A"}, hair = {"#8A7A6A", "#A8988A", "#5E5248"},
+    shirt = {"#E4DEC4", "#BDB594"}, pants = {"#2E3A58", "#222C44", "#18203A"}, shoes = {"#3A3A44", "#2A2A33"},
+    belt = "#2A2A33", stubble = false, lips = "#8A4A2E", glasses = true, patch = true,
+  },
   office_adam = {   -- the senior tech and mentor: a shaved head, glasses, a light-blue polo, khakis
     skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#F3B488", "#F3B488", "#6B4B34"},
     shirt = {"#7FA6D8", "#5E86BC"}, pants = {"#B9A67E", "#948360", "#6E6046"}, shoes = {"#6A5240", "#4F3E30"},
@@ -79,6 +84,18 @@ local CHARS = {
     skin = {"#7A4A30", "#623A24", "#4A2A18"}, hair = {"#1E1A1A", "#2E2828", "#1A1414"},
     shirt = {"#4A86D8", "#3566B0"}, pants = {"#24252C", "#1B1C22", "#131419"}, shoes = {"#1E1E24", "#14141A"},
     lips = "#5A2E22", buttons = "#CFE0F6", patch = true,
+  },
+  office_ross = {   -- Ross Calder of Summit Managed Holdings, the buyer: silver hair, glasses, a deep green button-down, black trousers and shoes
+    donor = "office_dan",
+    skin = {"#EDC4A4", "#D2A07E", "#B07E5E"}, hair = {"#A8A8B2", "#C8C8D0", "#7E7E88"},
+    shirt = {"#2E5A4A", "#204236"}, pants = {"#26262E", "#1C1C24", "#14141A"}, shoes = {"#1E1E24", "#14141A"},
+    lips = "#8A4A2E", buttons = "#C8DCD0", glasses = true,
+  },
+  office_terry = {   -- Terry Vance, the headhunter from across town: sandy slicked hair, a lavender button-down, tan trousers, brown shoes
+    donor = "office_dan",
+    skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#C8A064", "#E0BE84", "#8A6A3A"},
+    shirt = {"#8A84B8", "#6A6496"}, pants = {"#A89270", "#8A7658", "#6E5E44"}, shoes = {"#5A3A22", "#42291A"},
+    lips = "#8A4A2E", buttons = "#E4E2F2",
   },
   office_trent = {   -- Trent Dagmar of ByteBrothers, the rival recruiter: slate button-down, slicked dark hair, grey trousers, sharp black shoes
     donor = "office_dan",

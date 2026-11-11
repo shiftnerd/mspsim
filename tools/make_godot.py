@@ -22,9 +22,11 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
+                    # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
+                    "office_quinn", "office_ross", "office_terry",
                     # the custom person's hairstyles (tools/make_hair.lua): the intern with another Hair layer, one character per style
                     "custom_intern_short", "custom_intern_receding", "custom_intern_curly",
                     "custom_intern_long", "custom_intern_bob", "custom_intern_ponytail", "custom_intern_bun", "custom_intern_bald", "custom_intern_spiky", "custom_bare"]
@@ -166,19 +168,19 @@ SETS = {
     "breakout_a": dict(node="BreakoutA", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(79, 99, False), (109, 99, False), (139, 99, False)]),
+        exits=[], seats=[(79, 99, False), (109, 99, False), (139, 99, False), (58, 103, False), (88, 103, False), (118, 103, False)]),
     "breakout_b": dict(node="BreakoutB", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(71, 99, False), (99, 99, False), (127, 99, False)]),
+        exits=[], seats=[(71, 99, False), (99, 99, False), (127, 99, False), (50, 103, False), (78, 103, False), (106, 103, False)]),
     "breakout_c": dict(node="BreakoutC", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(59, 99, False), (91, 99, False), (123, 99, False)]),
+        exits=[], seats=[(59, 99, False), (91, 99, False), (123, 99, False), (38, 103, False), (70, 103, False), (102, 103, False)]),
     "breakout_d": dict(node="BreakoutD", W=240,
         spawns={"start": (80, "right"), "from_hall": (40, "right")},
         doors=[("ToHall", 17, "resort_hall", "@conf_door", "")],
-        exits=[], seats=[(85, 99, False), (115, 99, False), (145, 99, False)]),
+        exits=[], seats=[(85, 99, False), (115, 99, False), (145, 99, False), (64, 103, False), (94, 103, False), (124, 103, False)]),
     "vendor_hall": dict(node="VendorHall", W=320,
         spawns={"start": (150, "right"), "from_hall": (290, "left"), "from_booth": (150, "right")},
         doors=[("ToLobby", 303, "resort_lobby", "from_expo", "")],
@@ -4742,6 +4744,8 @@ const STAFF_CAST := {
     "Michael": {"character": "office_michael", "home": "cubicle_two", "seat": "Seat2", "role": "tech"},
     "Christy": {"character": "office_christy", "home": "cubicle_two", "seat": "Seat3", "role": "finance"},
     "Adam": {"character": "office_adam", "home": "cubicle_two", "seat": "Seat4", "role": "senior"},
+    # Quinn, the Year 3 new hire (tech campaign only, see roster_gone): hot-desks at the conference table like Terry does
+    "Quinn": {"character": "office_quinn", "home": "conference", "seat": "Seat6", "role": "newhire"},
 }
 const HOST_X := 84.0  # where the manager stands at the conference whiteboard during the all-hands
 const SPEED := 32.0
@@ -5141,6 +5145,9 @@ func roster_gone() -> Array:
             gone.append(n)
     if Campaign.active and Campaign.mode == "service":
         gone.append_array(staff_names())  # Sam has the front desk there
+    # Quinn only starts in Year 3 of the tech campaign
+    if not (Campaign.active and Campaign.mode == "tech" and Campaign.year >= 3) and not gone.has("Quinn"):
+        gone.append("Quinn")
     # Maya is on your payroll in the owner campaign (X4); a partner who left the company is gone too
     if Campaign.active and Campaign.mode == "owner" and Partner.left and Roles.partner() != "":
         gone.append(Roles.partner())
@@ -14593,6 +14600,8 @@ func beat(id: String) -> void:
     var row: Dictionary = beat_row(id)
     if row.is_empty():
         return
+    if Campaign.mode == "tech" and Campaign.year >= 3 and (id == "newhire" or id == "mentor") and World.chars.has("Quinn"):
+        World.force_activity("Quinn", "floor")  # Quinn is on the main floor for her two beats
     if row.has("lynk"):  # a Lynk line first: who is about to walk over, and why
         Lync._push(str(row.lynk.from), str(row.lynk.from), str(row.lynk.text))
     var options := []
@@ -25126,7 +25135,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -25717,6 +25726,7 @@ const THREADS := [
                 "by": "GrizzleAdmin",
                 "text": "Patch Tuesday is not the day to find out. Wait a week."
             },
+            {"by": "WSUS_Walt", "text": "Test group on Tuesday, everybody else on the following Tuesday. Never on a Friday. A Friday patch is how you meet your Saturday."},
         ],
         "answer":
         "Approve critical updates to a small test group first, wait a few days, then roll out. Never patch the whole fleet on the first day.",
@@ -52903,6 +52913,16 @@ const FORUM := [
         ],
     },
     {
+        "id": "walt", "speaker": "WSUS_Walt (forum regular)",
+        "text": "Walt. I patch things. On a Tuesday, in a window, with a rollback plan and a reboot nobody is surprised by. You look like somebody who patches on a Friday. Do not tell me.",
+        "options": [
+            {"id": "window", "label": "ASK ABOUT THE PATCH WINDOW", "skill": "servers", "xp": 4, "text": "'A test group, a week, then the rest. The window goes in the calendar and in the client's head.' He writes the approval steps on the back of your badge. (+4 servers XP)"},
+            {"id": "reboot", "label": "ASK ABOUT THE REBOOT", "skill": "people", "xp": 3, "text": "'Tell them it is coming, tell them when, tell them twice.' A reboot with a warning is maintenance. Without one it is an outage. (+3 customer XP)"},
+            {"id": "thread", "label": "UPVOTE HIS FRIDAY RULE", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his never-on-a-Friday post. He replies with the date of every Friday patch that ever went wrong, from memory. (+3 forum karma)", "text_free": "You upvote his never-on-a-Friday post. He replies with a list of dates."},
+            {"id": "friday", "label": "ADMIT TO A FRIDAY PATCH", "skill": "", "xp": 0, "social": 1, "text": "He puts a hand on your shoulder like a doctor. 'Tell me everything.' Your coworkers hear about the confession before you are back at the booth. (coworkers like you a little more)", "text_free": "He puts a hand on your shoulder like a doctor."},
+        ],
+    },
+    {
         "id": "dot", "speaker": "DNS_Dot (forum regular)",
         "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
         "options": [
@@ -52941,6 +52961,7 @@ const CROWD := {
         {"who": "expo_priya", "role": "att:1", "x": 243, "facing": "right", "routine": ["talk:5", "wait:3"]},
         {"who": "expo_grizzle", "role": "forum:grizzle", "x": 182, "facing": "left", "routine": ["wait:6", "say:2", "wait:4"]},
         {"who": "expo_ray", "role": "forum:ray", "x": 140, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
+        {"who": "expo_walt", "role": "forum:walt", "x": 160, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
     ],
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},
@@ -52954,24 +52975,32 @@ const CROWD := {
         {"who": "expo_tina", "role": "att:3", "x": 230, "facing": "left", "routine": ["wait:6", "say:2"]},
     ],
     "breakout_a": [
-        {"who": "expo_vendj", "role": "speaker", "x": 204, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_vendj", "role": "speaker", "x": 204, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_attd", "role": "att:2", "x": 79, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
         {"who": "expo_priya", "role": "att:1", "x": 139, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_attf", "role": "audience", "x": 58, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_atte", "role": "audience", "x": 118, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "breakout_b": [
-        {"who": "expo_dee", "role": "speaker", "x": 214, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_dee", "role": "speaker", "x": 214, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_attb", "role": "att:4", "x": 71, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
         {"who": "expo_atta", "role": "att:0", "x": 127, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_attc", "role": "audience", "x": 50, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_attf", "role": "audience", "x": 106, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "breakout_c": [
-        {"who": "expo_vendp", "role": "speaker", "x": 192, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_vendp", "role": "speaker", "x": 192, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_tina", "role": "att:3", "x": 91, "facing": "right", "seat": "Seat2", "routine": ["wait:8"]},
         {"who": "expo_attc", "role": "att:5", "x": 123, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_atta", "role": "audience", "x": 38, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_atte", "role": "audience", "x": 102, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "breakout_d": [
-        {"who": "expo_vendg", "role": "speaker", "x": 204, "facing": "left", "routine": ["wait:8", "say:2"]},
+        {"who": "expo_vendg", "role": "speaker", "x": 204, "facing": "left", "routine": ["talk:7", "wait:2", "talk:6", "wait:3"]},
         {"who": "expo_priya", "role": "att:1", "x": 85, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
         {"who": "expo_atta", "role": "att:0", "x": 145, "facing": "right", "seat": "Seat3", "routine": ["wait:8"]},
+        {"who": "expo_attb", "role": "audience", "x": 64, "facing": "right", "seat": "Seat4", "routine": ["wait:8"]},
+        {"who": "expo_attf", "role": "audience", "x": 124, "facing": "right", "seat": "Seat6", "routine": ["wait:8"]},
     ],
     "vendor_hall": [
         {"who": "expo_vendg", "role": "vendor:backup", "x": 159, "facing": "right", "routine": ["wait:5", "say:2"]},
@@ -61313,6 +61342,8 @@ func _ready() -> void:
     Onsite.populate(self)
     SalesBeats.auditor(self)
     SalesBeats.recruiter(self)
+    SalesBeats.buyer(self)
+    SalesBeats.headhunter(self)
     Shop.dress(self)
     OfficeDecor.dress(self)
     SetDressing.dress(self)  # plates on the dinner table, Jen's headset
@@ -68380,9 +68411,26 @@ static func recruiter(stage: Node) -> void:
     _visitor(stage, RECRUIT_DAY, "office_trent", "visitor:recruiter")
 
 
-static func _visitor(stage: Node, day: int, character: String, role: String) -> void:
+# Year 3: Ross Calder of Summit (owner campaign, the day of the `summit` beat) and Terry Vance the headhunter (service campaign,
+# the day of the `terry` beat) walk the main floor the same way
+static func buyer(stage: Node) -> void:
+    _y3_visitor(stage, "owner", "summit", "office_ross", "visitor:buyer")
+
+
+static func headhunter(stage: Node) -> void:
+    _y3_visitor(stage, "service", "terry", "office_terry", "visitor:headhunter")
+
+
+static func _y3_visitor(stage: Node, mode: String, beat: String, character: String, role: String) -> void:
+    if not Campaign.active or Campaign.year < 3:
+        return
+    var beats: Dictionary = (Yeartwo.year_cfg("beats") as Dictionary).get(mode, {})
+    _visitor(stage, int(beats.get(beat, -1)), character, role, mode)
+
+
+static func _visitor(stage: Node, day: int, character: String, role: String, mode := "sales") -> void:
     var scene := stage.scene_file_path.get_file().get_basename()
-    if scene != "main_floor" or not (Campaign.active and Campaign.mode == "sales" and Campaign.day == day):
+    if scene != "main_floor" or not (Campaign.active and Campaign.mode == mode and Campaign.day == day):
         return
     var info: Dictionary = World.DATA.SCENES[scene]
     var x0 := float(info.x0)

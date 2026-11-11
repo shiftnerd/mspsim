@@ -67,6 +67,8 @@ func _ready() -> void:
 	Onsite.populate(self)
 	SalesBeats.auditor(self)
 	SalesBeats.recruiter(self)
+	SalesBeats.buyer(self)
+	SalesBeats.headhunter(self)
 	Shop.dress(self)
 	OfficeDecor.dress(self)
 	SetDressing.dress(self)  # plates on the dinner table, Jen's headset
