@@ -15,6 +15,8 @@ const SET_X := 30.0  # the field starts this far into the set art (paintball_set
 const FEET_Y := 118.0
 const BALL_SPEED := 260.0
 const LIFT_BOTTOM := 166.0
+const PORCH_Y := 90.0  # whoever only watches stands on the boardwalk, behind every lane (the street is the field)
+const TAG_UP := 68.0  # a name tag sits above the head (the head is rows -60 to -41 above the feet: at -50 the tag covered the eyes)
 # the rules are one line (x only); each player stands in a lane of the street's depth so six people do not stack up on one spot
 const LANE_OFF := [-14.0, 0.0, 14.0]  # the three lanes of the street (the rules' unit.lane), as y offsets
 const JIT := [0.0, -2.0, 2.0, 1.0, -1.0, 2.0]  # a pixel or two per person, so two in one lane are not one on top of the other
@@ -143,6 +145,9 @@ func _sync() -> void:
 	for ev in game.events:
 		_event(ev)
 	game.events = []
+	for watcher in _actors.get_children():  # the crew who did not get a marker: off the street and off the red flag
+		if watcher.is_in_group("npcs") and watcher.position.y > PORCH_Y:
+			watcher.position.y = PORCH_Y
 	for i in puppets.size():
 		var u: Dictionary = game.units[i]
 		var p: Dictionary = puppets[i]
@@ -339,7 +344,7 @@ func _draw_top() -> void:
 		var node: Node2D = p.node
 		var text := str(p.label)
 		var w := float(PixelFont.width(text, 1))
-		var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -50.0 if not bool(u.duck) else -36.0)
+		var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -TAG_UP if not bool(u.duck) else -TAG_UP + 14.0)
 		if float(u.down) > 0.0:
 			at.y = node.position.y - 14.0
 		var mine: bool = bool(u.human)  # you, and player 2 in co-op

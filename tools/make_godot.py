@@ -5349,7 +5349,7 @@ func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void
         if st.node != null and is_instance_valid(st.node):
             st.node._leaving = true
         st.node = null
-        if absent.has(n):  # not invited tonight (or has a thing): they stay out until the next morning / end_outing()
+        if absent.has(n) or STAFF_CAST.has(n):  # the office staff never come to a game; not invited tonight (or has a thing): they stay out until the next morning / end_outing()
             st.scene = OUTSIDE
             st.following = false
             st.held = ""
@@ -14131,6 +14131,7 @@ const TEXT3 := {
 }
 
 var pending := false  # New Game Plus was chosen on the title menu: the next Campaign.new_game takes it
+var _mut_tex := {}  # mutator id -> its icon or null (held here: an unheld texture is freed before the frame is drawn)
 var pending_year := YEAR  # which year that is: 2, or 3 (START YEAR 3)
 var pick := ""  # a mutator the plan must contain ("" = AUTO)
 var ban := ""  # a mutator the plan must not contain
@@ -14336,8 +14337,10 @@ func toggle_mut_mode() -> void:
 # R9: the icon of the chosen mutator (assets/ui/mut_<id>.png, 12 x 12), null for AUTO or a missing file
 func mut_icon() -> Texture2D:
     var id := pick if pick != "" else ban
-    var path := "res://assets/ui/mut_%s.png" % id
-    return load(path) if id != "" and ResourceLoader.exists(path) else null
+    if not _mut_tex.has(id):
+        var path := "res://assets/ui/mut_%s.png" % id
+        _mut_tex[id] = load(path) if id != "" and ResourceLoader.exists(path) else null
+    return _mut_tex[id]
 
 
 func chip_text() -> String:
@@ -20912,6 +20915,7 @@ var options: Array = []
 var sel := 0
 var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
 var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
+var _art_cache := {}  # art id -> Texture2D or null: kept here, a texture nobody holds is freed before the frame is drawn (a white box)
 
 var _canvas: Node2D
 var _callback := Callable()
@@ -21115,8 +21119,10 @@ func _wrap(s: String, chars: int) -> Array:
 
 # the open card's spot picture, or null (none asked for, the file is missing)
 func _art_tex() -> Texture2D:
-    var path := "res://assets/ui/card_%s.png" % art
-    return load(path) if art != "" and ResourceLoader.exists(path) else null
+    if not _art_cache.has(art):
+        var path := "res://assets/ui/card_%s.png" % art
+        _art_cache[art] = load(path) if art != "" and ResourceLoader.exists(path) else null
+    return _art_cache[art]
 
 
 func _paint() -> void:
@@ -36104,6 +36110,7 @@ var tastes := {}  # dinner: the real tastes of this save, {who: {loves, hates}} 
 var song_best := {}  # karaoke: best stars per song id
 var chair_best := {}  # chair race: best time in seconds per difficulty tier (THE GAUNTLET: "<tier>:gauntlet")
 var chair_event := "straight"  # the event picked on the chair race card (CHAIR_EVENTS), kept for the session
+var _duel_tex := {}  # duel HUD art id -> Texture2D or null (held here: an unheld texture is freed before the frame is drawn)
 var paint_night := false  # paintball: tonight's match is the night one (drawn on the seeded stream when the card opens, LEFT / RIGHT changes it)
 var league: Dictionary = BowlVariety.new_league()  # bowling: the league season in progress (B5)
 var party: Array = []  # who was invited tonight, in priority order (draw_party)
@@ -38286,7 +38293,7 @@ const DEFAULT_ESCAPE_THEMES := {
         "title": "THE SERVER ROOM",
         "short": "SERVER ROOM",
         "tint": "9fd4e6",
-        "ink": "8ff0b0",
+        "ink": "f2fff4",
         "intro": "SOMEBODY LOCKED THE BACKUP TAPES IN THE VAULT AND THE RESTORE IS DUE. THE CODE IS HIDDEN IN THE SERVER ROOM: LOOK AT THE BOARD BY THE RACK, THE WALL CLOCK, THE NETWORK MAP AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE UPS IS COUNTING DOWN.",
         "start": "THE SERVER ROOM. {E} ON THE BOARD, THE CLOCK, THE NETWORK MAP. {N} = HINT",
         "open": "THE TAPE VAULT OPENS! THE RESTORE CAN START.",
@@ -38328,7 +38335,7 @@ const DEFAULT_ESCAPE_THEMES := {
         "title": "THE DETECTIVE'S OFFICE",
         "short": "DETECTIVE",
         "tint": "e6c690",
-        "ink": "f0e2b8",
+        "ink": "2a1c14",
         "intro": "THE DETECTIVE IS MISSING AND THE EVIDENCE IS IN THE VAULT. THE CODE IS HIDDEN IN THE OFFICE: LOOK AT THE CASE BOARD, THE STOPPED CLOCK, THE PORTRAIT AND THE CASE FILES ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE LANDLORD IS ON THE STAIRS.",
         "start": "THE DETECTIVE'S OFFICE. {E} ON THE CASE BOARD, THE CLOCK, THE PORTRAIT. {N} = HINT",
         "open": "THE EVIDENCE VAULT OPENS! CASE CLOSED.",
@@ -38369,7 +38376,7 @@ const DEFAULT_ESCAPE_THEMES := {
         "title": "THE 1990S COMPUTER LAB",
         "short": "COMPUTER LAB",
         "tint": "d4e6c0",
-        "ink": "b8f0a0",
+        "ink": "1e2a44",
         "intro": "DETENTION IN THE OLD COMPUTER LAB, AND THE HALL PASSES ARE IN THE VAULT. THE CODE IS HIDDEN IN THE ROOM: LOOK AT THE TEACHER'S BOARD, THE CLASSROOM CLOCK, THE CLASS PHOTO AND THE MANUAL SHELF ({E}), THEN ENTER IT AT THE KEYPAD. {N} ASKS A FRIEND. THE BELL IS COMING.",
         "start": "THE COMPUTER LAB. {E} ON THE BOARD, THE CLOCK, THE CLASS PHOTO. {N} = HINT",
         "open": "THE VAULT OPENS! HALL PASSES FOR EVERYBODY.",
@@ -40177,8 +40184,10 @@ func _hud_chair(s: Rect2) -> void:
 
 # a piece of the duel's HUD art (null when the file is missing: the code-drawn strip is the fallback)
 func _duel_art(id: String) -> Texture2D:
-    var path := "res://assets/ui/duel_%s.png" % id
-    return load(path) if ResourceLoader.exists(path) else null
+    if not _duel_tex.has(id):
+        var path := "res://assets/ui/duel_%s.png" % id
+        _duel_tex[id] = load(path) if ResourceLoader.exists(path) else null
+    return _duel_tex[id]
 
 
 # the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
@@ -43381,6 +43390,8 @@ const SET_X := 30.0  # the field starts this far into the set art (paintball_set
 const FEET_Y := 118.0
 const BALL_SPEED := 260.0
 const LIFT_BOTTOM := 166.0
+const PORCH_Y := 90.0  # whoever only watches stands on the boardwalk, behind every lane (the street is the field)
+const TAG_UP := 68.0  # a name tag sits above the head (the head is rows -60 to -41 above the feet: at -50 the tag covered the eyes)
 # the rules are one line (x only); each player stands in a lane of the street's depth so six people do not stack up on one spot
 const LANE_OFF := [-14.0, 0.0, 14.0]  # the three lanes of the street (the rules' unit.lane), as y offsets
 const JIT := [0.0, -2.0, 2.0, 1.0, -1.0, 2.0]  # a pixel or two per person, so two in one lane are not one on top of the other
@@ -43509,6 +43520,9 @@ func _sync() -> void:
     for ev in game.events:
         _event(ev)
     game.events = []
+    for watcher in _actors.get_children():  # the crew who did not get a marker: off the street and off the red flag
+        if watcher.is_in_group("npcs") and watcher.position.y > PORCH_Y:
+            watcher.position.y = PORCH_Y
     for i in puppets.size():
         var u: Dictionary = game.units[i]
         var p: Dictionary = puppets[i]
@@ -43705,7 +43719,7 @@ func _draw_top() -> void:
         var node: Node2D = p.node
         var text := str(p.label)
         var w := float(PixelFont.width(text, 1))
-        var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -50.0 if not bool(u.duck) else -36.0)
+        var at: Vector2 = node.position + Vector2(-w * 0.5 + 1.0, -TAG_UP if not bool(u.duck) else -TAG_UP + 14.0)
         if float(u.down) > 0.0:
             at.y = node.position.y - 14.0
         var mine: bool = bool(u.human)  # you, and player 2 in co-op

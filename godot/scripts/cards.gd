@@ -23,6 +23,7 @@ var options: Array = []
 var sel := 0
 var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
 var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
+var _art_cache := {}  # art id -> Texture2D or null: kept here, a texture nobody holds is freed before the frame is drawn (a white box)
 
 var _canvas: Node2D
 var _callback := Callable()
@@ -235,8 +236,10 @@ func _wrap(s: String, chars: int) -> Array:
 
 # the open card's spot picture, or null (none asked for, the file is missing)
 func _art_tex() -> Texture2D:
-	var path := "res://assets/ui/card_%s.png" % art
-	return load(path) if art != "" and ResourceLoader.exists(path) else null
+	if not _art_cache.has(art):
+		var path := "res://assets/ui/card_%s.png" % art
+		_art_cache[art] = load(path) if art != "" and ResourceLoader.exists(path) else null
+	return _art_cache[art]
 
 
 func _paint() -> void:
