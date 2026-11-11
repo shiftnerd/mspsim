@@ -4,5 +4,8 @@
 {"piece":"chair_blue_side","x":70,"y":63,"sort":98},
 {"piece":"chair_blue_side","x":100,"y":63,"sort":98},
 {"piece":"chair_blue_side","x":130,"y":63,"sort":98},
+{"piece":"chair_blue_side","x":90,"y":54,"sort":94},
+{"piece":"chair_blue_side","x":120,"y":54,"sort":94},
+{"piece":"chair_blue_side","x":150,"y":54,"sort":94},
 {"piece":"plant_floor","x":5,"y":73,"sort":101}
 ]

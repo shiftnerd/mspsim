@@ -120,7 +120,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat4" type="Area2D" parent="Interactables"]
-position = Vector2(114, 103)
+position = Vector2(152, 90)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -132,7 +132,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat5" type="Area2D" parent="Interactables"]
-position = Vector2(142, 103)
+position = Vector2(180, 90)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -144,7 +144,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat6" type="Area2D" parent="Interactables"]
-position = Vector2(170, 103)
+position = Vector2(208, 90)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -195,19 +195,25 @@ centered = false
 offset = Vector2(0, -35)
 texture = ExtResource("prop_chair_wood_side")
 
-[node name="coffee_station_5" type="Sprite2D" parent="Actors"]
+[node name="chair_wood_side_5" type="Sprite2D" parent="Actors"]
+position = Vector2(199, 94)
+centered = false
+offset = Vector2(0, -40)
+texture = ExtResource("prop_chair_wood_side")
+
+[node name="coffee_station_6" type="Sprite2D" parent="Actors"]
 position = Vector2(85, 100)
 centered = false
 offset = Vector2(0, -39)
 texture = ExtResource("prop_coffee_station")
 
-[node name="presenter_table_6" type="Sprite2D" parent="Actors"]
+[node name="presenter_table_7" type="Sprite2D" parent="Actors"]
 position = Vector2(211, 100)
 centered = false
 offset = Vector2(0, -36)
 texture = ExtResource("prop_presenter_table")
 
-[node name="plant_floor_7" type="Sprite2D" parent="Actors"]
+[node name="plant_floor_8" type="Sprite2D" parent="Actors"]
 position = Vector2(285, 101)
 centered = false
 offset = Vector2(0, -28)

@@ -310,7 +310,7 @@ const SCENES := {
 		"W": 240,
 		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
 		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
-		"seats": {"Seat1": 143, "Seat2": 173, "Seat3": 203, "Seat4": 122, "Seat5": 152, "Seat6": 182},
+		"seats": {"Seat1": 143, "Seat2": 173, "Seat3": 203, "Seat4": 163, "Seat5": 193, "Seat6": 218},
 		"uses": {},
 		"outside_x": -1
 	},
@@ -320,7 +320,7 @@ const SCENES := {
 		"W": 240,
 		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
 		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
-		"seats": {"Seat1": 135, "Seat2": 163, "Seat3": 191, "Seat4": 114, "Seat5": 142, "Seat6": 170},
+		"seats": {"Seat1": 135, "Seat2": 163, "Seat3": 191, "Seat4": 152, "Seat5": 180, "Seat6": 208},
 		"uses": {},
 		"outside_x": -1
 	},
@@ -330,7 +330,7 @@ const SCENES := {
 		"W": 240,
 		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
 		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
-		"seats": {"Seat1": 123, "Seat2": 155, "Seat3": 187, "Seat4": 102, "Seat5": 134, "Seat6": 166},
+		"seats": {"Seat1": 123, "Seat2": 155, "Seat3": 187, "Seat4": 144, "Seat5": 176, "Seat6": 208},
 		"uses": {},
 		"outside_x": -1
 	},
@@ -340,7 +340,7 @@ const SCENES := {
 		"W": 240,
 		"spawns": {"start": [144, "right"], "from_hall": [104, "right"]},
 		"links": [{"name": "ToHall", "x": 81, "to": "resort_hall", "spawn": "@conf_door"}],
-		"seats": {"Seat1": 149, "Seat2": 179, "Seat3": 209, "Seat4": 128, "Seat5": 158, "Seat6": 188},
+		"seats": {"Seat1": 149, "Seat2": 179, "Seat3": 209, "Seat4": 169, "Seat5": 199, "Seat6": 229},
 		"uses": {},
 		"outside_x": -1
 	},

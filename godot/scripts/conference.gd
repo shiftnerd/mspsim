@@ -955,7 +955,7 @@ const CROWD := {
 		{
 			"who": "expo_attf",
 			"role": "audience",
-			"x": 58,
+			"x": 99,
 			"facing": "right",
 			"seat": "Seat4",
 			"routine": ["wait:8"]
@@ -963,7 +963,7 @@ const CROWD := {
 		{
 			"who": "expo_atte",
 			"role": "audience",
-			"x": 118,
+			"x": 154,
 			"facing": "right",
 			"seat": "Seat6",
 			"routine": ["wait:8"]
@@ -997,7 +997,7 @@ const CROWD := {
 		{
 			"who": "expo_attc",
 			"role": "audience",
-			"x": 50,
+			"x": 88,
 			"facing": "right",
 			"seat": "Seat4",
 			"routine": ["wait:8"]
@@ -1005,7 +1005,7 @@ const CROWD := {
 		{
 			"who": "expo_attf",
 			"role": "audience",
-			"x": 106,
+			"x": 144,
 			"facing": "right",
 			"seat": "Seat6",
 			"routine": ["wait:8"]
@@ -1039,7 +1039,7 @@ const CROWD := {
 		{
 			"who": "expo_atta",
 			"role": "audience",
-			"x": 38,
+			"x": 80,
 			"facing": "right",
 			"seat": "Seat4",
 			"routine": ["wait:8"]
@@ -1047,7 +1047,7 @@ const CROWD := {
 		{
 			"who": "expo_atte",
 			"role": "audience",
-			"x": 102,
+			"x": 144,
 			"facing": "right",
 			"seat": "Seat6",
 			"routine": ["wait:8"]
@@ -1081,7 +1081,7 @@ const CROWD := {
 		{
 			"who": "expo_attb",
 			"role": "audience",
-			"x": 64,
+			"x": 105,
 			"facing": "right",
 			"seat": "Seat4",
 			"routine": ["wait:8"]
@@ -1089,7 +1089,7 @@ const CROWD := {
 		{
 			"who": "expo_attf",
 			"role": "audience",
-			"x": 124,
+			"x": 165,
 			"facing": "right",
 			"seat": "Seat6",
 			"routine": ["wait:8"]

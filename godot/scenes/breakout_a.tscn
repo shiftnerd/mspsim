@@ -121,7 +121,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat4" type="Area2D" parent="Interactables"]
-position = Vector2(122, 103)
+position = Vector2(163, 90)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -133,7 +133,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat5" type="Area2D" parent="Interactables"]
-position = Vector2(152, 103)
+position = Vector2(193, 90)
 script = ExtResource("seat")
 facing = "right"
 typing = false
@@ -145,7 +145,7 @@ position = Vector2(0, -14)
 shape = SubResource("shape_seat")
 
 [node name="Seat6" type="Area2D" parent="Interactables"]
-position = Vector2(182, 103)
+position = Vector2(218, 90)
 script = ExtResource("seat")
 facing = "right"
 typing = false

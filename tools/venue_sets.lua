@@ -561,7 +561,7 @@ return function(L, builders)
     s.put("Window", P.bigWindow(50, 50), 82, 14)
     s.put("Screen", P.roomScreen("b", 100, 56), 136, 6)
     s.put("Clock", P.clock(), 70, 20)
-    for _, x in ipairs({80, 108}) do
+    for _, x in ipairs({80, 108, 136}) do
       s.putS("BackRow", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), x, 55, 94, "chair_wood_side")
     end
     for _, x in ipairs({57, 85, 113}) do
@@ -618,6 +618,9 @@ return function(L, builders)
     s.put("Clock", P.clock(), 112, 18)
     s.putS("Lab1", P.labTable(), 44, 58, 92, "lab_table")
     s.putS("Lab2", P.labTable(), 114, 58, 92, "lab_table")
+    for _, x in ipairs({91, 121, 151}) do
+      s.putS("BackRow", P.chairSide("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 55, 94, "chair_blue_side")
+    end
     for _, x in ipairs({71, 101, 131}) do
       s.putS("Seats", P.chairSide("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 64, 98, "chair_blue_side")
     end
