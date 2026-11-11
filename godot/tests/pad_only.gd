@@ -340,9 +340,29 @@ func _day() -> void:
 		return
 	print("     ticket #%d %s, endpoint %s, fix %s" % [tk.id, tk.summary, tk.endpoint, tk.fix])
 	_note("before the computer")
+	# a coworker who stops to talk, a ringing call or a sip has you gesture for a second or two: the press waits for it, like a player would
+	var held := 0
+	while _player() != null and str(_player().state) in ["emote", "use"] and held < 600:
+		await process_frame
+		held += 1
 	await _tap(JOY_BUTTON_X)
 	await _wait(20)
-	_check(comp.is_open and comp.app == "desktop", "X at the desk opens the Computer (%s)" % _state())
+	# a coworker standing at your desk is nearer than the PC: X talks to them. End the chat (B, the cards) and press again
+	var tries := 0
+	while not comp.is_open and tries < 8:
+		tries += 1
+		await _tap(JOY_BUTTON_B)
+		await _wait(20)
+		if cards.is_open:
+			await _answer_cards()
+		held = 0
+		while _player() != null and str(_player().state) in ["emote", "use"] and held < 400:
+			await process_frame
+			held += 1
+		await _wait(90)  # they walk on
+		await _tap(JOY_BUTTON_X)
+		await _wait(20)
+	_check(comp.is_open and comp.app == "desktop", "X at the desk opens the Computer (%s, %d extra tries)" % [_state(), tries])
 	# ---- the Computer: every button is reached with RB (the focus cycle) and pressed with A
 	_check(await _press_region(comp, "app:psa"), "RB steps to the service board's icon, A opens it")
 	_check(comp.app == "psa" and not comp.psa_detail, "the PSA board (%s)" % _state())
@@ -458,6 +478,8 @@ func _day() -> void:
 		guard += 1
 	await _a()
 	_check(pm._confirm, "A on QUIT TO TITLE asks first")
+	# a card waiting behind the menu (or a drive, overtime) refuses the resume point: the older one stays and the menu says so
+	var savable: bool = camp.can_snapshot()
 	await _dpad("down")
 	await _a()
 	await _wait(40)
@@ -477,7 +499,7 @@ func _day() -> void:
 		await _wait(80)
 	_check(camp.active and camp.mode == "tech" and _player() != null and _room() != "title", "A continues the day (%s)" % _state())
 	_check(d.day_label() != day0 and msp.pace_label() != pace0, "with the settings as they were changed")
-	_check(str(msp.ticket(int(tk.id)).status) == "Closed", "and the closed ticket still closed (%s)" % str(msp.ticket(int(tk.id))))
+	_check(not savable or str(msp.ticket(int(tk.id)).status) == "Closed", "and the closed ticket still closed (savable %s, %s)" % [savable, str(msp.ticket(int(tk.id)))])
 	await _answer_cards()
 	var x1: float = _player().global_position.x
 	_axis(JOY_AXIS_LEFT_X, 1.0)

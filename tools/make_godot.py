@@ -75498,6 +75498,10 @@ func _paint() -> void:
     var body := UiStyle.panel(c, r, "SETTINGS" if settings_mode else "PAUSED", "QUIT?" if _confirm else ("COZY" if Difficulty.cozy_on() else ""))
     if _confirm:
         var line := "YOUR LAST SAVE IS KEPT" if Campaign.active else "FREE PLAY IS NOT SAVED"
+        if Campaign.active and not Campaign.can_snapshot():
+            # no resume point can be written right now (a card is waiting, a drive, overtime): say how far the save goes
+            var info: Dictionary = Campaign.resume_info(Campaign.mode, Campaign.slot)
+            line = ("SAVED AS OF %s TODAY" % str(info.text)) if not info.is_empty() else "SAVED AS OF THIS MORNING"
         UiStyle.text(c, line, body.position.x, r.position.y + 14.0, UiStyle.MUTED)
     var labels := _labels()
     for i in labels.size():

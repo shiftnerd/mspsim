@@ -18,6 +18,7 @@ const GOLDEN := "res://tests/pad_prompts_keyboard.txt"
 const ALLOW := [
 	["\\bVERTICAL MOUSE\\b|\\bMOUSE (CORDS|PAD)\\b", "a mouse as a thing: the web shop, an escape room clue"],
 	["\\bA/R\\b", "accounts receivable (the owner's books)"],
+	["\\bDAYS: S [0-9]+  A [0-9]+  B [0-9]+  C [0-9]+  D [0-9]+", "the review counts days per grade (S A B C D)"],
 	["\\(N\\) = THE OUTING", "the dinner's legend: (2) is the outing a fact was learned at"],
 	["\\bL R\\b|\\bU/D\\b|\\bL/R\\b|\\bHOOK [LR]\\b", "left / right and up / down, short: directions, which a pad has too"],
 	["\\bCUSTOM TAB\\b|\\bTAB WITH A\\b|\\b(PROJECT|CAPACITY) TAB\\b|\\bTHE TAB\\b", "a tab of an app (forum threads, the RMM), and the dinner's bill"],
