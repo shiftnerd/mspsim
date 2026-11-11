@@ -650,7 +650,7 @@ func start_outing(room: String, spots: Array, seats := {}, absent := []) -> void
 		if st.node != null and is_instance_valid(st.node):
 			st.node._leaving = true
 		st.node = null
-		if absent.has(n) or STAFF_CAST.has(n):  # the office staff are not part of the games (they stood in a row at Dan's spot, in front of the props); not invited tonight (or has a thing): they stay out until the next morning / end_outing()
+		if absent.has(n) or STAFF_CAST.has(n):  # the office staff never come to a game; not invited tonight (or has a thing): they stay out until the next morning / end_outing()
 			st.scene = OUTSIDE
 			st.following = false
 			st.held = ""

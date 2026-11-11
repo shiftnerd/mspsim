@@ -5,6 +5,10 @@ extends SceneTree
 # Env QA_SET = a comma list of the groups to shoot (default all): breakout, escape, paintball, people, decor, hats, ui.
 # Env QA_OUT = the folder for the PNGs (default user://qa_art/): <group>_<name>_<format>.png. Never point it into the project.
 
+const HAT_POSES := [["idle", 0], ["walk", 2], ["sit", 0], ["type", 1], ["death", 99]]
+const HAT_HAIR := ["side", "long", "bald"]
+const PLAYER := preload("res://scripts/player.gd")
+
 var out_dir := "user://qa_art/"
 var sets: Array = ["breakout", "escape", "paintball", "people", "decor", "hats", "ui"]
 var fmt := "wide"
@@ -324,7 +328,7 @@ func _set_decor() -> void:
 		await _end_outing()
 	o.chair_event = "straight"
 	# Dispatch: chips with the asked-for star
-	load("res://scripts/player.gd").current_character = "office_dan"
+	PLAYER.current_character = "office_dan"
 	_campaign("service", 1, 8)
 	var msp := root.get_node("Msp")
 	var sv := root.get_node("Service")
@@ -355,14 +359,10 @@ func _set_decor() -> void:
 	await _wait(1.0)
 	await _shot("decor_dispatch_star")
 	computer.close()
-	load("res://scripts/player.gd").current_character = "office_intern"
+	PLAYER.current_character = "office_intern"
 
 
 # ---- 6. hats and the other accessories ---------------------------------------------------------------------------------
-const HAT_POSES := [["idle", 0], ["walk", 2], ["sit", 0], ["type", 1], ["death", 99]]
-const HAT_HAIR := ["side", "long", "bald"]
-
-
 func _strip(name: String, looks: Array, zoom: int, poses: Array = HAT_POSES, sides: Array = ["right", "left"]) -> void:
 	var look := root.get_node("Look")
 	var cw := 64
