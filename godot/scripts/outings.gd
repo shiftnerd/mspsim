@@ -242,6 +242,7 @@ const NARROW_KEYS := {
 	"L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE": "ARROWS MOVE  Z FIRE  SHIFT DUCK  ESC OUT",
 	"ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
 	"YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+	"P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE": "P1 Z X  P2 {A B|(A) (B)}  ARROWS STEER",
 }
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
@@ -4652,15 +4653,35 @@ func _hud_chair(s: Rect2) -> void:
 	_canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
 
 
+# a piece of the duel's HUD art (null when the file is missing: the code-drawn strip is the fallback)
+func _duel_art(id: String) -> Texture2D:
+	var path := "res://assets/ui/duel_%s.png" % id
+	return load(path) if ResourceLoader.exists(path) else null
+
+
 # the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
 # floor with both chairs on it, your stamina
 func _hud_fight(s: Rect2, o: Vector2) -> void:
 	var fight: RefCounted = g.race
-	_t("READY" if fight.clock < 0.0 else "%d" % fight.time_left(), o.x + 21.0, o.y, WHITE)
+	var clock_text := "READY" if fight.clock < 0.0 else "%d" % fight.time_left()
+	# the co-op duel: the clock in a frame, a P1 / P2 tag and sprite pips for each side (assets/ui/duel_*.png; the solo fight keeps its rectangles)
+	var duel: bool = fight.duel and _duel_art("frame") != null and _duel_art("tag_p1") != null and _duel_art("tag_p2") != null and _duel_art("pip_off") != null
+	if duel:
+		_canvas.draw_texture(_duel_art("frame"), Vector2(o.x + 19.0, s.position.y + 1.0))
+		_t(clock_text, o.x + 19.0 + floorf((23.0 - float(clock_text.length() * 4 - 1)) * 0.5), o.y, WHITE)
+	else:
+		_t(clock_text, o.x + 21.0, o.y, WHITE)
 	var px := o.x + 44.0
 	for side in 2:
+		if duel:
+			_canvas.draw_texture(_duel_art("tag_p%d" % (side + 1)), Vector2(px, s.position.y + 2.0))
+			px += 11.0
 		for k in ChairFight.TARGET:
 			var on: bool = k < int(fight.score()[side])
+			if duel:
+				_canvas.draw_texture(_duel_art(("pip_p%d" % (side + 1)) if on else "pip_off"), Vector2(px, s.position.y + 3.0))
+				px += 4.0
+				continue
 			var col: Color = (AMBER if side == 0 else fight.chairs[1].color) if on else UiStyle.MUTED
 			_canvas.draw_rect(Rect2(px, s.position.y + 4.0, 4.0, 5.0), col)
 			px += 5.0

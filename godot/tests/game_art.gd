@@ -32,6 +32,8 @@ func _init() -> void:
 		"props/chair_finish": Vector2i(10, 24), "props/chair_ring_end": Vector2i(12, 28), "props/chair_ring_line": Vector2i(12, 2),
 		"props/chair_ring_spot": Vector2i(30, 12), "ui/star_asked": Vector2i(5, 5), "props/dinner_plate_a": Vector2i(11, 6),
 		"props/dinner_plate_b": Vector2i(11, 6), "props/dinner_plate_c": Vector2i(11, 6), "props/desk_headset": Vector2i(9, 12),
+		"props/dinner_plate_d": Vector2i(11, 6), "props/dinner_setting": Vector2i(16, 7), "props/dinner_tent": Vector2i(7, 6), "props/dinner_briefcase": Vector2i(12, 10),
+		"ui/duel_pip_p1": Vector2i(5, 6), "ui/duel_pip_p2": Vector2i(5, 6), "ui/duel_pip_off": Vector2i(5, 6), "ui/duel_tag_p1": Vector2i(9, 7), "ui/duel_tag_p2": Vector2i(9, 7), "ui/duel_frame": Vector2i(23, 9),
 	}
 	var files_ok := true
 	for id in sizes:
@@ -40,7 +42,54 @@ func _init() -> void:
 		if t == null or Vector2i(t.get_size()) != sizes[id]:
 			files_ok = false
 			print("     missing or wrong size: %s" % id)
-	_check(files_ok, "the nine sprites load at their sizes")
+	_check(files_ok, "the nineteen sprites load at their sizes")
+
+	# ---- the co-op duel's strip finds its sprites (outings.gd _hud_fight draws them; the rectangles are the fallback)
+	var duel_art: Texture2D = outings._duel_art("frame")
+	_check(duel_art != null and outings._duel_art("tag_p2") != null and outings._duel_art("pip_p1") != null and outings._duel_art("nothing") == null, "the duel strip loads its frame, tags and pips; a missing piece is null")
+
+	# ---- R8: the event cards' spot pictures: four seasons and six kinds, each a 34 x 26 sprite; cards.gd draws one when it has room
+	var events := root.get_node("Events")
+	var cards := root.get_node("Cards")
+	var pics_ok := true
+	for pic in ["holidays", "tax", "xp", "school", "printer", "phone", "food", "power", "security", "backup"]:
+		var pt: Texture2D = load("res://assets/ui/card_%s.png" % pic) if ResourceLoader.exists("res://assets/ui/card_%s.png" % pic) else null
+		pics_ok = pics_ok and pt != null and Vector2i(pt.get_size()) == Vector2i(34, 26)
+	_check(pics_ok, "the ten card pictures load at 34 x 26")
+	_check(events.art_for("xmas_ecard") == "holidays" and events.art_for("tax_printer") == "tax" and events.art_for("xp_six") == "xp" and events.art_for("school_laptops") == "school", "the seasonal cards get their season's picture")
+	_check(events.art_for("toner_late") == "printer" and events.art_for("lost_phone") == "phone" and events.art_for("free_pizza") == "food" and events.art_for("power_blip") == "power" and events.art_for("phish_invoice") == "security" and events.art_for("tape_check") == "backup", "six kinds of deck card get a picture")
+	_check(events.art_for("birthday_cake") == "food" and events.art_for("no_such_card") == "", "a card with no kind has none")
+	var kinds_in_deck := true
+	for kind in events.ART_KINDS:
+		for card_id in events.ART_KINDS[kind]:
+			kinds_in_deck = kinds_in_deck and not events.card_of(str(card_id)).is_empty()
+	_check(kinds_in_deck, "every card named in a kind is in the deck")
+	cards.art = "printer"
+	_check(cards._art_tex() != null, "a card with art loads its picture")
+	cards.art = "nothing"
+	_check(cards._art_tex() == null, "a missing picture is null")
+	cards.art = ""
+	cards.art_next = "food"
+	cards.ask("Test", "A short card.", [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+	_check(cards.art == "food" and cards.art_next == "", "ask() takes the picture its caller set, and clears it")
+	cards.pick(0)
+	cards.art = ""
+
+	# ---- R9: a 12 x 12 icon for every mutator, and the chooser finds the chosen one's
+	var mut_ok := true
+	for mid in root.get_node("Mutators").MUTATORS:
+		var mt: Texture2D = load("res://assets/ui/mut_%s.png" % mid) if ResourceLoader.exists("res://assets/ui/mut_%s.png" % mid) else null
+		if mt == null or Vector2i(mt.get_size()) != Vector2i(12, 12):
+			mut_ok = false
+			print("     no 12 x 12 icon for mutator %s" % mid)
+	_check(mut_ok, "every mutator has a 12 x 12 icon")
+	var y2 := root.get_node("Yeartwo")
+	y2.pick = ""
+	y2.ban = ""
+	_check(y2.mut_icon() == null, "AUTO has no icon")
+	y2.pick = "heat_wave"
+	_check(y2.mut_icon() != null, "a picked mutator shows its icon")
+	y2.pick = ""
 
 	# ---- the chair track finds its paint, and a missing one is null (the rectangles are the fallback)
 	var track: Node2D = load("res://scripts/chair_track.gd").new()
@@ -87,6 +136,18 @@ func _init() -> void:
 		outings.g = {}
 		dress.refresh()
 		_check(dress.plates[0].visible, "the classic dinner (no ordering round) has plates from the start")
+		# a guest at the table: the setting, the name tent and the briefcase show, the second table's plates make room
+		var x0: float = dress.plates[2].position.x
+		_check(dress.guest.size() == 3 and not dress.guest[0].visible and not dress.guest[2].visible, "a dinner without a guest has no setting, tent or briefcase")
+		outings.game = "dinner"
+		outings.g = {"order": {"done": true}, "guest": {"client": 0, "name": "Pat", "firm": "Test Co"}}
+		dress.refresh()
+		_check(dress.guest[0].visible and dress.guest[1].visible and dress.guest[2].visible, "a guest at the table: setting, tent and briefcase show")
+		_check(dress.plates[2].position.x < x0 and dress.plates[3].position.x + 11.0 < dress.guest[0].position.x + 7.0, "the plates step aside for the setting")
+		_check(dress.guest[1].get_parent() == dress.plates[2].get_parent() and dress.guest[1].position.y + 7.0 == -37.0, "the setting stands on the table top")
+		outings.g = {"order": {"done": true}}
+		dress.refresh()
+		_check(not dress.guest[0].visible and dress.plates[2].position.x == x0, "the guest goes home: the plates are back where they were")
 		outings.game = was
 		outings.g = was_g
 

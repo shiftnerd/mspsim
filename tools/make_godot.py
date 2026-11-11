@@ -6007,16 +6007,25 @@ write("scripts/pad_glyphs.gd", '''extends RefCounted
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const ATLAS := "res://assets/ui/pad_glyphs.png"
 const CELL := Vector2(11.0, 7.0)
-const NAMES := ["A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD"]
-const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7]
+# cells 13 to 24 (R42): the Deck's View and Menu, the right stick with a direction, the stick pressed in, the D-pad's single directions
+const NAMES := [
+    "A", "B", "X", "Y", "LB", "RB", "LT", "RT", "START", "BACK", "STICK", "DPAD",
+    "VIEW", "MENU", "RS_UP", "RS_DOWN", "RS_LEFT", "RS_RIGHT", "L3", "R3", "UP", "DOWN", "LEFT", "RIGHT",
+]
+const WIDTHS := [7, 7, 7, 7, 11, 11, 11, 11, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 11, 11, 7, 7, 7, 7]
+# on a Steam Deck the BACK and START buttons are called View and Menu
+const DECK_SWAP := {"BACK": "VIEW", "START": "MENU"}
 # what a hint line may hold -> the glyph. The buttons stand in brackets; STICK is a bare word
 const TOKENS := {
     "(A)": "A", "(B)": "B", "(X)": "X", "(Y)": "Y", "(LB)": "LB", "(RB)": "RB", "(LT)": "LT", "(RT)": "RT",
-    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "STICK", "(R3)": "STICK",
-    "(UP)": "DPAD", "(DOWN)": "DPAD", "(LEFT)": "DPAD", "(RIGHT)": "DPAD",
+    "(START)": "START", "(BACK)": "BACK", "STICK": "STICK", "(L3)": "L3", "(R3)": "R3",
+    "(UP)": "UP", "(DOWN)": "DOWN", "(LEFT)": "LEFT", "(RIGHT)": "RIGHT",
+    "(VIEW)": "VIEW", "(MENU)": "MENU", "RS UP": "RS_UP", "RS DOWN": "RS_DOWN", "RS LEFT": "RS_LEFT", "RS RIGHT": "RS_RIGHT",
 }
 
 static var force := -1  # tests: 1 = glyphs on, 0 = off, -1 = follow Controls.pad_active
+static var deck_force := -1  # tests: 1 = a Steam Deck, 0 = not, -1 = look (the SteamDeck environment variable, or the pad's name)
+static var _deck := -1
 static var _tex: Texture2D
 static var _looked := false
 
@@ -6026,6 +6035,17 @@ static func atlas() -> Texture2D:
         _looked = true
         _tex = load(ATLAS) if ResourceLoader.exists(ATLAS) else null
     return _tex
+
+
+static func deck() -> bool:
+    if deck_force >= 0:
+        return deck_force == 1
+    if _deck < 0:
+        _deck = 1 if OS.get_environment("SteamDeck") == "1" else 0
+        for id in Input.get_connected_joypads():
+            if Input.get_joy_name(id).to_lower().contains("steam deck"):
+                _deck = 1
+    return _deck == 1
 
 
 static func active() -> bool:
@@ -6040,16 +6060,20 @@ static func active() -> bool:
 
 
 # the line cut into pieces: a String is text, an int is a glyph index
-static func parts(text: String) -> Array:
+# `sentence` (a card, a tutorial line): only the bracketed buttons and "RS UP" turn into glyphs; a bare STICK stays a word,
+# because prose has USB sticks in it
+static func parts(text: String, sentence := false) -> Array:
     var out := []
     var rest := text.to_upper()
     while rest != "":
         var at := -1
         var hit := ""
         for token in TOKENS:
+            if sentence and token == "STICK":
+                continue
             var i := rest.find(token)
-            # STICK only as a whole word
-            if i >= 0 and token == "STICK" and ((i > 0 and rest[i - 1] != " ") or (i + 5 < rest.length() and not rest[i + 5] in [" ", ",", "."])):
+            # the words (STICK, RS UP) only as whole words
+            if i >= 0 and not token.begins_with("(") and ((i > 0 and rest[i - 1] != " ") or (i + token.length() < rest.length() and not rest[i + token.length()] in [" ", ",", "."])):
                 i = -1
             if i >= 0 and (at < 0 or i < at):
                 at = i
@@ -6059,16 +6083,17 @@ static func parts(text: String) -> Array:
             break
         if at > 0:
             out.append(rest.substr(0, at))
-        out.append(NAMES.find(str(TOKENS[hit])))
+        var gname := str(TOKENS[hit])
+        out.append(NAMES.find(str(DECK_SWAP.get(gname, gname)) if deck() else gname))
         rest = rest.substr(at + hit.length())
     return out
 
 
-static func width(text: String, scale := 1) -> int:
+static func width(text: String, scale := 1, sentence := false) -> int:
     if not active():
         return PixelFont.width(text, scale)
     var w := 0
-    for part in parts(text):
+    for part in parts(text, sentence):
         w += (int(WIDTHS[part]) + 1) * scale if part is int else str(part).length() * 4 * scale
     return maxi(0, w - scale)
 
@@ -6082,12 +6107,12 @@ static func glyph(canvas: CanvasItem, id: String, pos: Vector2, scale := 1) -> v
     canvas.draw_texture_rect_region(atlas(), Rect2(pos, Vector2(w, CELL.y) * float(scale)), Rect2(CELL.x * float(i), 0.0, w, CELL.y))
 
 
-static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1, sentence := false) -> void:
     if not active():
         PixelFont.draw(canvas, text, pos, color, scale)
         return
     var x := pos.x
-    for part in parts(text):
+    for part in parts(text, sentence):
         if part is int:
             glyph(canvas, str(NAMES[part]), Vector2(x, pos.y - float(scale)), scale)
             x += float((int(WIDTHS[part]) + 1) * scale)
@@ -14220,6 +14245,13 @@ func toggle_mut_mode() -> void:
     ban = cur if mut_mode == "ban" else ""
 
 
+# R9: the icon of the chosen mutator (assets/ui/mut_<id>.png, 12 x 12), null for AUTO or a missing file
+func mut_icon() -> Texture2D:
+    var id := pick if pick != "" else ban
+    var path := "res://assets/ui/mut_%s.png" % id
+    return load(path) if id != "" and ResourceLoader.exists(path) else null
+
+
 func chip_text() -> String:
     var id := pick if pick != "" else ban
     if id == "":
@@ -15475,6 +15507,15 @@ const MAX_OPTIONS := 3
 const MAX_LABEL := 58
 const MAX_TEXT := 320
 const OPTIONS_OK := [{"label": "OK", "id": "ok"}]
+# R8: a card's spot picture (assets/ui/card_<name>.png): the four seasons (Seasons.CARD_SEASON), else the six most common kinds of deck card
+const ART_KINDS := {
+    "printer": ["toner_late", "toner_mixup", "home_printer", "copier_lease", "projector_cart"],
+    "phone": ["lost_phone", "pw_reset_call", "scam_call", "conference_call", "client_text_night"],
+    "food": ["free_pizza", "lunch_run", "birthday_cake", "coffee_machine", "chamber_lunch"],
+    "power": ["heat_wave", "cold_snap", "power_blip", "leaky_ceiling"],
+    "security": ["phish_invoice", "sticky_password", "guest_wifi", "found_usb", "licence_audit"],
+    "backup": ["dropbox_it", "tape_check", "old_pc_donation"],
+}
 
 const DEFAULT_DECK := {
     "toner_late": {
@@ -17866,6 +17907,17 @@ func _process(_delta: float) -> void:
 
 
 # ---- showing a card ---------------------------------------------------------------------------------------
+# the picture name of a deck or seasonal card ("" for none): its season, else its kind
+static func art_for(id: String) -> String:
+    var season := str(Seasons.CARD_SEASON.get(id, Seasons.TAGS.get(id, "")))
+    if season != "":
+        return season
+    for kind in ART_KINDS:
+        if (ART_KINDS[kind] as Array).has(id):
+            return str(kind)
+    return ""
+
+
 func show_draw(draw: Dictionary) -> void:
     last_shown = str(draw.id)
     shown += 1
@@ -17880,6 +17932,7 @@ func show_draw(draw: Dictionary) -> void:
     var options := []
     for o in c.options:
         options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.art_next = art_for(str(draw.id))
     Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: _answer(c, pick))
 
 
@@ -20741,8 +20794,11 @@ write("scripts/cards.gd", '''extends CanvasLayer
 # Options can be {"label", "id", "enabled": false, "hint": "why"} to show them greyed out.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: a pad button named in a card is its sprite (the lines are cut as text, the glyph is narrower)
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
+const ART_MIN_W := 200.0  # R8: a card this wide or wider has room for its spot picture (34 x 26, assets/ui/card_<art>.png) beside the text
+const ART_W := 36.0
 
 var is_open := false
 var pane_slot := -1  # co-op: a personal card shown in this player's pane (panes.gd); -1 = the full-window team card
@@ -20750,6 +20806,8 @@ var speaker := ""
 var text := ""
 var options: Array = []
 var sel := 0
+var art := ""  # the picture of the open card (a season or a kind of event card), "" for none
+var art_next := ""  # a caller sets this just before ask(): the picture of the card it is about to ask
 
 var _canvas: Node2D
 var _callback := Callable()
@@ -20771,6 +20829,8 @@ func _ready() -> void:
 # `valid` (optional) is checked again when a queued card finally comes up; if it says no the card is dropped
 # and on_pick gets "__none" so the asker can clean up
 func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := Callable(), slot := -1) -> void:
+    var art_id := art_next
+    art_next = ""
     if slot >= 0 and pane_slot < 0 and Players.coop and Players.slot(slot).joined:
         # co-op scope "player": the card appears in that player's pane and only they are held (a team card, slot -1, is the old full-window one)
         Players.takeover_host().card_for(slot).ask(who, body, choices, on_pick, valid)
@@ -20778,10 +20838,11 @@ func ask(who: String, body: String, choices: Array, on_pick: Callable, valid := 
     # X9: every asked card is shown once, in the order asked. A card asked while another is open, while the
     # report covers the screen, or while older cards are still waiting joins the back of the queue.
     if is_open or DayReport.is_open or (not _queue.is_empty() and not _draining):
-        _queue.append([who, body, choices, on_pick, valid])
+        _queue.append([who, body, choices, on_pick, valid, art_id])
         if not is_open and not DayReport.is_open:
             _show_next()
         return
+    art = art_id
     speaker = Roles.speaker(Roles.fill(who))  # a card that names you comes from somebody else
     text = Roles.fill(body)  # {tech} {ops} {partner} {me} become names
     options = []
@@ -20856,6 +20917,7 @@ func _show_next() -> void:
                 next[3].call("__none")
             continue
         _draining = true
+        art_next = str(next[5]) if next.size() > 5 else ""
         ask(next[0], next[1], next[2], next[3], valid)
         _draining = false
 
@@ -20947,15 +21009,24 @@ func _wrap(s: String, chars: int) -> Array:
     return out
 
 
+# the open card's spot picture, or null (none asked for, the file is missing)
+func _art_tex() -> Texture2D:
+    var path := "res://assets/ui/card_%s.png" % art
+    return load(path) if art != "" and ResourceLoader.exists(path) else null
+
+
 func _paint() -> void:
     var size := get_viewport().get_visible_rect().size
     _hits.clear()
     _canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.45))
     var pw := minf(size.x - 8.0, 250.0)
     var chars := int((pw - 10.0) / 4.0)
+    var art_tex: Texture2D = _art_tex() if pw >= ART_MIN_W else null  # a narrow card (the tall format) goes without the picture
     var lines := []
+    var plain_lines := []
     for para in text.split("\\n"):
-        lines.append_array(_wrap(para, chars))
+        lines.append_array(_wrap(para, chars - int(ART_W / 4.0) if art_tex != null else chars))
+        plain_lines.append_array(_wrap(para, chars))
     # option labels wrap onto more rows instead of being cut off (the room left for chips depends on the option)
     var opt_lines := []
     var opts_h := 0.0
@@ -20969,7 +21040,13 @@ func _paint() -> void:
         var rows: Array = _wrap(full, chars - 1 - chip_w)
         opt_lines.append(rows)
         opts_h += maxf(3.0 + 7.0 * float(rows.size()), tap_h) + 1.0
-    var ph := 12.0 + float(lines.size()) * 7.0 + 4.0 + opts_h + 4.0
+    var body_h := maxf(float(lines.size()) * 7.0, 27.0 if art_tex != null else 0.0)
+    var ph := 12.0 + body_h + 4.0 + opts_h + 4.0
+    if art_tex != null and ph > size.y - 14.0:  # no room for the picture on this screen: the plain card, the text at full width
+        art_tex = null
+        lines = plain_lines
+        body_h = float(lines.size()) * 7.0
+        ph = 12.0 + body_h + 4.0 + opts_h + 4.0
     # short screens (16:9, wide) keep the people visible by putting the card at the top
     var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
@@ -20978,9 +21055,11 @@ func _paint() -> void:
     PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
     var y := panel.position.y + 12.0
     for line in lines:
-        PixelFont.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK)
+        PadGlyphs.draw(_canvas, line, Vector2(panel.position.x + 5, y), INK, 1, true)
         y += 7.0
-    y += 4.0
+    if art_tex != null:
+        _canvas.draw_texture(art_tex, Vector2(panel.end.x - ART_W + 1.0, panel.position.y + 11.0))
+    y = panel.position.y + 12.0 + body_h + 4.0
     for i in options.size():
         var opt: Dictionary = options[i]
         var on: bool = bool(opt.get("enabled", true))
@@ -20993,7 +21072,7 @@ func _paint() -> void:
         var tchip := str(opt.get("trust_chip", ""))  # X9: what the choice does to the partner's trust
         var right_edge := r.end.x
         for k in rows.size():
-            PixelFont.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"))
+            PadGlyphs.draw(_canvas, str(rows[k]), r.position + Vector2(3, ty + 7 * k), INK if on else Color("8b93a1"), 1, true)
         if chip != "":
             var tint := Color("2f7d46")
             if str(opt.get("stance", "")) == "warn":
@@ -35514,6 +35593,7 @@ const NARROW_KEYS := {
     "L R RUN  UP DN LANE  Z FIRE  SHIFT DUCK  ESC LEAVE": "ARROWS MOVE  Z FIRE  SHIFT DUCK  ESC OUT",
     "ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
     "YOUR HALF: ARROWS = PICK  E = FLIP  SPACE = SERVE  ESC = LEAVE": "ARROWS PICK  E FLIP  SPACE SERVE  ESC OUT",
+    "P1 = Z X  P2 = {A B|(A) (B)}  L R = TURN  UP DN = LANE": "P1 Z X  P2 {A B|(A) (B)}  ARROWS STEER",
 }
 const CHAIR_EVENTS := ["straight", "gauntlet", "fight"]  # what the chair race card offers (LEFT / RIGHT on the card): two courses and the chair fight
 const CHAIR_KEYS := [KEY_Z, KEY_X, KEY_UP, KEY_DOWN, KEY_W, KEY_S, KEY_LEFT, KEY_RIGHT, KEY_A, KEY_D]  # the chair race (in the warehouse) takes these; the rest of the keys do nothing
@@ -39916,15 +39996,35 @@ func _hud_chair(s: Rect2) -> void:
     _canvas.draw_rect(Rect2(mx - 1.0, ry - 1.0, 3.0, 3.0), WHITE)
 
 
+# a piece of the duel's HUD art (null when the file is missing: the code-drawn strip is the fallback)
+func _duel_art(id: String) -> Texture2D:
+    var path := "res://assets/ui/duel_%s.png" % id
+    return load(path) if ResourceLoader.exists(path) else null
+
+
 # the chair fight's strip: after the Z and X keys the clock, the bumps (yours in gold, theirs in their colour), the strip of
 # floor with both chairs on it, your stamina
 func _hud_fight(s: Rect2, o: Vector2) -> void:
     var fight: RefCounted = g.race
-    _t("READY" if fight.clock < 0.0 else "%d" % fight.time_left(), o.x + 21.0, o.y, WHITE)
+    var clock_text := "READY" if fight.clock < 0.0 else "%d" % fight.time_left()
+    # the co-op duel: the clock in a frame, a P1 / P2 tag and sprite pips for each side (assets/ui/duel_*.png; the solo fight keeps its rectangles)
+    var duel: bool = fight.duel and _duel_art("frame") != null and _duel_art("tag_p1") != null and _duel_art("tag_p2") != null and _duel_art("pip_off") != null
+    if duel:
+        _canvas.draw_texture(_duel_art("frame"), Vector2(o.x + 19.0, s.position.y + 1.0))
+        _t(clock_text, o.x + 19.0 + floorf((23.0 - float(clock_text.length() * 4 - 1)) * 0.5), o.y, WHITE)
+    else:
+        _t(clock_text, o.x + 21.0, o.y, WHITE)
     var px := o.x + 44.0
     for side in 2:
+        if duel:
+            _canvas.draw_texture(_duel_art("tag_p%d" % (side + 1)), Vector2(px, s.position.y + 2.0))
+            px += 11.0
         for k in ChairFight.TARGET:
             var on: bool = k < int(fight.score()[side])
+            if duel:
+                _canvas.draw_texture(_duel_art(("pip_p%d" % (side + 1)) if on else "pip_off"), Vector2(px, s.position.y + 3.0))
+                px += 4.0
+                continue
             var col: Color = (AMBER if side == 0 else fight.chairs[1].color) if on else UiStyle.MUTED
             _canvas.draw_rect(Rect2(px, s.position.y + 4.0, 4.0, 5.0), col)
             px += 5.0
@@ -57334,7 +57434,7 @@ func _draw_banner() -> void:
     if body.length() > chars:
         body = body.substr(0, chars - 1) + "."
     PixelFont.draw(self, head, Vector2(x + 11.0, y + 2.0), Color.WHITE)
-    PixelFont.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86))
+    PadGlyphs.draw(self, body, Vector2(x + 11.0, y + 8.0), Color(0.78, 0.8, 0.86), 1, true)
 
 
 func _draw_hint(raw: String) -> void:
@@ -59604,6 +59704,8 @@ func _draw_options(size: Vector2, narrow: bool) -> void:
                 _txt(">", Vector2(box.end.x + 3.0, ty), GOLD)
                 _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), row_id + "_down" if row_id != "level" else "tier_down", 0])
                 _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), row_id + "_up" if row_id != "level" else "tier_up", 0])
+        if row_id == "mut" and pitch >= 13.0 and Yeartwo.mut_icon() != null:  # the chosen mutator's icon (the compact 11 px rows have no room)
+            draw_texture(Yeartwo.mut_icon(), Vector2(x0 + 134.0 + 4.0, y + floorf((pitch - 12.0) * 0.5)), Color(1, 1, 1, 0.5 if Yeartwo.ban != "" else 1.0))
         _rects.append([whole, "opt", i])
     if str(rows[opt_row].id) == "level" and is_campaign() and Difficulty.tier_note(mode) != "":  # what the tier feels like here
         var tnote := Difficulty.tier_note(mode)
@@ -73982,6 +74084,7 @@ write("scripts/controls.gd", '''extends Node
 signal device_changed(pad: bool)  # R42: the active input went from keys / mouse to a pad or back (every canvas is redrawn too)
 
 const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: BACK and START are View and Menu on a Steam Deck
 
 # action: [keys, pad buttons, pad axes as [axis, value]]
 const ACTIONS := {
@@ -74345,7 +74448,10 @@ func help_value(label: String, text: String) -> String:
 # a short name for a pad button (the Xbox-style layout the bindings are written for)
 func button_name(button: int) -> String:
     var names := ["A", "B", "X", "Y", "BACK", "GUIDE", "START", "L3", "R3", "LB", "RB", "UP", "DOWN", "LEFT", "RIGHT"]
-    return names[button] if button >= 0 and button < names.size() else "BTN %d" % button
+    if button < 0 or button >= names.size():
+        return "BTN %d" % button
+    var n: String = names[button]
+    return str(PadGlyphs.DECK_SWAP.get(n, n)) if PadGlyphs.deck() else n
 
 
 # the pad button an action answers to (its first default button until it is remapped); -1 for none
@@ -81589,6 +81695,7 @@ static func show_event(id: String) -> void:
     var options := []
     for o in c.options:
         options.append({"label": str(o.label), "id": str(o.id)})
+    Cards.art_next = Events.art_for(id)
     Cards.ask(str(c.speaker), str(c.text), options, func(pick: String) -> void: Events._answer(c, pick))
 ''')
 
@@ -82108,12 +82215,23 @@ const ART := "res://assets/props/%s.png"
 # room -> [the furniture node under Actors, [[sprite, x, y from the node's position], ...]]
 const PLATES := {
     "wood_table_1": [["dinner_plate_a", 12, -43], ["dinner_plate_b", 32, -43]],
-    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_a", 32, -43]],
+    "wood_table_3": [["dinner_plate_c", 12, -43], ["dinner_plate_d", 32, -43]],
 }
+# a guest at the dinner (a client or a prospect): the second table's two plates make room for a place setting and a name tent at its
+# end, and a briefcase leans on the floor beside the booth. Drawn while Outings.dinner_guest() is not empty.
+const GUEST_TABLE := "wood_table_3"
+const GUEST_PLATE_X := [3.0, 16.0]
+const GUEST_SET := [["dinner_tent", 30, -43], ["dinner_setting", 37, -44]]
+const GUEST_CASE := ["dinner_briefcase", 91, 107, -10]  # sprite, x, y (the y-sort line), the sprite's offset up
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
+# the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
+const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk"}
+const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
+var guest: Array = []  # the guest's setting, name tent and briefcase (shown while a guest is at the table)
+var escape_stage: Node = null  # the escape room's stage (its props are re-skinned by theme)
 var _t := 0.0
 
 
@@ -82144,29 +82262,85 @@ static func dress(stage: Node) -> Node:
     if room == "cubicle_two" and World.chars.has("Jen"):
         _put(actors.get_node_or_null(str(HEADSET[0])), str(HEADSET[1]), Vector2(float(HEADSET[2]), float(HEADSET[3])))
         return null
-    if room != "restaurant":
+    if room != "restaurant" and room != "escape_room":
         return null
     var node: Node = load("res://scripts/set_dressing.gd").new()
     node.name = "SetDressing"
     stage.add_child(node)
+    if room == "escape_room":
+        node.escape_stage = stage
+        node.refresh()
+        return node
     for host in PLATES:
         for row in PLATES[host]:
             var s := _put(actors.get_node_or_null(str(host)), str(row[0]), Vector2(float(row[1]), float(row[2])))
             if s != null:
                 node.plates.append(s)
+    for row in GUEST_SET:
+        var g := _put(actors.get_node_or_null(GUEST_TABLE), str(row[0]), Vector2(float(row[1]), float(row[2])))
+        if g != null:
+            node.guest.append(g)
+    var bag := _put(actors, str(GUEST_CASE[0]), Vector2(float(GUEST_CASE[1]), float(GUEST_CASE[2])))
+    if bag != null:
+        bag.offset = Vector2(0.0, float(GUEST_CASE[3]))
+        node.guest.append(bag)
     node.refresh()
     return node
 
 
+# the texture of one of the escape room's big props: the theme's own piece, else the study's
+static func escape_art(theme: String, slot: String) -> Texture2D:
+    if theme != "study":
+        var t := art("escape_%s_%s" % [theme, slot])
+        if t != null:
+            return t
+    return art(str(ESCAPE_PLAIN.get(slot, slot)))
+
+
+# the theme the room shows: the run's while an escape game is on, else the old study
+static func escape_theme_now() -> String:
+    return Outings.theme_id() if Outings.game == "escape" else "study"
+
+
+# swap the safe, trunk and globe sprites of the escape room for the theme's; returns how many changed
+static func escape_swap(stage: Node) -> int:
+    var actors := stage.get_node_or_null("Actors")
+    if actors == null:
+        return 0
+    var theme := escape_theme_now()
+    var n := 0
+    for node_name in ESCAPE_SLOTS:
+        var s := actors.get_node_or_null(str(node_name)) as Sprite2D
+        var t := escape_art(theme, str(ESCAPE_SLOTS[node_name]))
+        if s != null and t != null and s.texture != t:
+            s.texture = t
+            n += 1
+    return n
+
+
 # the food is on the table once the dinner is past the ordering round
+# a client or prospect is at the dinner table
+static func guest_here() -> bool:
+    return Outings.game == "dinner" and not Outings.dinner_guest().is_empty()
+
+
 static func plates_on() -> bool:
     return Outings.game == "dinner" and not Outings.dinner_ordering()
 
 
 func refresh() -> void:
+    if escape_stage != null:
+        escape_swap(escape_stage)
+        return
     var on := plates_on()
     for s in plates:
         s.visible = on
+    var here := guest_here()
+    for s in guest:
+        s.visible = here
+    for i in GUEST_PLATE_X.size():  # the second table's plates step aside for the guest
+        if plates.size() > 2 + i:
+            plates[2 + i].position.x = float(GUEST_PLATE_X[i]) if here else float(PLATES[GUEST_TABLE][i][1])
 
 
 func _process(delta: float) -> void:

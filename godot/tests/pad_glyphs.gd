@@ -24,11 +24,11 @@ func _init() -> void:
 
 	# ---- the atlas
 	var tex: Texture2D = PadGlyphs.atlas()
-	_check(tex != null and Vector2i(tex.get_size()) == Vector2i(132, 7), "the atlas is 132 x 7 (12 cells of 11 x 7)")
-	_check(PadGlyphs.NAMES.size() == 12 and PadGlyphs.WIDTHS.size() == 12, "12 glyphs, each with a width")
+	_check(tex != null and Vector2i(tex.get_size()) == Vector2i(264, 7), "the atlas is 264 x 7 (24 cells of 11 x 7)")
+	_check(PadGlyphs.NAMES.size() == 24 and PadGlyphs.WIDTHS.size() == 24, "24 glyphs, each with a width")
 	var img := tex.get_image()
 	var cells_ok := true
-	for i in 12:
+	for i in 24:
 		var w := int(PadGlyphs.WIDTHS[i])
 		var inside := 0
 		var outside := 0
@@ -59,6 +59,16 @@ func _init() -> void:
 	_check(PadGlyphs.parts("STICK = MOVE  (RB) NEXT") == [10, " = MOVE  ", 5, " NEXT"], "STICK and (RB): %s" % str(PadGlyphs.parts("STICK = MOVE  (RB) NEXT")))
 	_check(PadGlyphs.parts("A MEMORY STICKS OUT") == ["A MEMORY STICKS OUT"], "STICK inside a word stays text")
 	_check(PadGlyphs.parts("PLAIN TEXT (SEATED)") == ["PLAIN TEXT (SEATED)"], "other brackets stay text")
+	_check(PadGlyphs.parts("(VIEW) (MENU) RS UP RS RIGHT (L3) (R3) (DOWN)") == [12, " ", 13, " ", 14, " ", 17, " ", 18, " ", 19, " ", 21], "View, Menu, right stick, L3, R3 and a D-pad direction are glyphs: %s" % str(PadGlyphs.parts("(VIEW) (MENU) RS UP RS RIGHT (L3) (R3) (DOWN)")))
+	_check(PadGlyphs.parts("HEARS UP") == ["HEARS UP"] and PadGlyphs.parts("RS UPDATE") == ["RS UPDATE"], "RS UP only as a whole word")
+	_check(PadGlyphs.parts("USB STICK (A)", true) == ["USB STICK ", 0] and PadGlyphs.parts("STICK = MOVE", true) == ["STICK = MOVE"], "in a sentence a bare STICK stays a word, the bracketed buttons are glyphs")
+	_check(PadGlyphs.width("(A) THE STICK", 1, true) == 8 + 10 * 4 - 1, "a sentence's width counts the glyph as its cell")
+	PadGlyphs.deck_force = 1
+	_check(PadGlyphs.parts("(BACK) (START)") == [12, " ", 13], "on a Deck BACK and START are View and Menu: %s" % str(PadGlyphs.parts("(BACK) (START)")))
+	_check(controls.button_name(JOY_BUTTON_BACK) == "VIEW" and controls.button_name(JOY_BUTTON_START) == "MENU" and controls.button_name(JOY_BUTTON_A) == "A", "Controls names the Deck's buttons View and Menu")
+	PadGlyphs.deck_force = 0
+	_check(PadGlyphs.parts("(BACK) (START)") == [9, " ", 8] and controls.button_name(JOY_BUTTON_BACK) == "BACK", "off the Deck they stay BACK and START")
+	PadGlyphs.deck_force = -1
 	_check(PadGlyphs.width("(A) OK") == 8 + 3 * 4 - 1, "width of (A) OK with a glyph: %d" % PadGlyphs.width("(A) OK"))
 	_check(PadGlyphs.width("(LT)") == 11 and PadGlyphs.width("OK") == PixelFont.width("OK"), "a lone glyph is its width, plain text is the font's")
 	PadGlyphs.force = 0

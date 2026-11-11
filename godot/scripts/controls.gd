@@ -16,6 +16,7 @@ extends Node
 signal device_changed(pad: bool)  # R42: the active input went from keys / mouse to a pad or back (every canvas is redrawn too)
 
 const TOUCH_OVERLAY := preload("res://scripts/touch_overlay.gd")
+const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R42: BACK and START are View and Menu on a Steam Deck
 
 # action: [keys, pad buttons, pad axes as [axis, value]]
 const ACTIONS := {
@@ -379,7 +380,10 @@ func help_value(label: String, text: String) -> String:
 # a short name for a pad button (the Xbox-style layout the bindings are written for)
 func button_name(button: int) -> String:
 	var names := ["A", "B", "X", "Y", "BACK", "GUIDE", "START", "L3", "R3", "LB", "RB", "UP", "DOWN", "LEFT", "RIGHT"]
-	return names[button] if button >= 0 and button < names.size() else "BTN %d" % button
+	if button < 0 or button >= names.size():
+		return "BTN %d" % button
+	var n: String = names[button]
+	return str(PadGlyphs.DECK_SWAP.get(n, n)) if PadGlyphs.deck() else n
 
 
 # the pad button an action answers to (its first default button until it is remapped); -1 for none
