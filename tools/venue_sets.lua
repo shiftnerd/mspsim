@@ -561,12 +561,14 @@ return function(L, builders)
     s.put("Window", P.bigWindow(50, 50), 82, 14)
     s.put("Screen", P.roomScreen("b", 100, 56), 136, 6)
     s.put("Clock", P.clock(), 70, 20)
-    for _, x in ipairs({80, 108, 136}) do
+    -- the order is the order of breakout_b_props.json (the scene names its chairs by index): two back, three front, the third back chair
+    for _, x in ipairs({80, 108}) do
       s.putS("BackRow", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), x, 55, 94, "chair_wood_side")
     end
     for _, x in ipairs({57, 85, 113}) do
       s.putS("Seats", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), x, 64, 98, "chair_wood_side")
     end
+    s.putS("BackRow", P.chairSide("#8A5E3A", "#B08050", "#6A4426"), 136, 55, 94, "chair_wood_side")
     s.putS("Coffee", P.coffeeStation(), 22, 62, 100, "coffee_station")
     s.putS("Table", P.presenterTable(60, "#2E6A5A", "#F2C94C"), 148, 65, 100, "presenter_table")
     s.putS("Plant", P.floorPlant(), 222, 74, 101, "plant_floor")
@@ -618,11 +620,12 @@ return function(L, builders)
     s.put("Clock", P.clock(), 112, 18)
     s.putS("Lab1", P.labTable(), 44, 58, 92, "lab_table")
     s.putS("Lab2", P.labTable(), 114, 58, 92, "lab_table")
-    for _, x in ipairs({91, 121, 151}) do
-      s.putS("BackRow", P.chairSide("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 55, 94, "chair_blue_side")
-    end
+    -- front row first: the order of breakout_d_props.json (the scene names its chairs by index)
     for _, x in ipairs({71, 101, 131}) do
       s.putS("Seats", P.chairSide("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 64, 98, "chair_blue_side")
+    end
+    for _, x in ipairs({91, 121, 151}) do
+      s.putS("BackRow", P.chairSide("#2E5A8E", "#4A7AB0", "#1E3E66"), x, 55, 94, "chair_blue_side")
     end
     s.putS("Plant", P.floorPlant(), 6, 74, 101, "plant_floor")
     if not s.exportMode then s.put("CharacterTest", L.char("office_adult_right"), 90, 56) end
