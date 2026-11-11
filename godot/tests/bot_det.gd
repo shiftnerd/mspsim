@@ -50,7 +50,8 @@ func _init() -> void:
 	var ts := 120.0
 	var twice := false
 	var stop := 0
-	var before := 0  # play this seed first, untraced (state an earlier run leaves behind)
+	var before: Array = []  # play these seeds first, untraced (state an earlier run leaves behind)
+	var chain: Array = []
 	for a in OS.get_cmdline_user_args():
 		var s := str(a)
 		if s == "twice":
@@ -59,8 +60,12 @@ func _init() -> void:
 			show_chars = true
 		elif s.begins_with("stop="):
 			stop = int(s.substr(5))
-		elif s.begins_with("before="):
-			before = int(s.substr(7))
+		elif s.begins_with("before="):  # play these seeds first, untraced ("before=1,2")
+			for part in s.substr(7).split(","):
+				before.append(int(part))
+		elif s.begins_with("chain="):  # play year 1 + Year 2 of these seeds first, untraced ("chain=1,2")
+			for part in s.substr(6).split(","):
+				chain.append(int(part))
 		elif s.begins_with("every="):
 			step = int(s.substr(6))
 		elif s.begins_with("seed="):
@@ -78,8 +83,10 @@ func _init() -> void:
 	await process_frame
 	bots = load("res://tests/bot_lib.gd").new(self)
 	bots.ts = ts
-	if before > 0:
-		await bots.play(mode, tier, strat, before)
+	for seed_before in before:
+		await bots.play(mode, tier, strat, int(seed_before))
+	for seed_chain in chain:
+		await bots.play_year2(mode, tier, strat, int(seed_chain))
 	bots.frame_hook = _trace
 	bots.stop_day = stop
 	var r: Dictionary = await bots.play(mode, tier, strat, seed_n)

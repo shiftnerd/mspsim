@@ -114,7 +114,7 @@ func _init() -> void:
 				gap_at = "day %d" % d
 			prev_t = t
 		last_day = maxi(last_day, int(r.get("week", r.get("last_day", last_day))))
-		var weeks: Array = r.get("weeks", [])
+		var weeks: Array = r.weeks if r.get("weeks") is Array else []
 		var dead := []
 		for d in range(1, last_day + 1):
 			var list: Array = by_day.get(d, [])
@@ -156,10 +156,10 @@ func _init() -> void:
 				print("FLAG runaway: seed %d week %d: cash %d -> %d, value %d -> %d" % [first + k, int(b.week), int(a.cash), int(b.cash), int(a.value), int(b.value)])
 				flags += 1
 				failed = true
-	var hours: Array = by_hour.keys()
-	hours.sort()
+	var hour_keys: Array = by_hour.keys()
+	hour_keys.sort()
 	var spread := []
-	for h in hours:
+	for h in hour_keys:
 		spread.append("%02d:00 %d" % [int(h), int(by_hour[h])])
 	print("HOURS %s %s %s: decisions by the hour of the game clock: %s" % [mode, tier, strat, ", ".join(spread)])
 	print("QUIETEST %s %s %s: the day with the fewest decisions had %d" % [mode, tier, strat, quietest])

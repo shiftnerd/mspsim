@@ -140,6 +140,12 @@ func _note_card(cards: Node, pick: int) -> void:
 # the new game (its callback moves energy, cash or reputation), and a run that was cut short leaves the clock stopped
 func _clean_slate() -> void:
 	var cards := root.get_node("Cards")
+	var camp := root.get_node("Campaign")
+	if camp.active:
+		# a run that was not finished through the review (tech, service and owner bots stop at the final report) is still the
+		# running campaign: leave it the way a player does, or the owner campaign after it starts a little differently
+		# (seed 3 of a cell gave $873k as the third run of a process and $832k alone)
+		camp.quit_to_title()
 	var guard := 0
 	while (cards.is_open or cards.waiting() > 0) and guard < 60:
 		guard += 1

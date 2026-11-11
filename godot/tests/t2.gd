@@ -1,7 +1,8 @@
 extends SceneTree
 # gdlint:disable=max-line-length
 # T2: tech campaign fixes. `-- curve` prints only the reputation-by-day curves; `-- curve seeds=5 tier=hard` prints them for
-# five seeds on a tier (the asserts stay on the first seed at normal). The run seed is pinned, so a seed is the same game every time.
+# five seeds on a tier (normal or hard; the asserts stay on the first seed at normal; on the cozy easy tier the careless player is
+# never fired and this driver does not finish). The run seed is pinned, so a seed is the same game every time.
 
 var failures := 0
 var seen := {}

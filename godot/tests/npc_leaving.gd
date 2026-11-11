@@ -47,7 +47,8 @@ func _init() -> void:
 	body._finish_routine()
 	body._start(PackedStringArray(["exit"]))
 	await process_frame
-	_check(st.legs == plan_before and is_equal_approx(float(st.leg_t), left_before), "its finished routine and its exit step do not touch the plan of %s" % who)
+	# (the World's own clock keeps running: the leg's time left may only have gone down, the legs themselves are the same)
+	_check(st.legs == plan_before and float(st.leg_t) <= left_before and st.scene == world.OUTSIDE, "its finished routine and its exit step do not touch the plan of %s" % who)
 	await process_frame
 	var gone := true
 	for row in bodies:
