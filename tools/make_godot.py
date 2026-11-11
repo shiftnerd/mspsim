@@ -83088,8 +83088,11 @@ const GUEST_CASE := ["dinner_briefcase", 91, 107, -10]  # sprite, x, y (the y-so
 const HEADSET := ["desk_cubicle_74_1", "desk_headset", 3, -37]
 const CHECK_SECS := 0.5
 # the escape room's three big props by theme: sprite node -> slot, slot -> the study's own texture (art: escape_<theme>_<slot>.png)
-const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk"}
-const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk"}
+const ESCAPE_SLOTS := {"globe_4": "globe", "safe_box_5": "safe", "trunk_6": "trunk", "grandfather_clock_1": "clock", "desk_cubicle_74_2": "desk"}
+const ESCAPE_PLAIN := {"globe": "globe", "safe": "safe_box", "trunk": "trunk", "clock": "grandfather_clock", "desk": "desk_cubicle_74"}
+# what stands on the themed desk (a sprite on the desk node, x from its left edge; its bottom edge sits on the desk top; the study's lamp stays put)
+const ESCAPE_DESK := "desk_cubicle_74_2"
+const ESCAPE_DESK_ITEM_X := 24
 
 var plates: Array = []  # the plate sprites (shown and hidden together)
 var guest: Array = []  # the guest's setting, name tent and briefcase (shown while a guest is at the table)
@@ -83177,7 +83180,28 @@ static func escape_swap(stage: Node) -> int:
         if s != null and t != null and s.texture != t:
             s.texture = t
             n += 1
+    _escape_deskitem(actors.get_node_or_null(ESCAPE_DESK), theme)
     return n
+
+
+# the typewriter, KVM monitor or CRT on the themed desk; the study's desk has none
+static func _escape_deskitem(desk: Node, theme: String) -> void:
+    if desk == null:
+        return
+    var item := desk.get_node_or_null("Dressing_deskitem") as Sprite2D
+    var tex := art("escape_%s_deskitem" % theme) if theme != "study" else null
+    if tex == null:
+        if item != null:
+            item.visible = false
+        return
+    if item == null:
+        item = Sprite2D.new()
+        item.name = "Dressing_deskitem"
+        item.centered = false
+        desk.add_child(item)
+    item.texture = tex
+    item.visible = true
+    item.position = Vector2(ESCAPE_DESK_ITEM_X, -23 - tex.get_height())
 
 
 # the food is on the table once the dinner is past the ordering round
