@@ -125,3 +125,46 @@ for _, n in ipairs({"pad_glyphs", "touch_stick", "touch_knob", "touch_round", "t
   s:saveCopyAs(PR.ROOT .. PNG .. n .. ".png")
   s:close()
 end
+
+-- ---- co-op chair duel HUD (outings.gd _hud_fight): bump pips for each side, P1 / P2 tags, the round timer's frame ----
+-- (assets/ui/duel_*.png; the single-player fight keeps its code-drawn pips)
+do
+  PR.FONT["1"] = {".#.", "##.", ".#.", ".#.", "###"}
+  PR.FONT["2"] = {"###", "..#", "###", "#..", "###"}
+  local function pip(name, fill, lit)   -- 3 x 4 content, 1 px outline: 5 x 6
+    PR.build{name = name, ase = ASE, png = nil, layers = {{name = "Pip", pal = {f = fill, h = lit}, rows = {"hff", "fff", "fff", "fff"}}}}
+  end
+  pip("ui_duel_pip_p1", "#E8B820", "#F5D442")
+  pip("ui_duel_pip_p2", "#5FA8E8", "#A8D4F5")
+  pip("ui_duel_pip_off", "#4A4A55", "#5A606C")
+  local function tag(name, bg, n)       -- 9 x 7: rounded corners, "P1" / "P2" in ink
+    local t = PR.text("P" .. n, "t")
+    local rows = {}
+    for y = 1, 7 do
+      if y == 1 or y == 7 then
+        rows[y] = "." .. string.rep("b", 7) .. "."
+      elseif y >= 2 and y <= 6 then
+        rows[y] = "b" .. t[y - 1] .. "b"
+      end
+    end
+    PR.build{name = name, ase = ASE, png = nil, pad = 0, layers = {{name = "Tag", pal = {b = bg, t = "#17121F"}, rows = rows}}}
+  end
+  tag("ui_duel_tag_p1", "#E8B820", "1")
+  tag("ui_duel_tag_p2", "#5FA8E8", "2")
+  local frame = {}                       -- the clock's frame, 23 x 9: a light rim, a near-black well, corners cut
+  for y = 1, 9 do
+    local s = ""
+    for x = 1, 23 do
+      local rim = (y == 1 or y == 9 or x == 1 or x == 23)
+      local corner = (y == 1 or y == 9) and (x == 1 or x == 23)
+      s = s .. (corner and "." or (rim and "r" or "w"))
+    end
+    frame[y] = s
+  end
+  PR.build{name = "ui_duel_frame", ase = ASE, png = nil, pad = 0, layers = {{name = "Frame", pal = {r = "#8A93A8", w = "#0F0D16"}, rows = frame}}}
+  for _, n in ipairs({"duel_pip_p1", "duel_pip_p2", "duel_pip_off", "duel_tag_p1", "duel_tag_p2", "duel_frame"}) do
+    local s = Sprite{fromFile = PR.ROOT .. ASE .. "ui_" .. n .. ".aseprite"}
+    s:saveCopyAs(PR.ROOT .. PNG .. n .. ".png")
+    s:close()
+  end
+end

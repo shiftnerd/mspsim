@@ -33,6 +33,7 @@ func _init() -> void:
 		"props/chair_ring_spot": Vector2i(30, 12), "ui/star_asked": Vector2i(5, 5), "props/dinner_plate_a": Vector2i(11, 6),
 		"props/dinner_plate_b": Vector2i(11, 6), "props/dinner_plate_c": Vector2i(11, 6), "props/desk_headset": Vector2i(9, 12),
 		"props/dinner_plate_d": Vector2i(11, 6), "props/dinner_setting": Vector2i(16, 7), "props/dinner_tent": Vector2i(7, 6), "props/dinner_briefcase": Vector2i(12, 10),
+		"ui/duel_pip_p1": Vector2i(5, 6), "ui/duel_pip_p2": Vector2i(5, 6), "ui/duel_pip_off": Vector2i(5, 6), "ui/duel_tag_p1": Vector2i(9, 7), "ui/duel_tag_p2": Vector2i(9, 7), "ui/duel_frame": Vector2i(23, 9),
 	}
 	var files_ok := true
 	for id in sizes:
@@ -41,7 +42,11 @@ func _init() -> void:
 		if t == null or Vector2i(t.get_size()) != sizes[id]:
 			files_ok = false
 			print("     missing or wrong size: %s" % id)
-	_check(files_ok, "the thirteen sprites load at their sizes")
+	_check(files_ok, "the nineteen sprites load at their sizes")
+
+	# ---- the co-op duel's strip finds its sprites (outings.gd _hud_fight draws them; the rectangles are the fallback)
+	var duel_art: Texture2D = outings._duel_art("frame")
+	_check(duel_art != null and outings._duel_art("tag_p2") != null and outings._duel_art("pip_p1") != null and outings._duel_art("nothing") == null, "the duel strip loads its frame, tags and pips; a missing piece is null")
 
 	# ---- the chair track finds its paint, and a missing one is null (the rectangles are the fallback)
 	var track: Node2D = load("res://scripts/chair_track.gd").new()

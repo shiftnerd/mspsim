@@ -770,6 +770,29 @@ func _floor_phase() -> void:
 		_begin()
 		await _end("chair %s result" % event)
 		out.close()
+	# co-op: the chair duel (player 1 against player 2): its intro page and the HUD strip with the clock's frame, the P1 / P2 tags and the pips
+	var duo := root.get_node("Players")
+	duo.enable_coop(true)
+	duo.join(1, 1)
+	out.chair_event = "straight"
+	_begin()
+	out.start("chair", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"]})
+	out.press(KEY_RIGHT)
+	out.press(KEY_RIGHT)
+	await _end("chair duel intro")
+	out.press(KEY_ENTER)
+	out.tick(3.4)
+	if out.g.has("race") and out.g.race.duel:
+		out.g.race.chairs[0].bumps = 2
+		out.g.race.chairs[1].bumps = 1
+		out.g.race._say("PLAYER 1 GOT YOU! 2 TO 1", 5.0)
+	out.tick(0.1)
+	out._traveled = true
+	_begin()
+	await _end("chair duel hud strip")
+	out._traveled = false
+	out.close()
+	duo.enable_coop(false)
 	out.chair_event = "straight"
 	_begin()
 	out.start("paintball", false, {"party": ["Alan", "Garrison", "Dan", "Maya", "John"], "night": true})
