@@ -33,7 +33,7 @@ func _init() -> void:
 	var total_intern := 0
 	for anim in intern.get_animation_names():
 		total_intern += intern.get_frame_count(anim)
-	for who in ["expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot"]:
+	for who in ["expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt"]:
 		var frames: SpriteFrames = load("res://characters/%s.tres" % who)
 		_check(frames != null, "%s has a SpriteFrames" % who)
 		var total := 0
@@ -261,5 +261,23 @@ func _init() -> void:
 				posted[str(post.by)] += 1
 	_check(nerds.POSTERS.has("TapeTony") and nerds.POSTERS.has("DNS_Dot"), "both have a forum title")
 	_check(posted.TapeTony >= 1 and posted.DNS_Dot >= 1, "both have a post on the forum (%s)" % str(posted))
+	# WSUS_Walt (R28 again): the patching regular in the lobby, a card that pays like the others, a title and a post
+	_check(spots.has("forum:walt") and spots["forum:walt"][0] == "resort_lobby", "Walt is in the lobby")
+	for door in [37, 301, 263]:
+		_check(absf(float(spots["forum:walt"][1]) - float(door)) >= 25.0, "Walt is clear of the lobby door at x %d" % door)
+	var wdef: Dictionary = cf.forum_def("walt")
+	_check(not wdef.is_empty() and wdef.options.size() == 4, "walt has a chat with four options")
+	cf.reset()
+	var w0: int = int(sk.xp.servers)
+	cf.npc_use(_fake("forum:walt"), null)
+	_check(cards.is_open and cards.speaker.begins_with("WSUS_Walt"), "E opens Walt's card")
+	cards.pick(0)
+	_check(int(sk.xp.servers) == w0 + 4, "Walt's patch window is +4 servers XP")
+	cards.pick(0)
+	var walt_posts := 0
+	for th in nerds.THREADS:
+		for post in th.get("posts", []):
+			walt_posts += 1 if str(post.by) == "WSUS_Walt" else 0
+	_check(nerds.POSTERS.has("WSUS_Walt") and walt_posts >= 1, "Walt has a forum title and a post")
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

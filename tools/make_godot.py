@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
@@ -25135,7 +25135,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -25726,6 +25726,7 @@ const THREADS := [
                 "by": "GrizzleAdmin",
                 "text": "Patch Tuesday is not the day to find out. Wait a week."
             },
+            {"by": "WSUS_Walt", "text": "Test group on Tuesday, everybody else on the following Tuesday. Never on a Friday. A Friday patch is how you meet your Saturday."},
         ],
         "answer":
         "Approve critical updates to a small test group first, wait a few days, then roll out. Never patch the whole fleet on the first day.",
@@ -52875,6 +52876,16 @@ const FORUM := [
         ],
     },
     {
+        "id": "walt", "speaker": "WSUS_Walt (forum regular)",
+        "text": "Walt. I patch things. On a Tuesday, in a window, with a rollback plan and a reboot nobody is surprised by. You look like somebody who patches on a Friday. Do not tell me.",
+        "options": [
+            {"id": "window", "label": "ASK ABOUT THE PATCH WINDOW", "skill": "servers", "xp": 4, "text": "'A test group, a week, then the rest. The window goes in the calendar and in the client's head.' He writes the approval steps on the back of your badge. (+4 servers XP)"},
+            {"id": "reboot", "label": "ASK ABOUT THE REBOOT", "skill": "people", "xp": 3, "text": "'Tell them it is coming, tell them when, tell them twice.' A reboot with a warning is maintenance. Without one it is an outage. (+3 customer XP)"},
+            {"id": "thread", "label": "UPVOTE HIS FRIDAY RULE", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his never-on-a-Friday post. He replies with the date of every Friday patch that ever went wrong, from memory. (+3 forum karma)", "text_free": "You upvote his never-on-a-Friday post. He replies with a list of dates."},
+            {"id": "friday", "label": "ADMIT TO A FRIDAY PATCH", "skill": "", "xp": 0, "social": 1, "text": "He puts a hand on your shoulder like a doctor. 'Tell me everything.' Your coworkers hear about the confession before you are back at the booth. (coworkers like you a little more)", "text_free": "He puts a hand on your shoulder like a doctor."},
+        ],
+    },
+    {
         "id": "dot", "speaker": "DNS_Dot (forum regular)",
         "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
         "options": [
@@ -52913,6 +52924,7 @@ const CROWD := {
         {"who": "expo_priya", "role": "att:1", "x": 243, "facing": "right", "routine": ["talk:5", "wait:3"]},
         {"who": "expo_grizzle", "role": "forum:grizzle", "x": 182, "facing": "left", "routine": ["wait:6", "say:2", "wait:4"]},
         {"who": "expo_ray", "role": "forum:ray", "x": 140, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
+        {"who": "expo_walt", "role": "forum:walt", "x": 160, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
     ],
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},

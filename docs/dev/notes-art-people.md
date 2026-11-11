@@ -32,3 +32,11 @@
 - Ross and Terry are visitors (`office_` names like Trent and Pell), not staff: they walk in on the beat day only.
 - Audience stays at four per room (the cap was six): more would leave the player no free chair.
 - Not seen in a game screenshot: the new seats and the audience were checked by tests, not by eye.
+
+## R28 again: WSUS_Walt
+
+- `expo_walt` (`tools/make_men.lua`): glasses, cream short-sleeve shirt with a logo badge, navy trousers, grey-brown comb-over.
+  Stands in the resort lobby (x 160, between Ray and Grizzle). Card `Expo.FORUM` id `walt` (inserted before Dot, so the
+  `# Expo > FORUM` section of `strings.txt` was deleted and re-synced): patch window (+4 servers), the reboot (+3 customer),
+  upvote his Friday rule (+3 karma), admit a Friday patch (+1 social). `Nerds.POSTERS` REGULAR, one post in the "Patch Tuesday
+  auto-approve rules" thread. Test: `tests/forum_people.gd`. Strings are a first draft.

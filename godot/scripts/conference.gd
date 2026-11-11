@@ -776,6 +776,16 @@ const DEFAULT_FORUM := [
 		],
 	},
 	{
+		"id": "walt", "speaker": "WSUS_Walt (forum regular)",
+		"text": "Walt. I patch things. On a Tuesday, in a window, with a rollback plan and a reboot nobody is surprised by. You look like somebody who patches on a Friday. Do not tell me.",
+		"options": [
+			{"id": "window", "label": "ASK ABOUT THE PATCH WINDOW", "skill": "servers", "xp": 4, "text": "'A test group, a week, then the rest. The window goes in the calendar and in the client's head.' He writes the approval steps on the back of your badge. (+4 servers XP)"},
+			{"id": "reboot", "label": "ASK ABOUT THE REBOOT", "skill": "people", "xp": 3, "text": "'Tell them it is coming, tell them when, tell them twice.' A reboot with a warning is maintenance. Without one it is an outage. (+3 customer XP)"},
+			{"id": "thread", "label": "UPVOTE HIS FRIDAY RULE", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his never-on-a-Friday post. He replies with the date of every Friday patch that ever went wrong, from memory. (+3 forum karma)", "text_free": "You upvote his never-on-a-Friday post. He replies with a list of dates."},
+			{"id": "friday", "label": "ADMIT TO A FRIDAY PATCH", "skill": "", "xp": 0, "social": 1, "text": "He puts a hand on your shoulder like a doctor. 'Tell me everything.' Your coworkers hear about the confession before you are back at the booth. (coworkers like you a little more)", "text_free": "He puts a hand on your shoulder like a doctor."},
+		],
+	},
+	{
 		"id": "dot", "speaker": "DNS_Dot (forum regular)",
 		"text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
 		"options": [
@@ -846,6 +856,13 @@ const CROWD := {
 			"x": 140,
 			"facing": "right",
 			"routine": ["wait:5", "talk:3", "wait:3"]
+		},
+		{
+			"who": "expo_walt",
+			"role": "forum:walt",
+			"x": 160,
+			"facing": "left",
+			"routine": ["wait:5", "say:2", "wait:4"]
 		},
 	],
 	"resort_hall":

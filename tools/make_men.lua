@@ -63,6 +63,11 @@ local CHARS = {
     shirt = {"#B89A62", "#927848"}, pants = {"#2B3550", "#1F2840", "#171E32"}, shoes = {"#5A3A22", "#42291A"},
     belt = "#2A2A33", stubble = "#C48E68", lips = "#8A4A2E", goatee = "#8A8A94", cap = {"#2E3A58", "#222C44"},
   },
+  expo_walt = {   -- WSUS_Walt (LabRat Nerds forum, patches everything, never on a Friday): thick glasses, a cream short-sleeve shirt with a logo badge, navy trousers, a grey-brown comb-over
+    skin = {"#EBBA98", "#D09A78", "#AE7A5A"}, hair = {"#8A7A6A", "#A8988A", "#5E5248"},
+    shirt = {"#E4DEC4", "#BDB594"}, pants = {"#2E3A58", "#222C44", "#18203A"}, shoes = {"#3A3A44", "#2A2A33"},
+    belt = "#2A2A33", stubble = false, lips = "#8A4A2E", glasses = true, patch = true,
+  },
   office_adam = {   -- the senior tech and mentor: a shaved head, glasses, a light-blue polo, khakis
     skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#F3B488", "#F3B488", "#6B4B34"},
     shirt = {"#7FA6D8", "#5E86BC"}, pants = {"#B9A67E", "#948360", "#6E6046"}, shoes = {"#6A5240", "#4F3E30"},
