@@ -95,6 +95,11 @@ Sometimes two things are within reach: a door and a coworker, a monitor and a ru
 picks the closest one. **`Tab`** moves the arrow to the next thing in reach, left to right. **`Shift`+`Tab`** goes back. Walk away
 about ten pixels and the game goes back to choosing for you.
 
+When the game chooses, **the thing you face wins** over something a little closer behind your back, and a computer in front of
+you wins over a coworker who just happens to stand at the desk (`Tab` still reaches them). Seated in your chair, `E` is always
+your Computer, with two exceptions that are meant to interrupt: a desk phone ringing within reach is answered first, and
+somebody who walked over with news for you is heard first. A gamepad's use button behaves the same.
+
 ---
 
 ## GAMEPAD
