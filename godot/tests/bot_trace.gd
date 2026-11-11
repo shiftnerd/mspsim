@@ -124,7 +124,8 @@ func _init() -> void:
 				var money := ""
 				if d - 1 < weeks.size():
 					var w: Dictionary = weeks[d - 1]
-					money = " cash %d rep %d trust %d value %d clients %d |" % [int(w.cash), int(w.rep), int(w.trust), int(w.value), int(w.clients)]
+					money = " cash %d rep %d trust %d value %d%s clients %d |" % [int(w.cash), int(w.rep), int(w.trust), int(w.value), " (contracts)" if bool(w.get("book", false)) else (" (%.1fx)" % float(w.get("mult", 0.0))), int(w.clients)]
+					money += " desk %d open, %d hires |" % [int(w.get("open", 0)), int(w.get("staff", 0))]  # X13
 				print("DAY %2d:%s %d cards | %s" % [d, money, list.size(), " ; ".join(list)])
 		for d in range(1, last_day + 1):
 			var n_day: int = by_day.get(d, []).size()

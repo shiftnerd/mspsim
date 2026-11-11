@@ -947,9 +947,11 @@ or the owner (owner campaign, 20 weeks).
 - **SEND MAYA OR A NEW HIRE ($100)** `[Owner.CARDS.rack.options.1.label]`
   - 50%: Back up by evening. `[Owner.CARDS.rack.options.1.roll.0.2]`
   - 50%: Cables were plugged into the wrong ports. Bob is furious. `[Owner.CARDS.rack.options.1.roll.1.2]`
-- **TELL THEM IT IS THEIR WALL** `[Owner.CARDS.rack.options.2.label]`
-  - 70%: They fix it themselves. They are not happy. `[Owner.CARDS.rack.options.2.roll.0.2]`
-  - 30%: Gnarly Gnomes cancels the contract. `[Owner.CARDS.rack.options.2.roll.1.2]`
+- **GO YOURSELF TONIGHT (NO CASH, YOUR EVENING)** `[Owner.CARDS.rack.options.2.label]`
+  - You hold the rack while Bob holds the flashlight. Back up by midnight, on the right studs this time. `[Owner.CARDS.rack.options.2.text]`
+- **TELL THEM IT IS THEIR WALL** `[Owner.CARDS.rack.options.3.label]`
+  - 70%: They fix it themselves. They are not happy. `[Owner.CARDS.rack.options.3.roll.0.2]`
+  - 30%: Gnarly Gnomes cancels the contract. `[Owner.CARDS.rack.options.3.roll.1.2]`
 
 **10:48** Event: profit_review (handled in code, it opens its own cards)
 

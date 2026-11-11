@@ -455,7 +455,10 @@ func _report(kind: String) -> Dictionary:
 			["OTHER COSTS + MARKETING", "-$1300", WHITE], ["JOBS AND DEALS", "+$450", Color("8fe3a0")],
 			["EBITDA", "$2450", Color("8fe3a0")], ["EBITDA MARGIN", "38% (PEERS 15%)", Color("8fe3a0")],
 			["W-2 RATIO", "48% (TARGET 55%)", Color("8fe3a0")], ["CASH", "$9800", Color("8fe3a0")],
-			["CLIENTS, A/R OWED", "8 (70%), $1200", Color("ffd27a")], ["OWNER HOURS", "22 FREE", WHITE],
+			["CLIENTS, A/R OWED", "8 (70%), $1200", Color("ffd27a")],
+			["DATED BILLS", "-$275 THIS WEEK, $1925 LEFT", Color("ffd27a")],  # X13
+			["DESK OVER CAPACITY", "14 CLOSED, 16 MISSED, 21 OPEN", Color("ff8a80")],  # X13
+			["OWNER HOURS", "22 FREE", WHITE],
 			["PARTNER TRUST", "GARRISON 55 (SOLID)", WHITE], ["PERSONAL GOAL", "A CLEAN YEAR: 3/3 ON TRACK", WHITE],
 			["RECURRING + PROJECTS", "$6400/WK + $450 JOBS", Color("8fe3a0")],
 			["VALUE (ESTIMATE)", "$412000, A GROWTH COMPANY", Color("ffd27a")],
@@ -495,6 +498,18 @@ func _floor_phase() -> void:
 		{"label": "STALL UNTIL MONDAY AND SAY NOTHING TO EITHER", "id": "d", "trust_chip": "BOTH -2", "trust_dir": -1},
 	], func(_id: String) -> void: pass)
 	await _end("card long")
+	_clear(cards)
+	# X13: the scammed-client card with its prices on the labels (the longest owner labels: a dated bill, a named risk)
+	_begin()
+	var scam := "ALAN, HOOT AND HOLLER FAMILY DENTISTRY WIRED $14,000 TO A SCAMMER THIS WEEK. AN EMAIL 'FROM' THEIR OWNER TOLD ACCOUNTING TO PAY A NEW ACCOUNT AND IT WORKED. "
+	scam += "THEIR MAILBOX HAD BEEN WATCHED FOR DAYS. THEIR OWNER IS ON THE PHONE WITH THE BANK AND HIS FIRST QUESTION IS WHAT IT WAS DOING. WHAT DO WE SAY?"
+	cards.ask("CHRISTY (CONTROLLER)", scam, [
+		{"label": "CREDIT THEM 40% ($5,600) OVER 8 WEEKS AND SIGN THEM FOR THE EMAIL FILTER", "id": "0", "trust_chip": "TRUST +1", "trust_dir": 1},
+		{"label": "LET OUR LAWYER ANSWER THEIR LETTER ($600) (RISK $7,600)", "id": "1", "enabled": false, "hint": "NEED $600"},
+		{"label": "ASK OUR INSURER (COVERED: $1,100, NOT COVERED: $5,600)", "id": "2"},
+		{"label": "TELL THEM IT WAS THEIR OWN PROCESS", "id": "3"},
+	], func(_id: String) -> void: pass)
+	await _end("card scam prices")
 	_clear(cards)
 	# R8: event cards with their spot picture (drawn where the card is wide enough and has the height: the tall format goes without)
 	for pic in ["tax", "printer"]:

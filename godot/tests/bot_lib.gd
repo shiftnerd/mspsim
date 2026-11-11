@@ -1273,7 +1273,7 @@ const OW_POLICIES := {
 		"desktop": 2,
 		"prospect": 1,
 		"license": 1,
-		"rack": 2,
+		"rack": 3,
 		"migration": 0,
 		"email24": 2,
 		"raise": 1,
@@ -1298,7 +1298,10 @@ const OW_SHORTCUTS := {"temp_seats": 0, "temp_reboot": 0, "temp_launder": 0, "te
 # takeover assessment and walks the site (so a bot run exercises the takeover visit); week 19 he assesses before he signs
 const OW_TAKEOVER := {"rival_defect": 2, "rival_takeover": 0, "rival_badday": 1}
 const OW_CAREFUL := ["careful", "shortcut", "takeover"]
-const OW_CREDIT_CASH := 5000  # Q6: the careful owner credits a scammed client 40% only with at least this much in the bank
+const OW_HIRE_CASH := 1500  # X13: the careful bot answers Morgan's desk card with a hire only with at least this much in the bank
+const OW_HIRE_W2 := 0.75  # ... and with payroll at no more than this share of revenue (the W-2 RATIO row of the report; the target is 55%)
+const OW_SQUEEZE_CASH := 2000  # X13: under this the careful bot does not accept slower payment terms from its biggest clients
+const OW_HIRE_EBITDA := -600  # ... and with the week's EBITDA at this or better (a company losing more does not add a wage)
 const OW_TRIP_CASH := 3000  # Q6d: the careful bot sends someone to Rodent Nation only with at least this much in the bank
 
 
@@ -1318,10 +1321,32 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			pick = 2  # R36: the lopsided crew: pair the techs (falls back to an open option without the cash)
 		if strategy in OW_CAREFUL and cards.options.size() == 3 and cards.text.contains("non-solicit line"):
 			pick = 1  # R36: a client wants to follow a tech out: go and see them
-		if strategy in OW_CAREFUL and cards.options.size() == 4 and cards.text.contains("to a scammer") and root.get_node("Owner").cash < OW_CREDIT_CASH:
-			# Q6: a client lost money to a fake invoice. Crediting 40% of it ($2,000 and more, the card names no price) out of a thin
-			# bank is how the careful owner went bankrupt in week 15: he lets the lawyer answer ($600), or asks the insurer
-			pick = 1 if root.get_node("Owner").cash >= 600 else 2
+		if strategy in OW_CAREFUL and cards.options.size() == 4 and cards.text.contains("to a scammer"):
+			# X13: a client lost money to a fake invoice. The careful owner credits 40% of it: the option names its price now and a
+			# thin bank pays it as a credit note over eight weeks (before, it bankrupted him and the bot let the lawyer answer)
+			pick = 0
+		if strategy in OW_CAREFUL and cards.text.contains("the desk does not") or (strategy in OW_CAREFUL and cards.text.begins_with("Still under water")):
+			# X13: Morgan says the desk is over capacity. The careful owner reads the books before he answers: a hire when the
+			# bank can carry a new wage through its first weeks and the week is not already deep in the red; else the training
+			# course ($400, once); else he stops taking clients until the desk has caught up
+			var books: Dictionary = root.get_node("Owner").weekly_estimate()
+			pick = 0
+			if root.get_node("Owner").cash < OW_HIRE_CASH or int(books.ebitda) < OW_HIRE_EBITDA or float(books.w2) > OW_HIRE_W2:
+				for i in cards.options.size():
+					var desk_label := str(cards.options[i].label)
+					if desk_label.begins_with("TRAIN THE CREW") and bool(cards.options[i].get("enabled", true)):
+						pick = i
+						break
+					if desk_label.begins_with("STOP TAKING NEW CLIENTS"):
+						pick = i
+		# X13: the careful owner under water looks at the bank before he commits it (the bot gave the same answers at -$1,500 as
+		# at +$15,000: seed 4 accepted net-60 terms on its two biggest invoices with the bank below zero and was bankrupt at the close)
+		if strategy in OW_CAREFUL and cards.options.size() == 3 and cards.text.contains("net-60") and root.get_node("Owner").cash < OW_SQUEEZE_CASH:
+			pick = 2  # 2% off for paying on time: the money keeps coming in
+		if strategy in OW_CAREFUL and cards.options.size() == 4 and cards.text.begins_with("John wants a marketing budget") and root.get_node("Owner").cash < 0:
+			pick = 1  # LIGHT ($150/WEEK) until the bank is above water again
+		if strategy in OW_CAREFUL and cards.text.begins_with("Three candidates came through"):
+			pick = _ow_best_hire(cards)  # X13: and reads them (the bot took whoever stood first in the line)
 		# R38: the takeover visit's own cards (the owner meeting, a finding): ask about the backups; take the job, else sell the
 		# project, else patch it (the lazy owner makes a note)
 		var opt_ids := []
@@ -1362,6 +1387,25 @@ func ow_answer(cards: Node, ids: Dictionary) -> void:
 			if best < 0:
 				break
 			pb.choose(best)
+
+
+# X13: the careful owner's pick of three candidates: the most skill ("SKILL 0.85" on the label), a wizard a little ahead, a
+# flight risk well behind (he quits and takes his clients' goodwill with him)
+func _ow_best_hire(cards: Node) -> int:
+	var rx := RegEx.new()
+	rx.compile("SKILL ([0-9.]+)")
+	var best := 0
+	var best_score := -9.0
+	for i in cards.options.size():
+		var label := str(cards.options[i].label)
+		var m := rx.search(label)
+		if m == null:
+			continue
+		var score := float(m.get_string(1)) + (0.1 if label.contains("WIZARD") else 0.0) - (0.25 if label.contains("FLIGHT") else 0.0)
+		if score > best_score:
+			best_score = score
+			best = i
+	return best
 
 
 var ow_visits := 0  # takeover visits walked this run
@@ -1482,7 +1526,14 @@ func ow_run(seed_n: int) -> Dictionary:
 		for k in range(seen_cards, card_log.size()):
 			wk_cards.append(str(card_log[k].text).substr(0, 28))
 		seen_cards = card_log.size()
-		weeks.append({"week": day, "cash": int(o.cash), "rep": int(c.rep), "trust": int(root.get_node("Partner").trust), "value": int(o.valuation()), "clients": sales.active.size(), "cards": wk_cards})
+		weeks.append({"week": day, "cash": int(o.cash), "rep": int(c.rep), "trust": int(root.get_node("Partner").trust), "value": int(o.valuation()), "clients": sales.active.size(), "cards": wk_cards, "mult": float(o.multiple()), "ebitda": int(o.ebitda_weekly()), "open": root.get_node("Msp").open_tickets().size(), "staff": o.extra_staff.size(), "book": bool(o._value_on_book()) if o.has_method("_value_on_book") else false})
+		if stop_day > 0 and day >= stop_day and not bool(report.report.get("final", false)):
+			# X13: a short owner run (tests/determinism.gd): the row of the week it stopped in
+			row = {"rep": int(c.rep), "score": o.valuation(), "fired": false, "cash": o.cash, "week": day, "weeks": weeks, "ending": "STOPPED", "cls": "mid", "info": "week %d cash $%d clients %d mood %d trust %d burnout %.1f" % [day, o.cash, sales.active.size(), int(sales.average()), root.get_node("Partner").trust, float(o.burnout)]}
+			report.finish()
+			await _wait(0.7)
+			game.busy = false
+			return row
 		if OS.get_environment("BOT_TRACE") != "":
 			var est: Dictionary = o.weekly_estimate()
 			print("TRACE week %d cash %d rep %d" % [day, o.cash, c.rep])
@@ -1503,6 +1554,14 @@ func ow_run(seed_n: int) -> Dictionary:
 	row["ending"] = "FIRED" if fired else ("sell" if offers_ids.has("sell") else "stay")
 	row["cls"] = "bad" if (fired or rep < 45) else ("good" if rep >= 60 and o.goal_met() else "mid")
 	row["info"] = "week %d cash $%d clients %d mood %d trust %d draw $%d goal %s value $%d (%.1fx)" % [last, o.cash, sales.active.size(), int(sales.average()), root.get_node("Partner").trust, o.draw_paid, str(o.goal_met()), o.valuation(), o.multiple()]
+	if o.has_method("_value_on_book"):  # X13: is the final value the contracts' floor, how many weeks read $0, dated bills still open
+		var zero_weeks := 0
+		for w in weeks:
+			zero_weeks += 1 if int(w.value) <= 0 else 0
+		row["info"] += " %s zero-value weeks %d bills $%d hires %d" % ["ON CONTRACTS" if o._value_on_book() else "on earnings", zero_weeks, int(o.OwnerOps.bills_left()), o.extra_staff.size()]
+	row["zero_weeks"] = 0
+	for w in weeks:
+		row["zero_weeks"] += 1 if int(w.value) <= 0 else 0
 	# P5: the newer owner content (temptations, takeover, the second cast's cards, by-name requests)
 	var bn: Dictionary = o.flags.get("bn", {})
 	var cast_seen := 0

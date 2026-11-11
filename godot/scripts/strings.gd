@@ -17,6 +17,7 @@ const ROOTS := {
 	"Yeartwo": ["CARRY", "YEAR2", "TEXT", "YEAR3", "TEXT3"],
 	"Playbook": ["BOOKS", "PROBLEMS"],
 	"Owner": ["CARDS"],
+	"OwnerOps": ["LEADS"],
 	"Service":
 	[
 		"HUDDLE",
@@ -109,7 +110,7 @@ const ROOTS := {
 const SCRIPTS := {
 	"Seasons": "res://scripts/seasons.gd",
 	"Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd",
-	"RivalTouches": "res://scripts/rival_touches.gd", "OwnerCast": "res://scripts/owner_cast.gd"
+	"RivalTouches": "res://scripts/rival_touches.gd", "OwnerCast": "res://scripts/owner_cast.gd", "OwnerOps": "res://scripts/owner_ops.gd"
 }
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := [

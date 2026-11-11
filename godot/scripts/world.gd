@@ -523,6 +523,24 @@ func _everyone_outside() -> bool:
 func new_run() -> void:
 	_meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
 	_pair_last = {}
+	# X13: the office's running time starts again. try_chat compares `_total - _pair_last` with the cooldown and stores
+	# `_total - CHAT_COOLDOWN + 3.0`: with a `_total` that kept growing over the runs of a process the same three seconds
+	# rounded to another frame, two people stopped to chat one frame apart, the chat drew from the global generator and the
+	# rest of the year went another way (owner seed 3: $831,705 alone, $872,920 after seeds 1 and 2)
+	_total = 0.0
+	# X13: and the cast starts again in CAST order with fresh rows. Somebody who was out for a day (a mutator, a partner who
+	# left) is put back at the END of `chars`, and a row keeps what the year before left in it (a pending sales bell): the
+	# next game in the same sitting would hand the morning's waits to other people
+	for n in chars:
+		var body: Node = chars[n].node
+		if body != null and is_instance_valid(body):
+			body._leaving = true
+			body.queue_free()
+	chars = {}
+	for n in CAST:
+		chars[n] = _make_char(n)
+	_outage_t = 0.0
+	_closet_sent = false
 
 
 func begin_next_day(number: int) -> void:

@@ -540,7 +540,7 @@ static func victim(pick: int) -> int:
 	for c in open_clients():
 		if Sales.active.has(c) and (best < 0 or inherit(c) > inherit(best)):
 			best = c
-	if best >= 0 and randf() < float(inherit(best)) / 200.0:
+	if best >= 0 and Difficulty.rng("owner.luck").randf() < float(inherit(best)) / 200.0:
 		return best
 	return pick
 

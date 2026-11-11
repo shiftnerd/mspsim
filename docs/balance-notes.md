@@ -421,3 +421,31 @@ Seed 11 (sales also 12), tech at ts=120: tech careful 100 / 100 / 81 on easy / n
 tech normal mixed 77; sales careful 95-100 / 77-91 / 51-78, lazy 18-42 / 15-27 / 3-7; service careful 100 / 100 / 95,
 lazy 73 / 55 / 43. Since a seed now repeats, a drift in `tools/balance_baseline.py` is a change in the game or the bot,
 not noise; the 20-point tolerance can be tightened once that has held for a while.
+
+## Nov 2026: X13, the owner and sales findings (after the balance pass)
+
+Row X13 of the roadmap, owner and sales half. Seeds 1 to 5, owner at ts=4, sales at ts=20, one process at a time; before =
+commit `24ab53b`, after = the X13 branch with main merged. What was built and every table: `docs/dev/notes-x13-owner.md`.
+
+| Cell | Before | After |
+|---|---|---|
+| Owner normal careful | 4 good 1 bad, rep 85 (97 97 100 **32** 100), $728k | 5 good, rep 98 (98 98 100 96 100), $759k |
+| Owner normal shortcut | fired 1 of 5 (seed 1, week 15), $197k, 27% of careful | fired 0 of 5, $182k, 24% of careful |
+| Owner hard careful | 3 good 1 mid 1 bad, rep 67 (74 **27** 87 49 97), $544k | 3 good 2 mid, rep 90 (89 96 93 87 83), $637k |
+| Sales hard careful, year 1 | 1 of 5 let go | 0 of 5 (the quarters are the same; `sales.keep` 0.65 keeps seed 3) |
+| Sales hard careful, Year 2 | 3 of 5 let go | 0 of 5 |
+| Sales hard lazy; sales easy and normal | 5 of 5 fail; (as in the tier table) | the same lines |
+| Owner seed 3 alone / after seeds 1 and 2 | $831,705 / $872,920 | $698,128 / $698,128 |
+| Weeks the company value reads $0 (seed 1) | 8 (weeks 5 to 12) | 0 (a floor from recurring revenue, $24k to $47k in weeks 3 to 11) |
+| Most repeated owner decision | 9 x the inbound lead | 3 x the marketing budget |
+
+- The owner's weekly report now has a SERVICE DESK row, and Morgan says it when the desk is over capacity two weeks running.
+  With that card switched off the careful cell ends at 98 97 100 100 100 on this build, so the five seeds do not show the
+  card rescuing a run; the reputation-32 seed went away with the moved streams and a bot that reads candidates and the books.
+- The owner hard cell moved closer to normal (90 against 98, $637k against $759k). Worth a look if hard should bite more.
+- The late jump of the value (seed 2: $76k in week 18, $691k in week 20) is the week 19 clients at nearly full margin, not
+  an artefact of the formula; left as it is. `bot_trace.gd` flags it as `runaway` on that seed.
+- No single hard sales input rescued the weak seed (quota x1.1, lead quality or flow or rival at their normal values); the
+  let-go rate came from the two-miss rule meeting the x1.2 quota.
+- The baseline (`docs/dev/balance_baseline.json`) was rewritten from two identical runs of `tiers_balance.gd` on the merged
+  code: 25 cells, 0 drift against the old one inside the tolerance; the tech and service numbers moved with the x13-tech merge.

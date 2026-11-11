@@ -643,7 +643,7 @@ static func refund() -> void:
 		"card",
 		func(id: String) -> void: _refund_pick(e, id),
 		[str(e.name), 4 * fee],
-		{"refund": {"args": [4 * fee]}},
+		{"refund": {"args": [4 * fee]}, "credit": {"args": [2 * fee]}},
 		str(e.get("who", ""))
 	)
 

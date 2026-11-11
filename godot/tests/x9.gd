@@ -292,8 +292,8 @@ func _init() -> void:
 	_check(cards.is_open and cards.text.contains("ByteBrothers"), "week 16: a key hire is poached")
 	_clear(cards)
 	o._audit()
-	_check(cards.is_open and cards.options.size() == 3 and cards.text.contains("insurer"), "week 17: the audit card")
-	cards.pick(2)  # settle quietly
+	_check(cards.is_open and cards.options.size() == 4 and cards.text.contains("insurer"), "week 17: the audit card")
+	cards.pick(3)  # settle quietly (X13: option 1 is the answer that is never greyed: more time, no cash)
 	var cash_after: int = o.cash
 	_clear(cards)
 	_check(cash_after == 20000 - 1500, "settling quietly costs $1,500")

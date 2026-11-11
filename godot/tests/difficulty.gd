@@ -158,6 +158,7 @@ func _init() -> void:
 		"owner.cost": 1.0,
 		"sales.lead": 0.0,
 		"sales.flow": 0.5,
+		"sales.keep": 0.0,
 		"service.trust": 1.0,
 	}
 	var same: bool = legacy.size() == d.TABLE.size()

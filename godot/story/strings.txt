@@ -5496,14 +5496,22 @@ Cables were plugged into the wrong ports. Bob is furious.
 
 # owner card: rack
 [Owner.CARDS.rack.options.2.label]
+GO YOURSELF TONIGHT (NO CASH, YOUR EVENING)
+
+# owner card: rack
+[Owner.CARDS.rack.options.2.text]
+You hold the rack while Bob holds the flashlight. Back up by midnight, on the right studs this time.
+
+# owner card: rack
+[Owner.CARDS.rack.options.3.label]
 TELL THEM IT IS THEIR WALL
 
 # owner card: rack
-[Owner.CARDS.rack.options.2.roll.0.2]
+[Owner.CARDS.rack.options.3.roll.0.2]
 They fix it themselves. They are not happy.
 
 # owner card: rack
-[Owner.CARDS.rack.options.2.roll.1.2]
+[Owner.CARDS.rack.options.3.roll.1.2]
 Gnarly Gnomes cancels the contract.
 
 # owner card: migration
@@ -6367,6 +6375,10 @@ Hoot and Holler lost years of case files because our backup was not working. The
 SETTLE ($2,500)
 
 # owner card: ransom_lost
+[Owner.CARDS.ransom_lost.options.0.label_later]
+SETTLE ($2,500 OVER 8 WEEKS)
+
+# owner card: ransom_lost
 [Owner.CARDS.ransom_lost.options.1.label]
 FIGHT IT
 
@@ -6468,7 +6480,11 @@ Christy (Controller)
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.options.0.label]
-CREDIT THEM 40% AND SIGN THEM FOR THE EMAIL FILTER
+CREDIT THEM 40% ({pay}) AND SIGN THEM FOR THE EMAIL FILTER
+
+# owner card: bec_loss
+[Owner.CARDS.bec_loss.options.0.label_later]
+CREDIT THEM 40% ({pay}) OVER 8 WEEKS AND SIGN THEM FOR THE EMAIL FILTER
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.options.0.text]
@@ -6480,7 +6496,7 @@ LET OUR LAWYER ANSWER THEIR LETTER ($600)
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.options.2.label]
-ASK OUR INSURER
+ASK OUR INSURER (COVERED: {pay}, NOT COVERED: {risk})
 
 # owner card: bec_loss
 [Owner.CARDS.bec_loss.options.3.label]
@@ -6705,6 +6721,84 @@ SKIP IT, THE CLIENT IS ALREADY HANDLED
 # owner card: pm_bec
 [Owner.CARDS.pm_bec.options.2.text]
 The client is handled. The process that let it through is not.
+
+
+# ======================= OwnerOps > LEADS =======================
+# OwnerOps > LEADS > 0 > text
+[OwnerOps.LEADS.0.text]
+An inbound lead from our marketing: %s found us online and wants a meeting.
+
+# OwnerOps > LEADS > 1 > text
+[OwnerOps.LEADS.1.text]
+A referral. One of our clients told %s that we pick up the phone. They asked for you by name.
+
+# OwnerOps > LEADS > 1 > won
+[OwnerOps.LEADS.1.won]
+They had mostly decided before you sat down. %s signs and starts happy.
+
+# OwnerOps > LEADS > 2 > text
+[OwnerOps.LEADS.2.text]
+%s just fired their IT guy. His last invoice was for a server nobody can find. They want a meeting and they trust nobody.
+
+# OwnerOps > LEADS > 2 > won
+[OwnerOps.LEADS.2.won]
+You listen for an hour and promise very little. %s signs, arms still folded.
+
+# OwnerOps > LEADS > 3 > text
+[OwnerOps.LEADS.3.text]
+%s has our flyer in one hand and a ByteBrothers quote in the other. They will meet, and they want the first month cheap.
+
+# OwnerOps > LEADS > 3 > won
+[OwnerOps.LEADS.3.won]
+The cheap first month does it. %s signs and asks what else is negotiable.
+
+# OwnerOps > LEADS > 4 > text
+[OwnerOps.LEADS.4.text]
+%s is opening a second office and the owner's nephew cannot keep up. Bigger than our usual: more seats, more questions.
+
+# OwnerOps > LEADS > 4 > won
+[OwnerOps.LEADS.4.won]
+Two offices, one contract. %s signs and the crew starts counting desks.
+
+# OwnerOps > LEADS > 5 > text
+[OwnerOps.LEADS.5.text]
+%s is five people and one printer. They found us on the chamber of commerce list. Small money, easy work.
+
+# OwnerOps > LEADS > 5 > won
+[OwnerOps.LEADS.5.won]
+It takes twenty minutes. %s signs and offers you a muffin.
+
+# OwnerOps > LEADS > 6 > text
+[OwnerOps.LEADS.6.text]
+%s failed an insurance questionnaire and needs somebody who can spell backup. They will pay for it and read every line.
+
+# OwnerOps > LEADS > 6 > won
+[OwnerOps.LEADS.6.won]
+You answer the questionnaire line by line. %s signs at a better rate and keeps a copy.
+
+# OwnerOps > LEADS > 7 > text
+[OwnerOps.LEADS.7.text]
+%s lost their server on Tuesday. They want a provider yesterday. Whoever shows up first gets the contract, and the mess.
+
+# OwnerOps > LEADS > 7 > won
+[OwnerOps.LEADS.7.won]
+You show up first. %s signs on the hood of your car and the crew gets the mess.
+
+# OwnerOps > LEADS > 8 > text
+[OwnerOps.LEADS.8.text]
+%s wants a meeting. Christy looked them up: a good business that pays everybody on the sixtieth day.
+
+# OwnerOps > LEADS > 8 > won
+[OwnerOps.LEADS.8.won]
+A good meeting. %s signs. Christy sets a reminder for day sixty.
+
+# OwnerOps > LEADS > 9 > text
+[OwnerOps.LEADS.9.text]
+%s sat through my lunch seminar and stayed for the questions. They want a proposal, not a pitch.
+
+# OwnerOps > LEADS > 9 > won
+[OwnerOps.LEADS.9.won]
+You bring the proposal yourself. %s signs at a better rate and starts happy.
 
 
 # ======================= Service > HUDDLE =======================
@@ -22606,7 +22700,7 @@ ALAN: 10% OFF, LET THEM WALK
 
 # SalesCampaign > BEAT_TEXT > logo > pick > options > 2 > label
 [SalesCampaign.BEAT_TEXT.logo.pick.options.2.label]
-BROKER A SCOPED 15% (2 HOURS)
+BROKER A SCOPED 15% (2 H, $300)
 
 # SalesCampaign > BEAT_TEXT > logo > res_garrison > speaker
 [SalesCampaign.BEAT_TEXT.logo.res_garrison.speaker]
@@ -22670,7 +22764,7 @@ REFUND THE MONTH (-$%d)
 
 # SalesCampaign > BEAT_TEXT > refund > card > options > 1 > label
 [SalesCampaign.BEAT_TEXT.refund.card.options.1.label]
-OFFER HALF A MONTH AND A RESET
+HALF A MONTH BACK (-$%d), A RESET
 
 # SalesCampaign > BEAT_TEXT > refund > card > options > 2 > label
 [SalesCampaign.BEAT_TEXT.refund.card.options.2.label]

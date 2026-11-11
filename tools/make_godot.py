@@ -5233,6 +5233,24 @@ func _everyone_outside() -> bool:
 func new_run() -> void:
     _meeting_t = Difficulty.rng("world.meeting").randf_range(meeting_gap.x, meeting_gap.y)
     _pair_last = {}
+    # X13: the office's running time starts again. try_chat compares `_total - _pair_last` with the cooldown and stores
+    # `_total - CHAT_COOLDOWN + 3.0`: with a `_total` that kept growing over the runs of a process the same three seconds
+    # rounded to another frame, two people stopped to chat one frame apart, the chat drew from the global generator and the
+    # rest of the year went another way (owner seed 3: $831,705 alone, $872,920 after seeds 1 and 2)
+    _total = 0.0
+    # X13: and the cast starts again in CAST order with fresh rows. Somebody who was out for a day (a mutator, a partner who
+    # left) is put back at the END of `chars`, and a row keeps what the year before left in it (a pending sales bell): the
+    # next game in the same sitting would hand the morning's waits to other people
+    for n in chars:
+        var body: Node = chars[n].node
+        if body != null and is_instance_valid(body):
+            body._leaving = true
+            body.queue_free()
+    chars = {}
+    for n in CAST:
+        chars[n] = _make_char(n)
+    _outage_t = 0.0
+    _closet_sent = false
 
 
 func begin_next_day(number: int) -> void:
@@ -13620,6 +13638,8 @@ func _end_day() -> void:
     if books_active() and str(prop("report", "day")) == "pnl":
         var books: Dictionary = SalesCampaign.settle() if str(prop("settle", "owner")) == "sales" else Owner.settle()
         r["rows"] = books.rows
+        if mode == "owner":
+            Owner.OwnerOps.desk_week(r)  # X13: the desk's week is a row of the owner's report (it is what moves the reputation)
         r["title"] = books.title
         r["grade"] = books.grade
         r["pay"] = 0
@@ -21528,6 +21548,7 @@ const Habits := preload("res://scripts/habits.gd")  # R38: the good habits and t
 const Temptation := preload("res://scripts/temptation.gd")  # R38: shortcuts, skeletons, the conscience
 const Takeover := preload("res://scripts/takeover.gd")  # R38: inherited messes
 const RivalCards := preload("res://scripts/rival_cards.gd")  # R38: the rival arc and temptation cards (data)
+const OwnerOps := preload("res://scripts/owner_ops.gd")  # X13: option prices, dated bills, the lead stories, the desk row
 const START_CASH := 7500
 const FEE := 800  # weekly fee per client at standard pricing
 const WAGE := 650  # a tech's weekly wage
@@ -21573,6 +21594,7 @@ const VIC_PLANS := {
     "commission": {"label": "COMMISSION-HEAVY", "wage": 350, "per_deal": 300, "skill": 0.12, "start_mood": 58},
 }
 const BANKRUPT := -3000
+const VALUE_FLOOR := 0.25  # X13: a buyer pays at least this share of a year's recurring revenue for the contracts
 const COMPETITOR := "ByteBrothers"  # the rival MSP that circles your clients
 const HEAVY := {2: 2.0, 7: 2.0}  # clients whose requests creep: they generate twice the tickets until you enforce the scope
 const COST_PER_SEC := 2.9  # what a tech-second of work costs you (wages / capacity)
@@ -21689,6 +21711,7 @@ const CARDS := {
         "options": [
             {"label": "SEND {tech} NOW ($300)", "need": 300, "roll": [[0.85, {"cash": -300, "mood": {"2": 10}, "rep": 2}, "{tech} rebuilds it properly. Bob buys them lunch."], [0.15, {"cash": -300, "mood": {"2": 2}}, "Fixed, but it took all night."]]},
             {"label": "SEND MAYA OR A NEW HIRE ($100)", "need": 100, "roll": [[0.5, {"cash": -100, "mood": {"2": 5}}, "Back up by evening."], [0.5, {"cash": -100, "mood": {"2": -12}, "rep": -2}, "Cables were plugged into the wrong ports. Bob is furious."]]},
+            {"label": "GO YOURSELF TONIGHT (NO CASH, YOUR EVENING)", "fx": {"mood": {"2": 6}, "owner_hours": 6, "burnout": 2}, "text": "You hold the rack while Bob holds the flashlight. Back up by midnight, on the right studs this time."},
             {"label": "TELL THEM IT IS THEIR WALL", "roll": [[0.7, {"mood": {"2": -20}}, "They fix it themselves. They are not happy."], [0.3, {"mood": {"2": -20}, "drop": true}, "Gnarly Gnomes cancels the contract."]]},
         ],
     },
@@ -21990,7 +22013,7 @@ const CARDS := {
         "speaker": "Christy (Controller)",
         "text": "Hoot and Holler lost years of case files because our backup was not working. Their lawyers are talking about suing us.",
         "options": [
-            {"label": "SETTLE ($2,500)", "need": 2500, "fx": {"cash": -2500, "rep": -3, "mood": {"3": 10}}},
+            {"label": "SETTLE ($2,500)", "label_later": "SETTLE ($2,500 OVER 8 WEEKS)", "later": true, "need": 2500, "fx": {"cash": -2500, "rep": -3, "mood": {"3": 10}}},
             {"label": "FIGHT IT", "roll": [[0.5, {"rep": -3}, "The case is dismissed, but it cost you sleep."], [0.5, {"cash": -6000, "rep": -8}, "You lose. It costs $6,000 and your name."]]},
         ],
     },
@@ -22068,7 +22091,10 @@ const CARDS := {
         "options":
         [
             {
-                "label": "CREDIT THEM 40% AND SIGN THEM FOR THE EMAIL FILTER",
+                "label": "CREDIT THEM 40% ({pay}) AND SIGN THEM FOR THE EMAIL FILTER",
+                "label_later": "CREDIT THEM 40% ({pay}) OVER 8 WEEKS AND SIGN THEM FOR THE EMAIL FILTER",
+                "pay": true,
+                "later": true,
                 "fx": {"bec": "credit"},
                 "text":
                 "Christy cuts the credit memo. Their owner says it is fair and still not happy about the money. The filter goes on the next day."
@@ -22079,7 +22105,8 @@ const CARDS := {
                 "fx": {"cash": -600, "bec": "lawyer"}
             },
             {
-                "label": "ASK OUR INSURER",
+                "label": "ASK OUR INSURER (COVERED: {pay}, NOT COVERED: {risk})",
+                "later": true,
                 "fx": {"bec": "claim"}
             },
             {
@@ -22684,6 +22711,7 @@ func begin_day(day: int) -> void:
     if not _winback_queue.is_empty():
         _winback_card(int(_winback_queue.pop_front()))
     Incident.morning()
+    _desk_morning()
     Rival.morning(self)
     Projects.begin_week()
 
@@ -22769,11 +22797,15 @@ func show_card(id: String) -> void:
     var card: Dictionary = card_data(id)
     var options := []
     for opt in card.options:
-        var entry := {"label": str(opt.label), "id": str(options.size())}
-        var need := int(opt.get("need", 0))
+        var cost: Array = OwnerOps.cost(opt)  # X13: what it can take out of the bank, [least, most]
+        var entry := {"label": OwnerOps.label(opt, cost), "id": str(options.size())}
+        var need: int = OwnerOps.need(opt, cost)
         if need > 0 and cash < need:
-            entry["enabled"] = false
-            entry["hint"] = "NEED $%d" % need
+            if opt.get("later", false):
+                entry["label"] = OwnerOps.label(opt, cost, true)  # the bank cannot pay it today: a dated bill instead
+            else:
+                entry["enabled"] = false
+                entry["hint"] = "NEED $%d" % need
         if opt.get("policy", false) and not Msp.cyber_insured(_ransom_client):
             entry["enabled"] = false
             entry["hint"] = "NO POLICY"
@@ -22813,6 +22845,11 @@ func money(amount: int) -> String:
         out = "," + digits.substr(digits.length() - 3) + out
         digits = digits.substr(0, digits.length() - 3)
     return "%s$%s%s" % ["-" if amount < 0 else "", digits, out]
+
+
+# X13: a sum the bank cannot carry today becomes a dated bill (OwnerOps); true when it was billed
+func pay_or_bill(what: String, amount: int) -> bool:
+    return OwnerOps.pay_or_bill(what, amount)
 
 
 # a mentor shifts 10% of the odds from the worst outcome to the best
@@ -22861,7 +22898,7 @@ func _picked(id: String, index: int) -> void:
                 text = str(entry[2])
                 break
     else:
-        apply(opt.get("fx", {}))
+        apply(OwnerOps.later_fx(opt))  # X13: a `later` option the bank cannot pay today: its cash becomes a dated bill
     flags["card_" + id] = index
     if partner_note != "" and (text != "" or partner_note.contains("OPPOSED") or bool(card_data(id).get("beat", false))):
         text = (text + " " + partner_note).strip_edges()
@@ -23156,24 +23193,12 @@ func _inbound_lead() -> void:
     if pool.is_empty() or Sales.active.size() >= Sales.max_clients():
         return
     pool.sort_custom(func(a: int, b: int) -> bool: return int(Onsite.has_site(a)) > int(Onsite.has_site(b)))
-    var lead: int = pool[0]
-    var prospect: String = Msp.CLIENTS[lead].name
-    var vic_odds := clampf(Sales.vic_skill() + 0.25, 0.3, 0.95)
-    _dynamic["lead"] = {
-        "speaker": "John Marlowe",
-        "text": "An inbound lead from our marketing: %s found us online and wants a meeting." % prospect,
-        "options": [
-            {"label": "TAKE THE MEETING YOURSELF (60%: HAPPIER, +10% FEE)", "roll": [[0.6, {"sign": true, "client": lead, "sign_bonus": {"mood": 15, "fee": 1.1}}, "You charm them. %s signs at a better rate and starts happy." % prospect], [0.4, {}, "They say they will think about it."]]},
-            {"label": "LET JOHN CLOSE IT (%d%%)" % int(vic_odds * 100.0), "roll": [[vic_odds, {"sign": true, "client": lead}, "John closes it. %s signs." % prospect], [1.0 - vic_odds, {}, "John fumbles it. They go quiet."]]},
-        ],
-    }
-    if Onsite.has_site(lead):
-        _dynamic["lead"].options.append(
-            {
-                "label": "PITCH THEM AT THEIR OFFICE (%d MIN)" % Onsite.estimate_minutes(lead),
-                "fx": {"onsite_visit": {"client": lead, "kind": "pitch"}},
-            }
-        )
+    # X13: every lead is another story (OwnerOps.LEADS: who they are, how big, what the catch is) and no story comes twice in
+    # a run; when the stories run out John takes the meeting himself and texts how it went (the card came up to nine times)
+    var card: Dictionary = OwnerOps.lead_card(int(pool[0]), clampf(Sales.vic_skill() + 0.25, 0.3, 0.95))
+    if card.is_empty():
+        return
+    _dynamic["lead"] = card
     show_card("lead")
 
 
@@ -23260,6 +23285,13 @@ func _grumble() -> void:
             {"label": "TELL THEM TO DEAL WITH IT", "roll": [[0.6, {}, "They grumble and carry on."], [0.4, {"lose_tech": true, "rep": -1}, "One of the crew resigns over the tooling."]]},
         ],
     }
+    # X13: an answer no bank balance greys out, and nobody quits over it today (a broke owner was left with the last one)
+    var promise := {
+        "label": "PROMISE THE SWITCH FOR NEXT QUARTER (NO CASH)",
+        "fx": {"burnout": 4, "social_all": -1},
+        "text": "They take your word for it. Your word has a date on it now."
+    }
+    _dynamic["grumble"].options.insert(2, promise)
     show_card("grumble")
 
 
@@ -23456,6 +23488,14 @@ func _profit_review() -> void:
     show_card("profit")
 
 
+# X13: two weeks over capacity in a row and Morgan says so with the numbers (OwnerOps.desk_card)
+func _desk_morning() -> void:
+    var card: Dictionary = OwnerOps.desk_card()
+    if not card.is_empty():
+        _dynamic["desk"] = card
+        show_card("desk")
+
+
 # ---- burnout: the crew has limits ------------------------------------------------------------------------------
 func _burnout_week() -> void:
     var open := Msp.open_tickets().size()
@@ -23647,6 +23687,13 @@ func _audit() -> void:
             },
         ],
     }
+    # X13: never greyed and no gamble: more time, paid in evenings and a little of your name
+    var more_time := {
+        "label": "ASK FOR TWO MORE WEEKS, BUILD THE FILE AT NIGHT",
+        "fx": {"rep": -1, "burnout": 6, "owner_hours": 8},
+        "text": "The insurer grants two weeks with a sigh. You and Christy build the file after hours. It holds, and everybody knows you had to ask."
+    }
+    _dynamic["audit"].options.insert(1, more_time)
     show_card("audit")
 
 
@@ -23703,6 +23750,13 @@ func _vendor_breach() -> void:
             {"label": "SWITCH TO ANOTHER RMM NOW ($800)", "need": 800, "fx": {"cash": -800, "stack": {"rmm": "labrat_gold"}, "mood_all": -2}, "text": "A painful weekend, but you are off the compromised tool."},
         ],
     }
+    # X13: the honest answer without outside help: never greyed, paid in a tired crew (a broke owner was left with the gamble)
+    var by_hand := {
+        "label": "NOTIFY CLIENTS, ROTATE EVERYTHING OURSELVES THIS WEEKEND",
+        "fx": {"mood_all": -3, "rep": 1, "burnout": 8, "social_all": -1, "owner_hours": 6},
+        "text": "No outside help: you and the crew change every password by hand, Saturday and Sunday. Clients respected the honesty. Nobody respected Monday."
+    }
+    _dynamic["vendor_breach"].options.insert(1, by_hand)
     show_card("vendor_breach")
 
 
@@ -24266,6 +24320,7 @@ func settle() -> Dictionary:
     cash -= draw
     draw_paid += draw
     _draw_check(draw)
+    var billed: int = OwnerOps.pay_bills()  # X13: dated bills (a credit note paid over weeks)
     _commission_week = 0
     # what each client really cost you this week
     for c in Sales.active:
@@ -24332,6 +24387,8 @@ func settle() -> Dictionary:
             Color.WHITE if draw <= 0 or cash >= DRAW_FLOOR else red
         ]
     )
+    if billed > 0 or OwnerOps.bills_left() > 0:
+        rows.insert(8, OwnerOps.bills_row(billed))
     rows.append(hours_row)
     if Incident.armed():
         rows.append(["WIRE FRAUD RISK", "%s (%d CAUGHT, %d LOST)" % [Incident.risk_word(), int(flags.get("bec_caught", 0)), Incident.losses()], Color("8fe3a0") if Incident.risk_word() == "LOW" else Color("ffd27a")])
@@ -24389,11 +24446,26 @@ func quality() -> float:
 func valuation() -> int:
     # X9: a buyer discounts a young book of business (half the price at the start, full from week 12)
     var seasoning := clampf(0.5 + float(Campaign.day) / 24.0, 0.5, 1.0)
-    return maxi(0, int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning) + cash - bailout)
+    var earnings := int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning)
+    return maxi(0, maxi(earnings, _book_value(seasoning)) + cash - bailout - OwnerOps.bills_left())
+
+
+# X13: what the contracts alone are worth: a share of a year's recurring revenue, cut by the same name and age discounts.
+# While the company invests its profit is negative, and a multiple of that read $0 for eight weeks in the middle of the run
+func _book_value(seasoning: float) -> int:
+    return int(float(weekly_estimate().revenue) * 52.0 * VALUE_FLOOR * quality() * seasoning)
+
+
+# true while the value shown is the contracts' (the earnings would give less)
+func _value_on_book() -> bool:
+    var seasoning := clampf(0.5 + float(Campaign.day) / 24.0, 0.5, 1.0)
+    return int(ebitda_weekly() * 52.0 * multiple() * quality() * seasoning) < _book_value(seasoning)
 
 
 # X9: the one text for the company value (weekly report, Boardroom, board review)
 func value_text() -> String:
+    if _value_on_book():
+        return "$%d (CONTRACTS)" % valuation()
     return "$%d (%.1fX)" % [valuation(), multiple()]
 
 
@@ -24574,7 +24646,7 @@ func review_lines(page: int, ending: String) -> Array:
             lines.append(["EBITDA MARGIN %d%%   W-2 RATIO %d%%" % [int(100.0 * float(est.margin)), int(100.0 * float(est.w2))], ink])
             lines.append(["CLIENTS %d   CLIENT MOOD %d%%" % [Sales.active.size(), int(Sales.average())], ink])
             lines.append(["REPUTATION %d   STAFF %d" % [Campaign.rep, 4 + extra_staff.size() - lost_techs], ink])
-            lines.append(["COMPANY VALUE: %s EBITDA" % value_text(), good])
+            lines.append(["COMPANY VALUE: %s%s" % [value_text(), "" if _value_on_book() else " EBITDA"], good])
             lines.append(["SALES: %d NEW CLIENTS, %d INSTALLS SOLD (%s)" % [Sales.deals, Sales.installs_sold, str(VIC_PLANS[vic_plan].label)], ink])
             lines.append(["STACK: %s, %s, %s" % [stack_option("psa").name, stack_option("rmm").name, stack_option("hardware").name], ink])
             lines.append(["A/R OWED $%d   MATURITY: %s" % [ar_total(), OML_NAMES[oml() - 1]], ink])
@@ -30086,6 +30158,9 @@ const TABLE := {
     "owner.cost": [0.95, 1.0, 1.03],
     "sales.lead": [5, 0, -5],
     "sales.flow": [0.65, 0.5, 0.3],  # chance of a third new lead in a week
+    # X13: two missed quarters end the sales job (0), unless the year as a whole reached this share of both quotas (hard only:
+    # its quota is a fifth higher, and a careful year that came close was let go on 1 seed in 5, in Year 2 on 3 in 5)
+    "sales.keep": [0.0, 0.0, 0.65],
     "service.trust": [0.7, 1.0, 1.6],
 }
 
@@ -51987,6 +52062,7 @@ const ROOTS := {
     "Yeartwo": ["CARRY", "YEAR2", "TEXT", "YEAR3", "TEXT3"],
     "Playbook": ["BOOKS", "PROBLEMS"],
     "Owner": ["CARDS"],
+    "OwnerOps": ["LEADS"],
     "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
     "ServiceArc": ["SCHEDULE", "ARC", "JOB_BOOKS", "JOB_PROBLEMS", "PROBS", "HOOKS", "EVENT_HOOKS", "QUESTIONS", "VOICES", "TEXT"],
     "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL", "FAVOURS", "FAVOUR_TEXT"],
@@ -52016,7 +52092,7 @@ const ROOTS := {
 }
 # roots that are static helper scripts (R38), not autoloads: their tables are `static var` copies of the DEFAULT_ constants
 const SCRIPTS := {
-    "Seasons": "res://scripts/seasons.gd","Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd", "OwnerCast": "res://scripts/owner_cast.gd"}
+    "Seasons": "res://scripts/seasons.gd","Rival": "res://scripts/rival.gd", "Habits": "res://scripts/habits.gd", "RivalCards": "res://scripts/rival_cards.gd", "RivalTouches": "res://scripts/rival_touches.gd", "OwnerCast": "res://scripts/owner_cast.gd", "OwnerOps": "res://scripts/owner_ops.gd"}
 # fields that are always text (even when short, like OK) and fields that never are
 const TEXT_KEYS := ["title", "text", "body", "subject", "from", "label", "speaker", "note", "summary", "reply", "desc", "line", "error", "situation", "result"]
 const SKIP_KEYS := ["kind", "fix", "flag", "unflag", "needs", "id", "special", "specials", "book", "event", "card", "skill", "trait", "show", "effect", "req", "fx", "stack", "client", "unless"]
@@ -66605,7 +66681,7 @@ const BEAT_TEXT := {
             "options": [
                 {"id": "garrison", "label": "GARRISON: TAKE THE LOGO AT 30% OFF"},
                 {"id": "alan", "label": "ALAN: 10% OFF, LET THEM WALK"},
-                {"id": "broker", "label": "BROKER A SCOPED 15% (2 HOURS)"},
+                {"id": "broker", "label": "BROKER A SCOPED 15% (2 H, $300)"},
             ],
         },
         "res_garrison": {"speaker": "{tech_owner}", "text": "Thirty percent off. Fine. I said what I said, I will remember who wanted the logo when payroll is short."},
@@ -66621,7 +66697,7 @@ const BEAT_TEXT := {
             "text": "%s: your handover promised us a one hour response and we have waited two days. We want a refund of the last month, $%d, or we walk. I am not angry. I am done.",
             "options": [
                 {"id": "refund", "label": "REFUND THE MONTH (-$%d)"},
-                {"id": "credit", "label": "OFFER HALF A MONTH AND A RESET"},
+                {"id": "credit", "label": "HALF A MONTH BACK (-$%d), A RESET"},
                 {"id": "refuse", "label": "REFUSE: THE CONTRACT SAYS SO"},
             ],
         },
@@ -67299,7 +67375,7 @@ func _crunch_card(second := false) -> void:
 func _warning_card() -> void:
     Cards.ask(
         "{sales_owner}",
-        "You missed the quarter: %d%% of quota. This is a performance warning. Miss the next one and we part ways. What do you need?" % quota_pct(0),
+        "You missed the quarter: %d%% of quota. This is a performance warning. Miss the next one and we part ways.%s What do you need?" % [quota_pct(0), (" Unless the two quarters together reach %d%% of the year: it is a big number, I know." % int(100.0 * Difficulty.cf("sales.keep"))) if Difficulty.cf("sales.keep") > 0.0 else ""],
         [
             {"label": "UNDERSTOOD. I WILL CLOSE MORE.", "id": "ok"},
             {"label": "THE LEADS WERE THIN", "id": "excuse"},
@@ -67948,7 +68024,7 @@ func settle() -> Dictionary:
             warned = true
             verdict += Difficulty.ct("coach_first") if Difficulty.cozy_on() else ": WARNING"
         elif q_result[qi] == "MISS":
-            verdict += Difficulty.ct("coach_second") if Difficulty.cozy_on() else ": SECOND MISS"
+            verdict += Difficulty.ct("coach_second") if Difficulty.cozy_on() else (": SECOND MISS, THE YEAR HELD AT %d%%" % int(100.0 * year_share()) if year_saves() else ": SECOND MISS")
         _lynk("Garrison", "Quarter closed at %d%%. %s" % [pct, "Good work." if pct >= 100 else "We need to talk."])
     var mood := client_mood()
     var grade_rep: Dictionary = {"S": 2, "A": 1, "B": 0, "C": -1, "D": -2}
@@ -67971,7 +68047,8 @@ func settle() -> Dictionary:
         if Difficulty.cozy_on():
             rows.append([Difficulty.ct("coach_row"), Difficulty.ct("coach_text"), warn])
         else:
-            rows.append(["PERFORMANCE WARNING", "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
+            var keep := Difficulty.cf("sales.keep")  # X13: on hard the whole year can still save the job
+            rows.append(["PERFORMANCE WARNING", ("MISS AGAIN UNDER %d%% OF THE YEAR AND YOU ARE OUT" % int(100.0 * keep)) if keep > 0.0 else "ONE MORE MISSED QUARTER AND YOU ARE OUT", red])
     last_report = verdict
     return {
         "rows": rows,
@@ -68000,7 +68077,19 @@ func _money(n: int) -> String:
 
 # ---- the verdict (week 20) -----------------------------------------------------------------------------
 func pip_failed() -> bool:
-    return q_result[0] == "MISS" and q_result[1] == "MISS"
+    return q_result[0] == "MISS" and q_result[1] == "MISS" and not year_saves()
+
+
+# X13: how much of the year's two quotas together was signed (1.0 = both targets)
+func year_share() -> float:
+    return float(int(q_signed[0]) + int(q_signed[1])) / float(maxi(1, quota_target(0) + quota_target(1)))
+
+
+# X13 (Difficulty `sales.keep`, hard only): the hard quota is a fifth higher than the plan needs, so two missed quarters only end
+# the job there when the year as a whole came in under this share of it. 0 = off: two misses are the end (easy, normal).
+func year_saves() -> bool:
+    var keep := Difficulty.cf("sales.keep")
+    return keep > 0.0 and year_share() >= keep - 0.0001
 
 
 func director_ok() -> bool:
@@ -68063,6 +68152,8 @@ func review_lines(page: int, ending: String) -> Array:
                         good if res == "HIT" else (bad if res == "MISS" else ink),
                     ]
                 )
+            if q_result[0] == "MISS" and q_result[1] == "MISS" and year_saves():
+                lines.append(["THE YEAR: %d%% OF BOTH QUOTAS TOGETHER. ENOUGH TO STAY." % int(100.0 * year_share()), ink])  # X13
             lines.append(["DEALS WON %d  QUOTES LOST %d  COMMISSION $%d" % [wins, losses, commission_total], ink])
             lines.append(["BOOK: $%d A WEEK NEW, CLIENT MOOD %d%%" % [book_mrr(), int(client_mood())], good if client_mood() >= 60.0 else bad])
             lines.append(["PROMISE COMPLAINTS %d  GARRISON TRUST %d" % [complaints, Campaign.rep], ink])
@@ -68826,7 +68917,7 @@ static func refund() -> void:
         "card",
         func(id: String) -> void: _refund_pick(e, id),
         [str(e.name), 4 * fee],
-        {"refund": {"args": [4 * fee]}},
+        {"refund": {"args": [4 * fee]}, "credit": {"args": [2 * fee]}},
         str(e.get("who", ""))
     )
 
@@ -76131,6 +76222,12 @@ const HAPPENED := {"ransom": "ransom", "rack": "rack", "email": "email24", "bec"
 const MORGAN := "Morgan Reyes (Manager)"
 
 
+# X13: the scams draw from the run's seed (they used the global generator, so the same seed gave another year whenever
+# somebody in the office drew a number first)
+static func _luck() -> RandomNumberGenerator:
+    return Difficulty.rng("owner.luck")
+
+
 # ---- owner campaign: wire fraud ----------------------------------------------------------------------------
 static func armed() -> bool:
     return Campaign.mode == "owner" and Owner.flags.has("card_bec_scare") and Campaign.day >= FIRST_WEEK
@@ -76182,8 +76279,8 @@ static func fill(body: String) -> String:
     if not Owner.flags.has("bec_client") or not Sales.active.has(int(Owner.flags.bec_client)):
         if Sales.active.is_empty():
             return body
-        Owner.flags["bec_client"] = int(Sales.active[randi() % Sales.active.size()])
-        Owner.flags["bec_amount"] = 4000 + 500 * (randi() % 21)
+        Owner.flags["bec_client"] = int(Sales.active[_luck().randi() % Sales.active.size()])
+        Owner.flags["bec_amount"] = 4000 + 500 * (_luck().randi() % 21)
     var name: String = str(Msp.CLIENTS[int(Owner.flags.bec_client)].name)
     return body.replace("{client}", name).replace("{amount}", Owner.money(int(Owner.flags.get("bec_amount", 8000))))
 
@@ -76192,15 +76289,28 @@ static func credit_amount() -> int:
     return int(round(float(Owner.flags.get("bec_amount", 8000)) * SHARE / 50.0)) * 50
 
 
+# X13: what an answer of the scammed-client card can take out of the bank, [least, most] (Owner.option_cost): the credit, the
+# settlement when the lawyer loses (on top of his $600), the insurer's deductible or the whole credit
+static func option_cost(kind: String) -> Array:
+    match kind:
+        "credit":
+            return [credit_amount(), credit_amount()]
+        "lawyer":
+            return [0, int(float(Owner.flags.get("bec_amount", 8000)) * 0.5)]
+        "claim":
+            return [int(credit_amount() / 5), credit_amount()]
+    return [0, 0]
+
+
 # called by Owner.settle once a week
 static func week() -> void:
     if not armed():
         return
     for c in Sales.active.duplicate():
-        if randf() >= attempt_chance(int(c)):
+        if _luck().randf() >= attempt_chance(int(c)):
             continue
         var can_hit := losses() < MAX_LOSSES and Campaign.day - int(Owner.flags.get("bec_last", -9)) >= GAP
-        if randf() < miss_share(int(c)) and can_hit:
+        if _luck().randf() < miss_share(int(c)) and can_hit:
             _hit(int(c))
         else:
             _caught(int(c))
@@ -76217,7 +76327,7 @@ static func _caught(client: int) -> void:
 
 static func _hit(client: int) -> void:
     Owner.flags["bec_client"] = client
-    Owner.flags["bec_amount"] = 4000 + 500 * (randi() % 21)
+    Owner.flags["bec_amount"] = 4000 + 500 * (_luck().randi() % 21)
     Owner.flags["bec_losses"] = losses() + 1
     Owner.flags["bec_last"] = Campaign.day
     Owner.apply({"mood": {str(client): -12}})
@@ -76260,30 +76370,35 @@ static func owner_fx(kind: String) -> void:
             Owner.flags["bec_self_check"] = true
             Owner.flags["practice_callback"] = true
         "credit":
-            Owner.apply({"cash": -credit_amount(), "mood": {key: 6}})
+            # X13: a bank that cannot carry the credit pays it as a credit note over BILL_WEEKS (the honest answer is never greyed)
+            Owner.pay_or_bill("CREDIT NOTE", credit_amount())
+            Owner.apply({"mood": {key: 6}})
             if Sales.active.has(client) and not Projects.has_service(client, FILTER):
                 Projects.sell_service(client, FILTER)
         "lawyer":
             var odds := 0.8 if Owner.flags.get("bec_policy", false) else 0.5
-            if randf() < odds:
+            if _luck().randf() < odds:
                 Owner.apply({"mood": {key: -3}})
                 Owner.show_card("bec_lawyer_ok")
             else:
                 var half := int(float(Owner.flags.get("bec_amount", 8000)) * 0.5)
-                Owner.apply({"cash": -half, "rep": -3, "mood": {key: -10}})
+                Owner.pay_or_bill("SETTLEMENT", half)
+                Owner.apply({"rep": -3, "mood": {key: -10}})
                 Owner.show_card("bec_lawyer_bad")
         "claim":
             var odds2 := 0.7 if Owner.flags.get("bec_rider", false) else 0.3
-            if randf() < odds2:
-                Owner.apply({"cash": -int(credit_amount() / 5), "mood": {key: 5}})
+            if _luck().randf() < odds2:
+                Owner.pay_or_bill("DEDUCTIBLE", int(credit_amount() / 5))
+                Owner.apply({"mood": {key: 5}})
                 Owner.show_card("bec_claim_ok")
             else:
-                Owner.apply({"cash": -credit_amount(), "mood": {key: 2}})
+                Owner.pay_or_bill("CREDIT NOTE", credit_amount())
+                Owner.apply({"mood": {key: 2}})
                 Owner.show_card("bec_claim_no")
         "blame":
             var paper: float = Habits.blame_mult()  # R38: H13, written authorisation halves the blame
             Owner.apply({"rep": -int(round(3.0 * paper)), "mood": {key: -int(round(18.0 * paper))}})
-            if Sales.active.has(client) and randf() < 0.4 * paper:
+            if Sales.active.has(client) and _luck().randf() < 0.4 * paper:
                 Owner.drop_client(client, "")
                 Owner.show_card("bec_blame_left")
             else:
@@ -76305,7 +76420,7 @@ static func sell_filter(victim := -1, everyone := true) -> int:
     for c in Sales.active.duplicate():
         if Projects.has_service(int(c), FILTER):
             continue
-        var yes := int(c) == victim or (everyone and randf() < 0.35 + float(Sales.mood(int(c))) / 250.0)
+        var yes := int(c) == victim or (everyone and _luck().randf() < 0.35 + float(Sales.mood(int(c))) / 250.0)
         if yes:
             Projects.sell_service(int(c), FILTER)
             n += 1
@@ -77814,7 +77929,7 @@ static func _week_memory() -> void:
 static func _week_ports(owner: Node) -> void:
 	var s := state("H8")
 	if (s == STALE or s == LAPSED) and owner.flags.get("rdp_safe", false):
-		if randf() < minf(0.3, PORTS_CHANCE * float(Sales.active.size())):
+		if Difficulty.rng("owner.luck").randf() < minf(0.3, PORTS_CHANCE * float(Sales.active.size())):
 			owner.flags["rdp_safe"] = false
 			_card("habit_ports", "H8", [])
 
@@ -77929,7 +78044,7 @@ static func departure(who: String) -> void:
 		Msp.send_text("Christy", str(TEXT.offboard) % who)
 		return
 	var s := state("H6")
-	if (s == STALE or s == LAPSED) and randf() < REVENGE_CHANCE:
+	if (s == STALE or s == LAPSED) and Difficulty.rng("owner.luck").randf() < REVENGE_CHANCE:
 		_card("habit_revenge", "H6", [who])
 
 
@@ -79130,7 +79245,7 @@ static func victim(pick: int) -> int:
 	for c in open_clients():
 		if Sales.active.has(c) and (best < 0 or inherit(c) > inherit(best)):
 			best = c
-	if best >= 0 and randf() < float(inherit(best)) / 200.0:
+	if best >= 0 and Difficulty.rng("owner.luck").randf() < float(inherit(best)) / 200.0:
 		return best
 	return pick
 
@@ -80936,6 +81051,367 @@ static func merged_days(base: Dictionary) -> Dictionary:
     for day in DAYS:
         out[day] = (out.get(day, []) as Array) + (DAYS[day] as Array)
     return out
+''')
+
+write("scripts/owner_ops.gd", '''extends RefCounted
+# gdlint:disable=max-line-length,class-variable-name,class-definitions-order
+# X13: the owner campaign's fine print, found by the bot runs. A static helper (no state of its own: everything is in Owner.flags,
+# which is saved with the campaign).
+#   prices    what a card option can take out of the bank (cost) and the label as the card shows it (label): a cost the words do
+#             not name is added, so no option takes money without saying how much. Owner.show_card reads both.
+#   bills     a sum the bank cannot carry today becomes a dated bill: equal parts at the next BILL_WEEKS closes, a row on the
+#             weekly report, counted against the company value. The scammed client's credit is paid that way by a thin bank.
+#   leads     the inbound lead card: one story per card (LEADS, patchable from story/strings.txt as OwnerOps.LEADS), each at most
+#             once in a run; when the stories run out John takes the meeting and texts the result.
+#   the desk  the service desk's week as a row of the owner's report, and Morgan's card after two weeks over capacity.
+
+const BILL_WEEKS := 8  # a dated bill is paid in this many weekly parts
+const DESK_WARNINGS := 2  # Morgan says at most this often in a run that the desk is over capacity
+const DESK_GAP := 4  # weeks between two of those cards
+const GOOD := Color("8fe3a0")
+const WARN := Color("ffd27a")
+const BAD := Color("ff8a80")
+# `text` takes the prospect's name; fee = the size of the contract (x the standard fee), mood = how they start, odds = added to
+# both closing chances, catch = what signing them brings along (lead_catch). The first one is the plain lead and comes first.
+const DEFAULT_LEADS := [
+    {"id": "online", "text": "An inbound lead from our marketing: %s found us online and wants a meeting."},
+    {
+        "id": "referral",
+        "text": "A referral. One of our clients told %s that we pick up the phone. They asked for you by name.",
+        "mood": 6,
+        "odds": 0.1,
+        "won": "They had mostly decided before you sat down. %s signs and starts happy."
+    },
+    {
+        "id": "burned",
+        "text": "%s just fired their IT guy. His last invoice was for a server nobody can find. They want a meeting and they trust nobody.",
+        "fee": 1.05,
+        "mood": -8,
+        "odds": -0.1,
+        "won": "You listen for an hour and promise very little. %s signs, arms still folded."
+    },
+    {
+        "id": "bargain",
+        "text": "%s has our flyer in one hand and a ByteBrothers quote in the other. They will meet, and they want the first month cheap.",
+        "odds": 0.1,
+        "catch": "discount",
+        "won": "The cheap first month does it. %s signs and asks what else is negotiable."
+    },
+    {
+        "id": "growing",
+        "text": "%s is opening a second office and the owner's nephew cannot keep up. Bigger than our usual: more seats, more questions.",
+        "fee": 1.2,
+        "odds": -0.05,
+        "catch": "big",
+        "won": "Two offices, one contract. %s signs and the crew starts counting desks."
+    },
+    {
+        "id": "tiny",
+        "text": "%s is five people and one printer. They found us on the chamber of commerce list. Small money, easy work.",
+        "fee": 0.85,
+        "mood": 4,
+        "odds": 0.1,
+        "won": "It takes twenty minutes. %s signs and offers you a muffin."
+    },
+    {
+        "id": "paperwork",
+        "text": "%s failed an insurance questionnaire and needs somebody who can spell backup. They will pay for it and read every line.",
+        "fee": 1.15,
+        "mood": -3,
+        "won": "You answer the questionnaire line by line. %s signs at a better rate and keeps a copy."
+    },
+    {
+        "id": "rush",
+        "text": "%s lost their server on Tuesday. They want a provider yesterday. Whoever shows up first gets the contract, and the mess.",
+        "fee": 1.1,
+        "odds": 0.15,
+        "catch": "rush",
+        "won": "You show up first. %s signs on the hood of your car and the crew gets the mess."
+    },
+    {
+        "id": "slowpay",
+        "text": "%s wants a meeting. Christy looked them up: a good business that pays everybody on the sixtieth day.",
+        "fee": 1.05,
+        "odds": 0.05,
+        "catch": "slow",
+        "won": "A good meeting. %s signs. Christy sets a reminder for day sixty."
+    },
+    {
+        "id": "seminar",
+        "text": "%s sat through my lunch seminar and stayed for the questions. They want a proposal, not a pitch.",
+        "mood": 3,
+        "odds": 0.05,
+        "won": "You bring the proposal yourself. %s signs at a better rate and starts happy."
+    },
+]
+static var LEADS: Array = DEFAULT_LEADS.duplicate(true)
+
+
+# ---- prices ---------------------------------------------------------------------------------------------------------
+# what picking this option can take out of the bank at once: [the least, the most] in dollars. A rolled option has a figure
+# per outcome; a sum that is only known when the card opens (the scammed client's credit) comes from Incident.
+static func cost(opt: Dictionary) -> Array:
+    var lo := 0
+    var hi := 0
+    if opt.has("roll"):
+        var first := true
+        for table in [opt.roll, opt.get("roll_scoped", [])]:
+            for entry in table:
+                var c := _fx_cost(entry[1])
+                lo = c if first else mini(lo, c)
+                hi = maxi(hi, c)
+                first = false
+    else:
+        lo = _fx_cost(opt.get("fx", {}))
+        hi = lo
+    var extra: Array = Owner.Incident.option_cost(str((opt.get("fx", {}) as Dictionary).get("bec", "")))
+    return [lo + int(extra[0]), hi + int(extra[1])]
+
+
+static func _fx_cost(fx: Dictionary) -> int:
+    var c := maxi(0, -int(fx.get("cash", 0)))
+    if fx.has("quote"):
+        c += maxi(0, int(fx.quote.cost) - int(fx.quote.cash))
+    if fx.has("stack"):
+        for category in fx.stack:
+            c += Mutators.stack_fee(str(category), str(fx.stack[category]))
+    return c
+
+
+# what the bank must hold for the option to be open: its own `need`, or its price when that is only known now (`pay`)
+static func need(opt: Dictionary, price: Array) -> int:
+    return maxi(int(opt.get("need", 0)), int(price[0]) if opt.get("pay", false) else 0)
+
+
+# the label as the card shows it: {pay} and {risk} are the two figures of cost(); a cost the words do not name is added
+# (a sure one as "($600)", the worst case of a gamble as "(RISK $3,500)"). `later`: the label of the dated-bill variant.
+static func label(opt: Dictionary, price: Array, later := false) -> String:
+    var text := str(opt.get("label_later", opt.label)) if later else str(opt.label)
+    var lo := int(price[0])
+    var hi := int(price[1])
+    var named: bool = text.contains("{pay}") or text.contains("{risk}")
+    text = text.replace("{pay}", Owner.money(lo)).replace("{risk}", Owner.money(hi))
+    if named:
+        return text
+    if hi > lo and not text.contains("RISK"):
+        text += " (RISK %s)" % Owner.money(hi)
+    elif lo > 0 and not text.contains("$"):
+        text += " (%s)" % Owner.money(lo)
+    return text
+
+
+# ---- dated bills ----------------------------------------------------------------------------------------------------
+static func bills() -> Array:
+    return Owner.flags.get("bills", [])
+
+
+static func bills_left() -> int:
+    var total := 0
+    for b in bills():
+        total += int(b.left)
+    return total
+
+
+# `amount` in equal parts at the next `weeks` closes (cash out of the bank, never part of EBITDA)
+static func add_bill(what: String, amount: int, weeks := BILL_WEEKS) -> void:
+    if amount <= 0:
+        return
+    var list: Array = bills()
+    var part := int(ceil(float(amount) / float(maxi(1, weeks))))
+    list.append({"label": what, "part": part, "left": amount})
+    Owner.flags["bills"] = list
+    var note := "%s: %s A WEEK FOR %d WEEKS." % [what, Owner.money(part), weeks]
+    Msp.send_text("Christy", note)
+    Hints.toast(note, 4.0)
+
+
+# pay it now when the bank can, else put it on a dated bill; true when it was billed
+static func pay_or_bill(what: String, amount: int) -> bool:
+    if amount <= 0:
+        return false
+    if Owner.cash >= amount:
+        Owner.cash -= amount
+        return false
+    add_bill(what, amount)
+    return true
+
+
+# the week's parts of every dated bill (Owner.settle): returns what left the bank
+static func pay_bills() -> int:
+    var paid := 0
+    var open := []
+    for b in bills():
+        var part := mini(int(b.part), int(b.left))
+        paid += part
+        b.left = int(b.left) - part
+        if int(b.left) > 0:
+            open.append(b)
+    if Owner.flags.has("bills"):
+        Owner.flags["bills"] = open
+    Owner.cash -= paid
+    return paid
+
+
+# an fx option marked `later` whose price the bank cannot carry: the cash part becomes a dated bill, the rest applies as it is
+static func later_fx(opt: Dictionary) -> Dictionary:
+    var fx: Dictionary = opt.get("fx", {})
+    var due := maxi(0, -int(fx.get("cash", 0)))
+    if not opt.get("later", false) or due <= 0 or Owner.cash >= due:
+        return fx
+    var out := fx.duplicate()
+    out.erase("cash")
+    add_bill(str(opt.get("bill", "SETTLEMENT")), due)
+    return out
+
+
+static func bills_row(paid: int) -> Array:
+    return ["DATED BILLS", "-$%d THIS WEEK, $%d LEFT" % [paid, bills_left()], WARN]
+
+
+# ---- inbound leads --------------------------------------------------------------------------------------------------
+# the next lead story of this run: the plain one first, then the others in the run's own order, each once ({} when all are told)
+static func next_story() -> Dictionary:
+    var seen: Array = Owner.flags.get("leads_seen", [])
+    var open := []
+    for i in LEADS.size():
+        if not seen.has(str(LEADS[i].id)):
+            open.append(i)
+    if open.is_empty():
+        return {}
+    var k: int = open[0] if seen.is_empty() else open[Difficulty.rng("owner.lead").randi() % open.size()]
+    seen.append(str(LEADS[k].id))
+    Owner.flags["leads_seen"] = seen
+    return LEADS[k]
+
+
+# what a lead's catch does once they sign: a cheap first month, a rushed start, a slow payer, a big onboarding
+static func lead_catch(kind: String, lead: int) -> Dictionary:
+    match kind:
+        "discount":
+            return {"discount_new": {"mult": 0.8, "weeks": 4}}
+        "rush":
+            return {"burnout": 5}
+        "slow":
+            return {"squeeze": [lead]}
+        "big":
+            return {"burnout": 3}
+    return {}
+
+
+# the card of one inbound lead (Owner._inbound_lead picked the prospect): {} when every story has been told, and then John
+# has already taken the meeting himself
+static func lead_card(lead: int, vic_odds: float) -> Dictionary:
+    var prospect: String = Msp.CLIENTS[lead].name
+    var story := next_story()
+    if story.is_empty():
+        _by_john(lead, vic_odds)
+        return {}
+    var fee := float(story.get("fee", 1.0))
+    var mood := int(story.get("mood", 0))
+    var own := clampf(0.6 + float(story.get("odds", 0.0)), 0.2, 0.95)
+    var john := clampf(vic_odds + float(story.get("odds", 0.0)), 0.2, 0.95)
+    var own_fx := {"sign": true, "client": lead, "sign_bonus": {"mood": 15 + mood, "fee": snappedf(1.1 * fee, 0.01)}}
+    var john_fx := {"sign": true, "client": lead}
+    if fee != 1.0 or mood != 0:
+        john_fx["sign_bonus"] = {"mood": mood, "fee": fee}
+    var catch_fx := lead_catch(str(story.get("catch", "")), lead)
+    own_fx.merge(catch_fx)
+    john_fx.merge(catch_fx)
+    var won := str(story.get("won", "You charm them. %s signs at a better rate and starts happy.")) % prospect
+    var card := {
+        "speaker": "John Marlowe",
+        "text": str(story.text) % prospect,
+        "options":
+        [
+            {
+                "label": "TAKE THE MEETING YOURSELF (%d%%: HAPPIER, +10%% FEE)" % int(round(own * 100.0)),
+                "roll": [[own, own_fx, won], [1.0 - own, {}, "They say they will think about it."]]
+            },
+            {
+                "label": "LET JOHN CLOSE IT (%d%%)" % int(round(john * 100.0)),
+                "roll": [[john, john_fx, "John closes it. %s signs." % prospect], [1.0 - john, {}, "John fumbles it. They go quiet."]]
+            },
+        ],
+    }
+    if Onsite.has_site(lead):
+        card.options.append({"label": "PITCH THEM AT THEIR OFFICE (%d MIN)" % Onsite.estimate_minutes(lead), "fx": {"onsite_visit": {"client": lead, "kind": "pitch"}}})
+    return card
+
+
+# every story has been told: John takes the meeting and texts the result (no card)
+static func _by_john(lead: int, odds: float) -> void:
+    var prospect: String = Msp.CLIENTS[lead].name
+    var note := "%s called about a meeting. I took it. They went quiet." % prospect
+    if Difficulty.rng("owner").randf() < odds:
+        Owner.apply({"sign": true, "client": lead})
+        note = "%s called about a meeting. I took it. They signed." % prospect
+    Msp.send_text("John", note)
+    Hints.toast(note.to_upper(), 4.0)
+
+
+# ---- the desk's capacity, said out loud -----------------------------------------------------------------------------
+# The week's reputation change is the desk's (2 a close, -3 a missed clock, -1 a ticket left open) and the owner's report
+# only showed money: a company with healthy books could lose its name without one line saying why. The report gets a
+# SERVICE DESK row (DESK OVER CAPACITY when the loose ends outweigh the closes), and after two such weeks in a row Morgan
+# says it in the morning with the numbers (at most DESK_WARNINGS times a run, DESK_GAP weeks apart).
+static func desk_over(closed: int, missed: int, reopened: int, open_left: int) -> bool:
+    return missed * 3 + reopened * 2 + open_left > closed * 2
+
+
+# Campaign._end_day, owner campaign: adds the row to the report (above the owner's hours) and counts the weeks over
+static func desk_week(r: Dictionary) -> void:
+    var closed := int(r.get("closed", 0))
+    var missed := int(r.get("missed", 0))
+    var open_left := int(r.get("open_left", 0))
+    var over := desk_over(closed, missed, int(r.get("reopened", 0)), open_left)
+    Owner.flags["desk_over"] = int(Owner.flags.get("desk_over", 0)) + 1 if over else 0
+    Owner.flags["desk_last"] = [closed, missed, open_left]
+    var row := [
+        "DESK OVER CAPACITY" if over else "SERVICE DESK",
+        "%d CLOSED, %d MISSED, %d OPEN" % [closed, missed, open_left],
+        BAD if over else (WARN if missed > 0 else GOOD)
+    ]
+    var rows: Array = r.get("rows", [])
+    var at := rows.size()
+    for i in rows.size():
+        if str(rows[i][0]) == "OWNER HOURS":
+            at = i
+    rows.insert(at, row)
+
+
+# Owner.begin_day: Morgan's card ({} when there is nothing to say)
+static func desk_card() -> Dictionary:
+    var flags: Dictionary = Owner.flags
+    if Campaign.mode != "owner" or int(flags.get("desk_over", 0)) < 2:
+        return {}
+    var told := int(flags.get("desk_warned", 0))
+    if told >= DESK_WARNINGS or Campaign.day - int(flags.get("desk_warn_week", -99)) < DESK_GAP:
+        return {}
+    flags["desk_warned"] = told + 1
+    flags["desk_warn_week"] = Campaign.day
+    var last: Array = flags.get("desk_last", [0, 0, 0])
+    var numbers := [int(last[0]), int(last[1]), int(last[2]), Sales.active.size(), Owner.crew_size() + Owner.extra_staff.size()]
+    var text := (
+        "{me}, the books look fine and the desk does not. Last week we closed %d tickets, missed %d and left %d open: %d clients on %d techs. That is the reputation line on your report, and it is why it is falling. More hands, faster hands or less work."
+        % numbers
+    )
+    if told > 0:
+        text = (
+            "Still under water. %d closed, %d missed, %d open last week, with %d clients on %d techs. Every week like this costs us the name, whatever the bank says. What changes?"
+            % numbers
+        )
+    var options := [{"label": "SEE HIRING CANDIDATES", "fx": {"candidates": true}}]
+    if Owner.training_open():
+        options.append({"label": "TRAIN THE CREW ($400)", "need": 400, "fx": {"cash": -400, "train": true}})
+    options.append(
+        {
+            "label": "STOP TAKING NEW CLIENTS FOR NOW (MARKETING OFF)",
+            "fx": {"marketing": 0},
+            "text": "The ads stop. John looks at his phone a lot. The desk gets a few weeks to catch up."
+        }
+    )
+    options.append({"label": "THEY WILL COPE", "fx": {}})
+    return {"speaker": "{ops}", "text": text, "options": options}
 ''')
 
 write("scripts/save_migrate.gd", '''extends RefCounted

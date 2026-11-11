@@ -805,6 +805,8 @@ func _end_day() -> void:
 	if books_active() and str(prop("report", "day")) == "pnl":
 		var books: Dictionary = SalesCampaign.settle() if str(prop("settle", "owner")) == "sales" else Owner.settle()
 		r["rows"] = books.rows
+		if mode == "owner":
+			Owner.OwnerOps.desk_week(r)  # X13: the desk's week is a row of the owner's report (it is what moves the reputation)
 		r["title"] = books.title
 		r["grade"] = books.grade
 		r["pay"] = 0

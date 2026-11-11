@@ -87,7 +87,7 @@ const POLICIES := {
 		"desktop": 2,
 		"prospect": 1,
 		"license": 1,
-		"rack": 2,
+		"rack": 3,
 		"migration": 0,
 		"email24": 2,
 		"raise": 1,

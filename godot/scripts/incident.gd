@@ -22,6 +22,12 @@ const HAPPENED := {"ransom": "ransom", "rack": "rack", "email": "email24", "bec"
 const MORGAN := "Morgan Reyes (Manager)"
 
 
+# X13: the scams draw from the run's seed (they used the global generator, so the same seed gave another year whenever
+# somebody in the office drew a number first)
+static func _luck() -> RandomNumberGenerator:
+	return Difficulty.rng("owner.luck")
+
+
 # ---- owner campaign: wire fraud ----------------------------------------------------------------------------
 static func armed() -> bool:
 	return Campaign.mode == "owner" and Owner.flags.has("card_bec_scare") and Campaign.day >= FIRST_WEEK
@@ -73,8 +79,8 @@ static func fill(body: String) -> String:
 	if not Owner.flags.has("bec_client") or not Sales.active.has(int(Owner.flags.bec_client)):
 		if Sales.active.is_empty():
 			return body
-		Owner.flags["bec_client"] = int(Sales.active[randi() % Sales.active.size()])
-		Owner.flags["bec_amount"] = 4000 + 500 * (randi() % 21)
+		Owner.flags["bec_client"] = int(Sales.active[_luck().randi() % Sales.active.size()])
+		Owner.flags["bec_amount"] = 4000 + 500 * (_luck().randi() % 21)
 	var name: String = str(Msp.CLIENTS[int(Owner.flags.bec_client)].name)
 	return body.replace("{client}", name).replace("{amount}", Owner.money(int(Owner.flags.get("bec_amount", 8000))))
 
@@ -83,15 +89,28 @@ static func credit_amount() -> int:
 	return int(round(float(Owner.flags.get("bec_amount", 8000)) * SHARE / 50.0)) * 50
 
 
+# X13: what an answer of the scammed-client card can take out of the bank, [least, most] (Owner.option_cost): the credit, the
+# settlement when the lawyer loses (on top of his $600), the insurer's deductible or the whole credit
+static func option_cost(kind: String) -> Array:
+	match kind:
+		"credit":
+			return [credit_amount(), credit_amount()]
+		"lawyer":
+			return [0, int(float(Owner.flags.get("bec_amount", 8000)) * 0.5)]
+		"claim":
+			return [int(credit_amount() / 5), credit_amount()]
+	return [0, 0]
+
+
 # called by Owner.settle once a week
 static func week() -> void:
 	if not armed():
 		return
 	for c in Sales.active.duplicate():
-		if randf() >= attempt_chance(int(c)):
+		if _luck().randf() >= attempt_chance(int(c)):
 			continue
 		var can_hit := losses() < MAX_LOSSES and Campaign.day - int(Owner.flags.get("bec_last", -9)) >= GAP
-		if randf() < miss_share(int(c)) and can_hit:
+		if _luck().randf() < miss_share(int(c)) and can_hit:
 			_hit(int(c))
 		else:
 			_caught(int(c))
@@ -108,7 +127,7 @@ static func _caught(client: int) -> void:
 
 static func _hit(client: int) -> void:
 	Owner.flags["bec_client"] = client
-	Owner.flags["bec_amount"] = 4000 + 500 * (randi() % 21)
+	Owner.flags["bec_amount"] = 4000 + 500 * (_luck().randi() % 21)
 	Owner.flags["bec_losses"] = losses() + 1
 	Owner.flags["bec_last"] = Campaign.day
 	Owner.apply({"mood": {str(client): -12}})
@@ -151,30 +170,35 @@ static func owner_fx(kind: String) -> void:
 			Owner.flags["bec_self_check"] = true
 			Owner.flags["practice_callback"] = true
 		"credit":
-			Owner.apply({"cash": -credit_amount(), "mood": {key: 6}})
+			# X13: a bank that cannot carry the credit pays it as a credit note over BILL_WEEKS (the honest answer is never greyed)
+			Owner.pay_or_bill("CREDIT NOTE", credit_amount())
+			Owner.apply({"mood": {key: 6}})
 			if Sales.active.has(client) and not Projects.has_service(client, FILTER):
 				Projects.sell_service(client, FILTER)
 		"lawyer":
 			var odds := 0.8 if Owner.flags.get("bec_policy", false) else 0.5
-			if randf() < odds:
+			if _luck().randf() < odds:
 				Owner.apply({"mood": {key: -3}})
 				Owner.show_card("bec_lawyer_ok")
 			else:
 				var half := int(float(Owner.flags.get("bec_amount", 8000)) * 0.5)
-				Owner.apply({"cash": -half, "rep": -3, "mood": {key: -10}})
+				Owner.pay_or_bill("SETTLEMENT", half)
+				Owner.apply({"rep": -3, "mood": {key: -10}})
 				Owner.show_card("bec_lawyer_bad")
 		"claim":
 			var odds2 := 0.7 if Owner.flags.get("bec_rider", false) else 0.3
-			if randf() < odds2:
-				Owner.apply({"cash": -int(credit_amount() / 5), "mood": {key: 5}})
+			if _luck().randf() < odds2:
+				Owner.pay_or_bill("DEDUCTIBLE", int(credit_amount() / 5))
+				Owner.apply({"mood": {key: 5}})
 				Owner.show_card("bec_claim_ok")
 			else:
-				Owner.apply({"cash": -credit_amount(), "mood": {key: 2}})
+				Owner.pay_or_bill("CREDIT NOTE", credit_amount())
+				Owner.apply({"mood": {key: 2}})
 				Owner.show_card("bec_claim_no")
 		"blame":
 			var paper: float = Habits.blame_mult()  # R38: H13, written authorisation halves the blame
 			Owner.apply({"rep": -int(round(3.0 * paper)), "mood": {key: -int(round(18.0 * paper))}})
-			if Sales.active.has(client) and randf() < 0.4 * paper:
+			if Sales.active.has(client) and _luck().randf() < 0.4 * paper:
 				Owner.drop_client(client, "")
 				Owner.show_card("bec_blame_left")
 			else:
@@ -196,7 +220,7 @@ static func sell_filter(victim := -1, everyone := true) -> int:
 	for c in Sales.active.duplicate():
 		if Projects.has_service(int(c), FILTER):
 			continue
-		var yes := int(c) == victim or (everyone and randf() < 0.35 + float(Sales.mood(int(c))) / 250.0)
+		var yes := int(c) == victim or (everyone and _luck().randf() < 0.35 + float(Sales.mood(int(c))) / 250.0)
 		if yes:
 			Projects.sell_service(int(c), FILTER)
 			n += 1
