@@ -2,6 +2,9 @@
 local E = {}
 local OX, OY, CW, CH = 12, 18, 64, 80
 local GROUND = 61 + OY            -- canvas row of the shoe outline when planted
+-- E.setTop(n): n extra rows ABOVE the canvas (the body is drawn n rows lower, the output is 64 x (80 + n)); only the accessory sheet
+-- maker uses it, so a tall hat in the jump is not clipped at row 0. The anim files are built with n = 0.
+local TOP = 0
 local OUTLINE = {23, 18, 31}
 local SKIN = {243, 180, 136}
 
@@ -254,6 +257,13 @@ function E.load(path)
   return an
 end
 
+function E.setTop(n)
+  TOP = n
+  OY = 18 + n
+  CH = 80 + n
+  GROUND = 61 + OY
+end
+
 -- an accessory layer (glasses, facial hair, hats ...) drawn only in the overlay sheets (tools/make_head_sheets.lua): it is
 -- rotated and shifted like the head (headBlit) but NOT measured for the death frames' union shift, so a tall hat cannot move
 -- the body. Add it after the character's own layers (the same idea as an.ghost, which is measured but not drawn).
@@ -267,7 +277,7 @@ function E.addLayer(an, name, S, acc, opts)
   -- "leg" (a pair of trousers or shoes of its own, opts.leg "pants" or "shoes": rendered like the Pants / Shoes layers but from this
   -- image, per leg with the knee and crouch; the character creator's real clothes, tools/make_clothes_sheets.lua)
   local kind = opts.kind or "head"
-  local rec = {name = name, vis = true, S = S, head = kind == "head", acc = acc and true or nil, arm = kind == "wrist" and opts.arm or nil, reftop = opts.reftop,
+  local rec = {name = name, vis = true, S = S, pad = opts.pad, head = kind == "head", acc = acc and true or nil, arm = kind == "wrist" and opts.arm or nil, reftop = opts.reftop,
     leg = kind == "leg" and opts.leg or nil}
   local at = #an.layers + 1
   if opts.before then
@@ -349,12 +359,14 @@ function E.render(an, pose, f)
   local armDx0 = rootDx + round(lean0 * 0.9)
   local armLen = pose.armLen or 0     -- seated: the forearm is this many rows longer (a bent arm has to reach the desk from a raised shoulder)
   local function armS(S, dup) return armLen > 0 and stretchShin(S, armLen, 35, dup) or S end
-  local function headBlit(O, M)
+  -- pad = {px, py}: the image has px extra columns on the left and py extra rows on top (a tall hat); the head's pivot moves with it
+  local function headBlit(O, M, pad)
     local hr = (pose.hrot or 0) * f
+    local px, py = pad and pad[1] or 0, pad and pad[2] or 0
     if hr == 0 then
-      blitShift(O, M, function() return headDx end, headDy)
+      blitShift(O, M, function() return headDx - px end, headDy - py)
     else
-      blitRot(O, M, an.headCx, 22, hr, headDx, headDy)
+      blitRot(O, M, an.headCx + px, 22 + py, hr, headDx - px, headDy - py)
     end
   end
   -- where an arm's hand grips (canvas coords, float): the near hand attaches held items (and the hands json); `ang` / `rel` are the
@@ -450,7 +462,7 @@ function E.render(an, pose, f)
       limbRot((near and L.reftop and pose.armTop) and top or O, armS(S, false), near and an.armN or an.armF, 25, near and an.armN or an.armF, 34, (near and (pose.aN or 0) or (pose.aF or 0)) * f,
         (near and (pose.aNr or 0) or (pose.aFr or 0)) * f, armDx, torsoDy)   -- (was `near and pose.aN or pose.aF`: a near arm with no aN took aF)
     elseif HEAD[n] or L.head then
-      headBlit(O, S)
+      headBlit(O, S, L.pad)
     else
       blitShift(O, S, torsoDx, torsoDy)   -- shirt, belt, collar, vest, extras
     end
