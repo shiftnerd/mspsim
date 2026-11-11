@@ -413,3 +413,11 @@ with the owner's welcome); no quiet day.
 
 Tech: a quiet day without any card happens three times in sixty days (the tickets are the decisions there), and the
 favour texts and by-name asks of R36 keep the count at about three a day. The owner campaign is covered above.
+
+### The baseline (`docs/dev/balance_baseline.json`)
+Rewritten at the end of this pass from `tests/tiers_balance.gd` (25 cells; the smoke test now also plays tech normal
+mixed and allows a tie of careful and lazy on cozy easy). Two runs of it in a row gave the same 25 lines, `failures=0`.
+Seed 11 (sales also 12), tech at ts=120: tech careful 100 / 100 / 81 on easy / normal / hard, tech lazy 100 / 0 / 0,
+tech normal mixed 77; sales careful 95-100 / 77-91 / 51-78, lazy 18-42 / 15-27 / 3-7; service careful 100 / 100 / 95,
+lazy 73 / 55 / 43. Since a seed now repeats, a drift in `tools/balance_baseline.py` is a change in the game or the bot,
+not noise; the 20-point tolerance can be tightened once that has held for a while.
