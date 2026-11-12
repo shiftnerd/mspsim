@@ -87,6 +87,12 @@ func _to_test(pg: Node, opts: Dictionary) -> Array:
 	return out
 
 
+# a road event with a choice can open a card on arrival (a random draw): skip it
+func _skip_road(cards: Node) -> void:
+	if cards.is_open and str(cards.options[0].get("id", "")) == "help":
+		cards.pick(1)
+
+
 func _init() -> void:
 	await process_frame
 	var pg := root.get_node("PrinterGame")
@@ -201,6 +207,7 @@ func _init() -> void:
 	on.offer(int(t.id))
 	cards.pick(0)
 	await _wait(1.2)
+	_skip_road(cards)
 	on.interact("printer")
 	_check(
 		(
@@ -208,7 +215,7 @@ func _init() -> void:
 			and cards.options.size() == 4
 			and cards.options[3].label == "OPEN IT UP AND FIGHT IT"
 		),
-		"the printer job offers to fight it"
+		"the printer job offers to fight it (open %s, %s)" % [cards.is_open, str(cards.options.map(func(o): return str(o.label)))]
 	)
 	cards.pick(3)
 	_check(cards.is_open and cards.options.size() == 5 and cards.options[4].label == "NO BAG, JUST THE TOOLS", "P6: first the bag: four bags and no bag")
