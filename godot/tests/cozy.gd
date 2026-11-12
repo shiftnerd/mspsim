@@ -95,6 +95,19 @@ func _init() -> void:
 		_check(bool(report.report.fired) and bool(report.report.final), "%s normal: rep 0 still fires" % mode)
 		report.is_open = false
 
+	# ---- sales: two missed quarters do not end the job on easy (the audit found "CLEAN OUT YOUR DESK" was still the only ending)
+	for tier in ["easy", "normal"]:
+		_fresh("sales", tier)
+		var sc: Node = root.get_node("SalesCampaign")
+		sc.q_result = ["MISS", "MISS"]
+		var ends: Array = []
+		for o in sc.offers():
+			ends.append(str(o.id))
+		if tier == "easy":
+			_check(not sc.pip_failed() and not ends.has("let_go") and ends.has("stay"), "sales easy: two misses are not the end (%s)" % str(ends))
+		else:
+			_check(sc.pip_failed() and ends.has("let_go"), "sales normal: two misses still end the job (%s)" % str(ends))
+
 	# ---- the bailout: once, flagged against the valuation (owner and sales)
 	for mode in ["owner", "sales"]:
 		_fresh(mode, "easy")

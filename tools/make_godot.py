@@ -68557,6 +68557,8 @@ func year_share() -> float:
 # X13 (Difficulty `sales.keep`, hard only): the hard quota is a fifth higher than the plan needs, so two missed quarters only end
 # the job there when the year as a whole came in under this share of it. 0 = off: two misses are the end (easy, normal).
 func year_saves() -> bool:
+    if Difficulty.cozy_on():
+        return true  # cozy Easy: nobody is fired, two missed quarters do not end the job (the coach text on the report says so)
     var keep := Difficulty.cf("sales.keep")
     return keep > 0.0 and year_share() >= keep - 0.0001
 
