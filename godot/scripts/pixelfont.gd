@@ -23,6 +23,8 @@ extends RefCounted
 # latest redraw (meta "_pf"), so an item that is not redrawn for a long time never loses its text to an eviction. Text under a
 # canvas transform that is not a plain translation falls back to draw_rect (snapping would differ).
 
+const TextSize := preload("res://scripts/text_size.gd")
+
 const GLYPHS := {
 	"A": ["XXX", "X.X", "XXX", "X.X", "X.X"],
 	"B": ["XX.", "X.X", "XX.", "X.X", "XX."],
@@ -297,6 +299,7 @@ static func _draw_cached(canvas: CanvasItem, text: String, pos: Vector2, color: 
 
 
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+	color = TextSize.color(color)  # R42 item 4: HIGH CONTRAST pushes light text to white and dark text to ink (a no-op otherwise)
 	text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
 	if _pad_line(canvas, text, pos, color, scale):
 		return

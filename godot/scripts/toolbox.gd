@@ -682,7 +682,7 @@ func _click(at: Vector2) -> void:
 
 # ---- drawing ---------------------------------------------------------------------------------------
 func _size() -> Vector2:
-	return Vector2(Game.FORMATS[Game.format].size)
+	return Game.logical_size()
 
 
 func _paint() -> void:
@@ -702,9 +702,14 @@ func _paint_tools(size: Vector2) -> void:
 	var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", Controls.keys("{SHIFT F10|}") if not in_title else "")
 	var label_w := 52.0
 	icon_drawn = Rect2()
+	# R42 LARGE: on a short picture the list scrolls (the selected row stays in view) instead of leaving the panel
+	var vis := clampi(int((r.size.y - 24.0) / 9.0), 1, list.size())
+	var first := clampi(sel - vis + 1, 0, list.size() - vis)
 	for i in list.size():
+		if i < first or i >= first + vis:
+			continue
 		var row: Dictionary = list[i]
-		var y := body.position.y + 9.0 * float(i)
+		var y := body.position.y + 9.0 * float(i - first)
 		var rect := Rect2(body.position.x - 2.0, y - 1.0, body.size.x + 4.0, 9.0)
 		_rects.append([rect, "row", i])
 		var hot := i == sel

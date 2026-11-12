@@ -498,8 +498,10 @@ write("scripts/game.gd", '''extends Node
 # F9 cycles the format while playing.
 
 signal format_changed
+signal text_changed
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const TextSize := preload("res://scripts/text_size.gd")
 
 # size = logical pixels; zoom = camera zoom; cam_y = world y the camera centres on;
 # scale = default window pixel scale without --resolution (6x of h = 1920x1080, 6x of v = 1080x1920)
@@ -512,6 +514,20 @@ const FORMATS := {
 	"vclose": {"size": Vector2i(180, 320), "zoom": 2.0, "cam_y": 92.0, "scale": 3, "follow": true},
 }
 const ORDER := ["wide", "h", "deck", "v", "vclose"]
+# R42 item 4, the TEXT setting. LARGE is the same picture in fewer logical pixels at a higher whole scale, so every glyph
+# (and every sprite) is bigger on the physical screen: deck 256 x 160 at x5 is 25 px glyphs on a 1280 x 800 Deck (20 px at
+# NORMAL), h 256 x 144 at x7 is 35 px on 1920 x 1080 (x5 on 1280 x 720 is exact). Only what differs from FORMATS is listed; see docs/dev/notes-textsize.md.
+const LARGE := {
+	"wide": {"size": Vector2i(320, 112), "scale": 5, "follow": true},
+	"h": {"size": Vector2i(256, 144), "scale": 7},
+	"deck": {"size": Vector2i(256, 160), "scale": 5},
+	"v": {"size": Vector2i(144, 256), "scale": 4},
+	"vclose": {"size": Vector2i(144, 256), "scale": 4},
+}
+# The one screen that does not fit a LARGE picture of a format: the printer mini-game lays out a fixed 176 px panel with
+# hard-coded columns (tray, toner, test lists), 40 px too wide for LARGE `v` (144). While it is open the picture is the
+# format's NORMAL size; every other screen keeps LARGE. screen -> the formats it falls back in (named in tests/text_size.gd).
+const FALLBACK := {"printer": ["v"]}
 const GAP_MS := 3000  # a frame that took longer than this in real time was a suspend (the Deck's power button): pause
 
 const UI_STRIP := 0.2  # share of the screen height left visible above a computer / phone UI
@@ -528,10 +544,14 @@ var title_mode := false  # the title screen shows real rooms without the player 
 var ui_open := false  # a computer / phone UI is open: the player is paused
 var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the faded strip
 var fullscreen := true  # the DISPLAY setting: the game starts full screen, SETTINGS can make it a window
+var text_large := false  # R42 item 4, the TEXT row: LARGE uses the format's smaller logical size (LARGE above)
+var fallback_on := true  # tests: false draws every screen at LARGE, FALLBACK or not
+var high_contrast := false  # the TEXT row's second switch: brighter hint text and darker plates (TextSize.apply)
 var focus_pause := true  # R42, the setting: the game pauses when its window loses focus or the app is suspended
 var focus_force := false  # tests: act on focus notifications in a script run too
 var focus_lost := false  # the window is in the background (or the app is suspended) right now
 var auto_format := ""  # the format the screen asked for at start ("" = none: a test run, or a screen that is not 16:10)
+var _held := {}  # FALLBACK screens that are open: the picture is the format's NORMAL size while any is
 var _held_pause := false  # this script paused the tree for a focus loss (no pause menu could open): undo it on return
 var _last_ms := -1
 
@@ -549,10 +569,37 @@ func dev_run() -> bool:
 	return DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
 
 
+func large_hold(screen: String) -> void:
+	if not fallback_on or not text_large or not FALLBACK.get(screen, []).has(format) or _held.has(screen):
+		return
+	_held[screen] = true
+	set_format(format)
+
+
+func large_release(screen: String) -> void:
+	if _held.erase(screen):
+		set_format(format)
+
+
+# the table row of a format for the text size now in force (or for `large` when asked): size, zoom, cam_y, scale, follow
+func info(name: String, large: bool = text_large and _held.is_empty()) -> Dictionary:
+	var f: Dictionary = FORMATS[name]
+	if not large:
+		return f
+	var out: Dictionary = f.duplicate()
+	out.merge(LARGE[name], true)
+	return out
+
+
+# the logical size of the picture now (what every screen lays out from)
+func logical_size() -> Vector2:
+	return Vector2(info(format).size)
+
+
 # what a screen gets from a format with integer scaling: {scale, size (the picture in screen pixels), bars (left / right,
 # top / bottom), fill (share of the screen that is picture)}
 func fit(screen: Vector2i, name: String) -> Dictionary:
-	var size: Vector2i = FORMATS[name].size
+	var size: Vector2i = info(name).size
 	var scale := maxi(1, mini(screen.x / size.x, screen.y / size.y))
 	var shown := size * scale
 	var fill := float(shown.x * shown.y) / float(maxi(1, screen.x * screen.y))
@@ -581,6 +628,9 @@ func load_display() -> String:
 	if cfg.load(Difficulty.settings_path) != OK:
 		return ""
 	focus_pause = bool(cfg.get_value("display", "focus_pause", true))
+	text_large = bool(cfg.get_value("display", "text_large", false))
+	high_contrast = bool(cfg.get_value("display", "high_contrast", false))
+	TextSize.apply(high_contrast)
 	fullscreen = bool(cfg.get_value("display", "fullscreen", true))
 	return str(cfg.get_value("display", "format", ""))
 
@@ -591,6 +641,8 @@ func save_display(with_format: bool = true) -> void:
 	if with_format:
 		cfg.set_value("display", "format", format)
 	cfg.set_value("display", "focus_pause", focus_pause)
+	cfg.set_value("display", "text_large", text_large)
+	cfg.set_value("display", "high_contrast", high_contrast)
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.save(Difficulty.settings_path)
 
@@ -608,8 +660,8 @@ func set_fullscreen(on: bool) -> void:
 
 # a windowed game: the largest whole scale, up to the format's own, that fits the room a screen has
 func window_scale(name: String, room: Vector2i) -> int:
-	var size: Vector2i = FORMATS[name].size
-	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(FORMATS[name].scale))
+	var size: Vector2i = info(name).size
+	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(info(name).scale))
 
 
 # size the window to the format and centre it in the screen's free area (the taskbar is not part of it). Without this a
@@ -621,7 +673,7 @@ func place_window() -> void:
 	var area := DisplayServer.screen_get_usable_rect(win.current_screen)
 	var frame := win.get_size_with_decorations() - win.size  # the title bar and the borders
 	var inset := win.position - win.get_position_with_decorations()
-	win.size = Vector2i(FORMATS[format].size) * window_scale(format, area.size - frame)
+	win.size = Vector2i(info(format).size) * window_scale(format, area.size - frame)
 	win.position = area.position + (area.size - win.size - frame) / 2 + inset
 
 
@@ -630,6 +682,23 @@ func place_window() -> void:
 func _window_input(event: InputEvent) -> void:
 	if Controls.take_display_key(event):
 		set_fullscreen(not fullscreen)
+
+
+# the TEXT row of SETTINGS: NORMAL / LARGE, applied at once (the picture is re-framed at the format's smaller size and every
+# screen redraws from the new viewport), and HIGH CONTRAST on / off (TextSize.apply: the palette and the plates)
+func set_text_large(on: bool) -> void:
+	text_large = on
+	save_display(false)
+	set_format(format)
+	text_changed.emit()
+
+
+func set_high_contrast(on: bool) -> void:
+	high_contrast = on
+	TextSize.apply(on)
+	save_display(false)
+	text_changed.emit()
+	format_changed.emit()  # every screen repaints
 
 
 func set_focus_pause(on: bool) -> void:
@@ -743,7 +812,7 @@ func _ready() -> void:
 
 func set_format(name: String) -> void:
 	format = name
-	var f: Dictionary = FORMATS[name]
+	var f: Dictionary = info(name)
 	var size: Vector2i = f.size
 	var win := get_window()
 	win.content_scale_size = size
@@ -5958,6 +6027,8 @@ write("scripts/pixelfont.gd", '''extends RefCounted
 # latest redraw (meta "_pf"), so an item that is not redrawn for a long time never loses its text to an eviction. Text under a
 # canvas transform that is not a plain translation falls back to draw_rect (snapping would differ).
 
+const TextSize := preload("res://scripts/text_size.gd")
+
 const GLYPHS := {
     "A": ["XXX", "X.X", "XXX", "X.X", "X.X"], "B": ["XX.", "X.X", "XX.", "X.X", "XX."],
     "C": [".XX", "X..", "X..", "X..", ".XX"], "D": ["XX.", "X.X", "X.X", "X.X", "XX."],
@@ -6201,6 +6272,7 @@ static func _draw_cached(canvas: CanvasItem, text: String, pos: Vector2, color: 
 
 
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+    color = TextSize.color(color)  # R42 item 4: HIGH CONTRAST pushes light text to white and dark text to ink (a no-op otherwise)
     text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
     if _pad_line(canvas, text, pos, color, scale):
         return
@@ -9202,7 +9274,7 @@ func _window(title: String, tint: Color) -> Rect2:
     var a := Rect2(_area.position, Vector2(_area.size.x, _area.size.y - TB))
     _fill(a, Color("e9ecf1"))
     _fill(Rect2(a.position, Vector2(a.size.x, 8)), tint)
-    _text(title, a.position + Vector2(3, 1), WHITE)
+    _text(_clip(title, int((a.size.x - 16.0) / 4.0)), a.position + Vector2(3, 1), WHITE)  # R42 LARGE: a long window title is cut, not run off the screen
     _button("close_app", Rect2(a.end.x - 10, a.position.y + 1, 9, 6), "X", true, Color("d86b5e"))
     return Rect2(a.position + Vector2(0, 8), Vector2(a.size.x, a.size.y - 8))
 
@@ -9499,7 +9571,7 @@ func _paint_site_window(accent: Color) -> void:
                 y += 8
         _:
             var body := _window("YOUR TOOLBOX", Color("5a5f6a"))
-            _text("YOU ARE ONSITE. THIS IS THEIR COMPUTER.", Vector2(body.position.x + 4, body.position.y + 4), Color("46506a"))
+            _text(_clip("YOU ARE ONSITE. THIS IS THEIR COMPUTER.", int((body.size.x - 6.0) / 4.0)), Vector2(body.position.x + 4, body.position.y + 4), Color("46506a"))
             _button("site:diag", Rect2(body.position.x + 4, body.position.y + 16, minf(body.size.x - 8, 90.0), 10), "DIAGNOSE AND FIX", true, Color("9bd6a8"))
             _button("site:audit", Rect2(body.position.x + 4, body.position.y + 28, minf(body.size.x - 8, 90.0), 10), "LOOK AROUND", true, Color("e9d99b"))
             _text("EVENT LOG: NOTHING UNUSUAL", Vector2(body.position.x + 4, body.position.y + 44), TXT)
@@ -10074,8 +10146,9 @@ func _paint_learn() -> void:
         return
     var chars := int((body.size.x - 8) / 4.0)
     _text(_clip("LEVEL %d OF 5. EACH LEVEL: FASTER, MORE RELIABLE FIXES." % Skills.ps_level, chars), body.position + Vector2(4, 3), Color("012456"))
+    var pitch := clampf(floorf((body.size.y - 12.0 - 20.0) / float(Skills.LESSONS.size())), 8.0, 11.0)  # R42 LARGE: a short window packs the lessons
     for i in Skills.LESSONS.size():
-        var rr := Rect2(body.position.x + 3, body.position.y + 12 + float(i) * 11.0, body.size.x - 6, 10)
+        var rr := Rect2(body.position.x + 3, body.position.y + 12 + float(i) * pitch, body.size.x - 6, pitch - 1.0)
         var state := "DONE" if i < Skills.ps_level else ("START" if i == Skills.ps_level else "LOCKED")
         _row(rr, false, i % 2 == 1)
         var title := "%d. %s" % [i + 1, Skills.LESSONS[i].title]
@@ -10085,7 +10158,7 @@ func _paint_learn() -> void:
         if state == "START":
             _region("lesson:%d" % i, rr)
     var lv := Skills.ps_level
-    var y := body.position.y + 12 + float(Skills.LESSONS.size()) * 11.0 + 4
+    var y := body.position.y + 12 + float(Skills.LESSONS.size()) * pitch + 4
     var perks := [
         "FIX TIME %.1fS   FAILS %d%%" % [float(Skills.FIX_SECS[lv]), int(float(Skills.FAIL[lv]) * 100.0)],
         "SCRIPTS: " + ("ALL CLIENTS" if lv >= 4 else ("ONE CLIENT" if lv >= 2 else "NONE YET (LEVEL 2)")),
@@ -10413,7 +10486,7 @@ func _irc_who(area: Rect2) -> void:
     _text("TALK TO WHO?", area.position + Vector2(4, 3), Color("c0561a"))
     var back_text := "LEFT = BACK"
     _text(back_text, Vector2(area.end.x - 4 - _tw(back_text), area.position.y + 3), BTN_SH)
-    var row_h := 8.0
+    var row_h := clampf(floorf((area.size.y - 14.0) / float(Nerds.NICKS.size())), 6.0, 8.0)  # R42 LARGE: a short window packs the nicks
     var y := area.position.y + 12
     var nicks: Array = Nerds.NICKS.keys()
     for i in nicks.size():
@@ -10765,7 +10838,8 @@ func _board_clients(a: Rect2) -> void:
         var letters := ("B" if not Msp.backups[c].ok else "") + ("P" if float(Owner.patch_debt.get(c, 0.0)) >= 4.0 else "") + ("M" if Sales.mood(c) < 50 else "")
         if letters != "":
             shown += " GAPS " + letters
-        _text(_clip(shown, int((a.end.x - x - (174 if wide else 134)) / 4.0)), Vector2(x + (172 if wide else 132), y), AMBER if shown != "" else Color("46506a"))
+        if a.end.x - x - (174 if wide else 134) >= 12.0:  # R42 LARGE: a column with no room is left off, not clipped to "P.."
+            _text(_clip(shown, int((a.end.x - x - (174 if wide else 134)) / 4.0)), Vector2(x + (172 if wide else 132), y), AMBER if shown != "" else Color("46506a"))
         y += 7
     if not Owner.gone.is_empty() and y < a.end.y - 6:
         var names := []
@@ -15123,6 +15197,7 @@ const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
 var _row_h := 7.0  # row height in virtual pixels (one font pixel at scale 1); 6 when the short wide screen needs it
 var _pad := 1.0  # text offset inside a row (0 in the tight 6 pixel rows)
+var _tight := false  # R42 LARGE: a report with an ending is still too tall at 6 pixel rows: the gaps between its blocks close
 const GRADE_COLORS := {
     "S": Color("f5d442"), "A": Color("5fd068"), "B": Color("5aa0e8"), "C": Color("e0a030"), "D": Color("e0463c"),
 }
@@ -15521,23 +15596,23 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
         if size.y / float(sc) - y >= 62.0:  # (narrow screens: only when there is room left for the rest)
             y += 3.0 + _spark(4.0, y + 3.0, inner, draw)
     for note in report.get("notes", []):  # cozy Easy: a probation or bailout line, in a calm colour
-        y += 3.0
+        y += 1.0 if _tight else 3.0
         for line in _wrap(str(note), int(inner / 4.0)):
             if draw:
                 _t(line, 4.0, y, HEAD)
             y += _row_h
     var ending := str(report.get("ending", ""))
     if ending != "":
-        y += 4.0
+        y += 1.0 if _tight else 4.0
         var col := BAD if bool(report.get("fired", false)) else WARN
         for line in _wrap(ending, int(inner / 4.0)):
             if draw:
                 _t(line, 4.0, y, col)
             y += _row_h
-    y += 2.0
+    y += 1.0 if _tight else 2.0
     if draw:
         _r(4.0, y, inner, 1.0, LINE)
-    y += 2.0
+    y += 1.0 if _tight else 2.0
     var label := _button_label()
     var bw := _tw(label) + 12.0
     var hint := Controls.hint("ENTER{ OR CLICK|}")
@@ -15580,6 +15655,7 @@ func _paint() -> void:
     var sc := 2 if size.x < 220.0 else 1
     _row_h = 7.0
     _pad = 1.0
+    _tight = false
     _spill = 0
     _from = 0
     _count = -1
@@ -15608,6 +15684,9 @@ func _paint() -> void:
             _from = int(_pages[_page])
             _count = (int(_pages[_page + 1]) if _page + 1 < _pages.size() else total) - _from
             h = _fit(sc, size)
+    if h > size.y - 2.0:  # the last resort: close the gaps between the blocks
+        _tight = true
+        h = _fit(sc, size)
     var u := float(sc)
     var pw := _panel_w(sc, size)
     _canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.86))
@@ -21371,8 +21450,13 @@ func _paint() -> void:
     if not held.is_empty():
         rows.append([held[0], held[1]])
     var extra := 0.0
+    var olines := []  # R42 LARGE: an offer's label wraps onto a second line in a narrow panel
+    for o in offers:
+        olines.append(_wrap(str(o.label), int((pw - 14.0 * u) / (4.0 * u))))
     if page == _opt_page():
-        extra = float(offers.size()) * 11.0 * u + 3.0 * u + 24.0 * u
+        extra = 3.0 * u + 24.0 * u
+        for ol in olines:
+            extra += (4.0 + 7.0 * float(ol.size())) * u
     var ph := (12.0 + float(rows.size()) * 7.0 + 18.0) * u + extra
     ph = minf(ph, size.y - 4.0)
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf((size.y - ph) * 0.5), pw, ph)
@@ -21390,12 +21474,14 @@ func _paint() -> void:
     if page == _opt_page():
         y += 3.0 * u
         for i in offers.size():
-            var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, 10.0 * u)
+            var ol: Array = olines[i]
+            var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, (3.0 + 7.0 * float(ol.size())) * u)
             var chosen := i == sel
             _canvas.draw_rect(r, Color("f5d442") if chosen else Color("c9d2e0"))
-            PixelFont.draw(_canvas, str(offers[i].label), r.position + Vector2(3.0 * u, 2.0 * u), INK, sc)
+            for k in ol.size():
+                PixelFont.draw(_canvas, str(ol[k]), r.position + Vector2(3.0 * u, (2.0 + 7.0 * float(k)) * u), INK, sc)
             _hits.append({"r": r, "id": str(i)})
-            y += 11.0 * u
+            y += (4.0 + 7.0 * float(ol.size())) * u
         y += 2.0 * u
         for wrapped in _wrap(str(offers[sel].desc), chars):
             PixelFont.draw(_canvas, wrapped, Vector2(panel.position.x + 5.0 * u, y), Color("46506a"), sc)
@@ -21693,11 +21779,21 @@ func _paint() -> void:
         body_h = float(lines.size()) * 7.0
         ph = 12.0 + body_h + 4.0 + opts_h + 4.0
     # short screens (16:9, wide) keep the people visible by putting the card at the top
-    var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
+    var opt_pad := 3.0
+    var top_y := 6.0
+    if size.y < 200.0 and ph > size.y - 12.0:  # R42 LARGE: a very short screen: the card hugs the top and its answers sit closer
+        opt_pad = 1.0
+        top_y = 2.0
+        ph -= 2.0 * float(options.size()) + 2.0
+    var panel_y := top_y if size.y < 200.0 else size.y - ph - 6.0
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
     _canvas.draw_rect(panel, Color("e9ecf1"))
     _canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9)), Color("8e3a2b"))
-    PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
+    var title_chars := int((pw - 6.0) / 4.0)
+    var title_text := speaker.to_upper()
+    if title_text.length() > title_chars:  # R42 LARGE: a long speaker line is cut at the card's edge
+        title_text = title_text.substr(0, maxi(1, title_chars - 2)) + ".."
+    PixelFont.draw(_canvas, title_text, panel.position + Vector2(3, 2), WHITE)
     icon_drawn = Rect2()
     var icon := icon_tex()
     if icon != null and PixelFont.width(speaker) + 3.0 < pw - 18.0:
@@ -21717,7 +21813,7 @@ func _paint() -> void:
         var opt: Dictionary = options[i]
         var on: bool = bool(opt.get("enabled", true))
         var rows: Array = opt_lines[i]
-        var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(3.0 + 7.0 * float(rows.size()), tap_h))
+        var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(opt_pad + 7.0 * float(rows.size()), tap_h))
         var ty := floorf((r.size.y - 7.0 * float(rows.size()) + 2.0) * 0.5)
         var col := Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))
         _canvas.draw_rect(r, col)
@@ -32704,6 +32800,7 @@ write("scripts/ui_style.gd", '''extends RefCounted
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a footer hint are small sprites
+const TextSize := preload("res://scripts/text_size.gd")  # R42 item 4: the HIGH CONTRAST plates and borders
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("e9ecf1")
@@ -32718,6 +32815,9 @@ const HEAD_H := 9.0
 const STRIP_H := 11.0  # one-line HUD strip
 const HINT_H := 9.0  # the control hint line at the bottom of the screen in a room
 const MARGIN := 4.0
+
+static var hint_extra := 0.0  # R42 LARGE: how much taller than HINT_H the last hint_bar came out (a long hint wraps upward)
+static var hint_frame := -1  # the frame that value is from (a screen without a hint bar must not inherit it)
 
 
 static func text(c: CanvasItem, s: String, x: float, y: float, color := INK) -> void:
@@ -32773,6 +32873,7 @@ static func panel_rect(size: Vector2, w: float, h: float) -> Rect2:
 static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1.0) -> Rect2:
     c.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2, 2)), Color(INK, minf(1.0, alpha + 0.1)))
     c.draw_rect(r, Color(PANEL, alpha))
+    TextSize.edge(c, r)
     c.draw_rect(Rect2(r.position, Vector2(r.size.x, HEAD_H)), HEAD)
     text(c, title, r.position.x + 3.0, r.position.y + 2.0, WHITE)
     if note != "":
@@ -32784,38 +32885,62 @@ static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1
 
 # the footer hint line of a page
 static func footer(c: CanvasItem, r: Rect2, hint: String) -> void:
-    PadGlyphs.draw(c, hint, Vector2(r.position.x + 3.0, r.end.y - 7.0), MUTED)
+    var lines := fit_lines(hint, r.size.x - 6.0)  # R42 LARGE: a hint wider than the panel breaks, upward from the footer line
+    for i in lines.size():
+        PadGlyphs.draw(c, str(lines[i]), Vector2(r.position.x + 3.0, r.end.y - 7.0 - 8.0 * float(lines.size() - 1 - i)), MUTED)
 
 
 # a one-line HUD strip: the same dark bar with a blue accent along its top; returns the text origin
 static func strip(c: CanvasItem, r: Rect2) -> Vector2:
-    c.draw_rect(r, DARK)
+    c.draw_rect(r, Color(DARK, TextSize.plate(DARK.a)))
     c.draw_rect(Rect2(r.position, Vector2(r.size.x, 1.0)), HEAD)
     return Vector2(r.position.x + 4.0, r.position.y + 3.0)
 
 
 # a HUD box (the karaoke lanes, the keypad entry): same dark fill and accent as a strip
 static func box(c: CanvasItem, r: Rect2) -> void:
-    c.draw_rect(r, DARK)
+    c.draw_rect(r, Color(DARK, TextSize.plate(DARK.a)))
     c.draw_rect(Rect2(r.position, Vector2(r.size.x, 1.0)), HEAD)
 
 
 # the control hint line at the very bottom of the screen in a room (same words as a page footer)
 static func hint_bar(c: CanvasItem, size: Vector2, hint: String) -> void:
-    var r := Rect2(0.0, size.y - HINT_H, size.x, HINT_H)
-    c.draw_rect(r, Color(0.02, 0.02, 0.05, 0.92))
-    PadGlyphs.draw(c, hint, Vector2(4.0, r.position.y + 2.0), SOFT)
+    var lines := fit_lines(hint, size.x - 8.0)
+    var h := HINT_H + 8.0 * float(lines.size() - 1)
+    hint_extra = h - HINT_H
+    hint_frame = Engine.get_process_frames()
+    var r := Rect2(0.0, size.y - h, size.x, h)
+    c.draw_rect(r, Color(0.02, 0.02, 0.05, TextSize.plate(0.92)))
+    for i in lines.size():
+        PadGlyphs.draw(c, str(lines[i]), Vector2(4.0, r.position.y + 2.0 + 8.0 * float(i)), SOFT)
+
+
+# R42 LARGE: a hint wider than the screen breaks at its spaces (what PadGlyphs measures, so a pad's glyphs count right)
+static func fit_lines(s: String, max_w: float) -> Array:
+    if float(PadGlyphs.width(s)) <= max_w:
+        return [s]
+    var out := []
+    var line := ""
+    for word in s.split(" "):
+        var next: String = word if line == "" else line + " " + word
+        if line != "" and float(PadGlyphs.width(next)) > max_w:
+            out.append(line)
+            line = word
+        else:
+            line = next
+    out.append(line)
+    return out
 
 
 # the caption bar sits above the hint line; returns its top edge (the HUD strip goes above it)
 static func caption_bar(c: CanvasItem, size: Vector2, cap: String) -> float:
-    var top := size.y - HINT_H
+    var top := size.y - HINT_H - (hint_extra if hint_frame == Engine.get_process_frames() else 0.0)
     if cap == "":
         return top
     var lines := wrap_text(cap, int((size.x - 2.0 * MARGIN - 8.0) / 4.0))
     var h := float(lines.size()) * 7.0 + 4.0
     top -= h
-    c.draw_rect(Rect2(0.0, top, size.x, h), DARK)
+    c.draw_rect(Rect2(0.0, top, size.x, h), Color(DARK, TextSize.plate(DARK.a)))
     c.draw_rect(Rect2(0.0, top, 2.0, h), GOLD)
     for i in lines.size():
         PadGlyphs.draw(c, str(lines[i]), Vector2(6.0, top + 2.0 + float(i) * 7.0), WHITE, 1, true)  # R42: the talk and outing captions
@@ -35699,7 +35824,7 @@ func _sync() -> void:
         node.rotation = sin(_t * 44.0) * 0.09 * minf(1.0, shake) if shake > 0.0 else 0.0
     for pr in props:
         _mark(pr)
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
         _player.global_position = Vector2(x0 + ChairRace.world_x(race.pos) + (0.0 if _fight() else view.x * 0.1), 118.0)
@@ -40960,8 +41085,11 @@ func _paint_lines() -> Array:
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
     var rules: RefCounted = g.rules
-    _t("YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()], b.position.x, b.position.y)
-    _t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
+    var head := "YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()]
+    if float(PixelFont.width(head)) > b.size.x:  # R42 LARGE: a narrow panel
+        head = "YOU %d  THEM %d  %s %d" % [rules.score[0], rules.score[1], "OT" if rules.overtime else "TIME", rules.time_left()]
+    _t(head, b.position.x, b.position.y)
+    _tl(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, b.size.x, INK)
 
 
 # the strip at the bottom of the room: the score, the clock, whether you hold the flag or are out
@@ -41555,7 +41683,7 @@ func _paint_darts(b: Rect2) -> void:
     for i in dg.players.size():
         var who: String = dg.players[i]
         _t("%s %d" % [who.to_upper(), int(dg.totals[who])], b.position.x, y + 9.0 + 8.0 * float(i), BLUE if who == str(dg.thrower()) else INK)
-    _t(str(dg.msg), b.position.x, b.end.y - 8.0, RED if dg.phase == "pull" else INK)
+    _tb(str(dg.msg), b.position.x, b.end.y - 8.0, b.size.x, RED if dg.phase == "pull" else INK)
     _draw_dart_zoom(Vector2(b.end.x - 32.0, b.position.y + 34.0), 30.0, dg)
 
 
@@ -41818,7 +41946,7 @@ func _paint_grill(b: Rect2) -> void:
         var t: Dictionary = rows[i]
         _t("%s: %s" % [str(t.who).to_upper(), ", ".join(gg.lines(t))], b.position.x, y + 43.0 + 8.0 * float(i), AMBER)
     if float(gg.msg_t) > 0.0:
-        _t(str(gg.msg), b.position.x, b.end.y - 8.0, RED)
+        _tb(str(gg.msg), b.position.x, b.end.y - 8.0, b.size.x, RED)
 
 
 # ---- the warehouse extras for both games: the camera sits so the floor is above the HUD, boards and grill are the way in
@@ -41829,7 +41957,7 @@ func _room_extras(_delta: float) -> void:
     var cam := get_viewport().get_camera_2d()
     if cam == null:
         return
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     var view := get_viewport().get_visible_rect().size / float(f.zoom)
     var centre: float = float(f.cam_y) if f.follow else 64.0
     var lift := CORN_LIFT if game == "cornhole" else (DARTS_LIFT if game == "darts" else GRILL_LIFT)
@@ -41870,6 +41998,21 @@ func _offer_here(id: String) -> void:
 
 func _t(s: String, x: float, y: float, color := INK) -> void:
     PixelFont.draw(_canvas, s, Vector2(x, y), color, 1)
+
+
+# R42 LARGE: a line of a narrow panel wrapped to `w` px, drawn downward from y; returns the y after the last line
+func _tl(s: String, x: float, y: float, w: float, color := INK) -> float:
+    for part in _wrap(s, maxi(4, int(w / 4.0))):
+        _t(str(part), x, y, color)
+        y += 7.0
+    return y
+
+
+# the same, drawn upward so its last line sits at y (the message line at the bottom of a panel)
+func _tb(s: String, x: float, y: float, w: float, color := INK) -> void:
+    var parts := _wrap(s, maxi(4, int(w / 4.0)))
+    for i in parts.size():
+        _t(str(parts[i]), x, y - 7.0 * float(parts.size() - 1 - i), color)
 
 
 func _tc(s: String, cx: float, y: float, color := INK) -> void:
@@ -42079,7 +42222,7 @@ func _paint_result(b: Rect2) -> void:
                 else:
                     detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
     if detail != "":
-        _t(detail, b.position.x, y + 3.0, BLUE)
+        _tl(detail, b.position.x, y + 3.0, b.size.x, BLUE)
 
 
 func _paint_bowling(b: Rect2) -> void:
@@ -42180,15 +42323,10 @@ func _paint_escape(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
     var n: int = g.code.size()
-    _t(
-        (
-            "TIME %d   HINTS LEFT %d   TRIES %d OF 8"
-            % [int(float(g.time)), int(g.hints), g.guesses.size()]
-        ),
-        x,
-        y,
-        RED if float(g.time) < 20.0 else INK
-    )
+    var escape_head := "TIME %d   HINTS LEFT %d   TRIES %d OF 8" % [int(float(g.time)), int(g.hints), g.guesses.size()]
+    if float(PixelFont.width(escape_head)) > b.size.x:  # R42 LARGE: a narrow panel
+        escape_head = "TIME %d  HINTS %d  TRIES %d/8" % [int(float(g.time)), int(g.hints), g.guesses.size()]
+    _t(escape_head, x, y, RED if float(g.time) < 20.0 else INK)
     var row := 0
     for entry in g.guesses:
         if row >= 8:
@@ -42228,21 +42366,26 @@ func _paint_escape(b: Rect2) -> void:
 func _paint_dinner(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
-    _t(str(DINNER_TEXT.order_head) if dinner_ordering() else "ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)], x, y)
+    var head := str(DINNER_TEXT.order_head) if dinner_ordering() else "ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)]
+    if float(PixelFont.width(head)) > b.size.x and head.find(": ") > 0:
+        head = head.substr(head.find(": ") + 2)  # R42 LARGE: "WHAT DO YOU ORDER?" on a narrow panel
+    _t(head, x, y)
     var said := _wrap(str(g.get("line", "")), 21)  # the plate, the guest, a table event: what just happened
     for i in mini(said.size(), 5):
         _t(str(said[i]), x, y + 50.0 + 7.0 * float(i), BLUE)
+    var stacked := b.size.x < 170.0  # R42 LARGE: no room for the table beside the answers: it goes under them
+    var table_top := y + 9.0 if not stacked else y + 54.0 + 7.0 * float(mini(said.size(), 5))
     for i in 4:
         var on: bool = int(g.sel) == i and g.react.is_empty()
         if on:
             _canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
         _t(str(dinner_rows()[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
         _dinner_mark(i, Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 2.0, 8.0))
-    var rx := x + 92.0
+    var rx := x if stacked else x + 92.0
     var table := diners()
     for i in table.size():
         var who: String = table[i]
-        var ry := y + 9.0 + 14.0 * float(i)
+        var ry := table_top + 14.0 * float(i)
         _t(who.to_upper(), rx, ry, BLUE)
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
         var shift := int(DINNER_MOODS[md].shift)
@@ -42265,7 +42408,7 @@ func _paint_dinner(b: Rect2) -> void:
             note += "LIKES " + ", ".join(_with_marks(entry, entry.likes))
         if not entry.hates.is_empty():
             note += ("  " if note != "" else "") + "NOT " + ", ".join(_with_marks(entry, entry.hates))
-        _t(note.substr(0, int((b.size.x - 92.0) / 4.0)), rx, ry + 7.0, Color("46506a"))
+        _t(note.substr(0, int((b.size.x - (0.0 if stacked else 92.0)) / 4.0)), rx, ry + 7.0, Color("46506a"))
 ''')
 
 write("scripts/hints.gd", '''extends Node
@@ -44145,7 +44288,7 @@ func _sync() -> void:
         p.shoot_t = maxf(0.0, float(p.shoot_t) - get_process_delta_time())
         _animate(i, u, p)
     _move_balls(get_process_delta_time())
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
         var focus: float = float(game.units[0].x)
@@ -58093,6 +58236,7 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
     if practice:
         _reseed()
     is_open = true
+    Game.large_hold("printer")  # R42: its fixed 176 px layout does not fit LARGE `v` (Game.FALLBACK)
     Game.ui_open = true
     _canvas.visible = true
     phase = "intro"
@@ -58118,6 +58262,7 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
 
 func _finish() -> void:
     is_open = false
+    Game.large_release("printer")
     Game.ui_open = false
     _canvas.visible = false
     if _callback.is_valid():
@@ -59694,7 +59839,7 @@ func _click(at: Vector2) -> void:
 
 # ---- drawing ---------------------------------------------------------------------------------------
 func _size() -> Vector2:
-    return Vector2(Game.FORMATS[Game.format].size)
+    return Game.logical_size()
 
 
 func _paint() -> void:
@@ -59714,9 +59859,14 @@ func _paint_tools(size: Vector2) -> void:
     var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", Controls.keys("{SHIFT F10|}") if not in_title else "")
     var label_w := 52.0
     icon_drawn = Rect2()
+    # R42 LARGE: on a short picture the list scrolls (the selected row stays in view) instead of leaving the panel
+    var vis := clampi(int((r.size.y - 24.0) / 9.0), 1, list.size())
+    var first := clampi(sel - vis + 1, 0, list.size() - vis)
     for i in list.size():
+        if i < first or i >= first + vis:
+            continue
         var row: Dictionary = list[i]
-        var y := body.position.y + 9.0 * float(i)
+        var y := body.position.y + 9.0 * float(i - first)
         var rect := Rect2(body.position.x - 2.0, y - 1.0, body.size.x + 4.0, 9.0)
         _rects.append([rect, "row", i])
         var hot := i == sel
@@ -59808,7 +59958,9 @@ signal look_changed  # the create step changed the look (the outfit overlay wear
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PLAYER := preload("res://scripts/player.gd")
 const BuildPanel := preload("res://scripts/build_panel.gd")
+const UiStyle := preload("res://scripts/ui_style.gd")
 const GOLD := Color("f5d442")
+const SHORT_H := 150.0  # a screen this short (wide 128, LARGE h 144) takes the compact rows; deck 200 and LARGE deck 160 do not
 const INK := Color("17121f")
 const PANEL := Color(0.05, 0.07, 0.12, 0.85)
 const DIM := Color("9aa8c0")
@@ -61079,7 +61231,7 @@ func _click(at: Vector2) -> void:
 
 # ---- drawing --------------------------------------------------------------------
 func _size() -> Vector2:
-    return Vector2(Game.FORMATS[Game.format].size)
+    return Game.logical_size()
 
 
 func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
@@ -61088,7 +61240,19 @@ func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
 
 # a line of key hints, centred: the words follow a remapped menu key, and a pad shows its buttons (R34)
 func _keys_line(s: String, y: float) -> void:
-    _ctxt(Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"}), y, DIM)
+    var text := Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"})
+    var lines: Array = UiStyle.fit_lines(text, _size().x - 6.0)  # R42 LARGE: a line wider than the screen breaks, upward from y
+    for i in lines.size():
+        _ctxt(str(lines[i]), y - 8.0 * float(lines.size() - 1 - i), DIM)
+
+
+# a side note after a value (READY-MADE, 3 LOCKED): on a screen too narrow for it, only its first word (a count) or nothing
+func _txt_fit(s: String, p: Vector2, c := Color.WHITE) -> void:
+    if p.x + float(PixelFont.width(s)) > _size().x - 2.0:
+        s = s.split(" ")[0] if s.find(" ") > 0 else ""
+        if p.x + float(PixelFont.width(s)) > _size().x - 2.0:
+            return
+    _txt(s, p, c)
 
 
 func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
@@ -61167,7 +61331,7 @@ func _draw() -> void:
         if create_modal != "":
             _keys_line("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
         elif narrow:
-            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 28.0 if size.x < 160.0 else size.y - 20.0)
             _keys_line("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0)
         else:
             var keys := "Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TAB HOLD POSE  ENTER GO  ESC BACK"
@@ -61197,7 +61361,7 @@ func _draw() -> void:
 
 # the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
 func _draw_summary(size: Vector2, narrow: bool) -> void:
-    var base := size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0))
+    var base := size.y - (34.0 if narrow else (18.0 if size.y <= SHORT_H else 19.0))
     var text := summary(false)
     if float(PixelFont.width(text)) <= size.x - 8.0:
         _ctxt(text, base, Color.WHITE)
@@ -61325,7 +61489,7 @@ func _place_sprites(size: Vector2, narrow: bool) -> void:
         return
     var n := ids.size()
     var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
-    var feet := 83.0 if size.y <= 130.0 else 104.0
+    var feet := 83.0 if size.y <= SHORT_H else 104.0
     if narrow:
         feet = 176.0
     for i in n:
@@ -61344,7 +61508,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
     _place_sprites(size, narrow)
     var n := ids.size()
     var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
-    var feet := 83.0 if size.y <= 130.0 else 104.0
+    var feet := 83.0 if size.y <= SHORT_H else 104.0
     if narrow:
         feet = 176.0
         var panel := Rect2(26.0, feet - 136.0, size.x - 52.0, 146.0)
@@ -61373,7 +61537,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
     _ctxt(str(data.name), name_y, GOLD)
     var by := name_y + (20.0 if narrow else 9.0)
     var blurb := str(data.blurb)
-    if size.y <= 130.0 and not narrow:
+    if size.y <= SHORT_H and not narrow:
         blurb = _one_line(blurb, int((size.x - 20.0) / 4.0))
     var end_y := _para(blurb, by, Color.WHITE, 4 if narrow else 2)
     if is_campaign() and end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
@@ -61385,8 +61549,8 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
     if narrow:
         return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 134.0, "pitch": 14.0}
-    if size.y <= 130.0:
-        return {"cx": 52.0, "feet": 98.0, "x0": 104.0, "y0": 17.0, "pitch": 11.0}
+    if size.y <= SHORT_H:
+        return {"cx": 52.0, "feet": minf(98.0, size.y - 17.0), "x0": 104.0, "y0": 17.0, "pitch": 11.0}  # (the pose line sits 10 px under the feet)
     return {"cx": 60.0, "feet": 130.0, "x0": 116.0, "y0": 28.0, "pitch": 17.0}
 
 
@@ -61422,11 +61586,19 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
     var tx := x0 - 3.0
     var pages := _pages()
     if create_modal == "":
+        var pad := 10.0
+        var gap := 3.0
+        var total := 0.0
+        for p in pages.size():
+            total += float(PixelFont.width(str(pages[p].label))) + pad + gap
+        if tx + total > size.x - 2.0:  # R42 LARGE: a narrow screen packs the tab chips closer
+            pad = 6.0
+            gap = 1.0
         for p in pages.size():
             var label := str(pages[p].label)
-            var tw := float(PixelFont.width(label)) + 10.0
+            var tw := float(PixelFont.width(label)) + pad
             _chip(Rect2(tx, float(lay.y0), tw, pitch - 2.0), label, p == create_page, "tab", p)
-            tx += tw + 3.0
+            tx += tw + gap
     if create_modal == "presets":
         _draw_presets(lay, size)
         return
@@ -61460,11 +61632,11 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
                 _txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
                 if kind == "start":  # what the start is: the original sprite as is (until an edit), or a saved look
                     var tag := "READY-MADE" if stock_pick() else ("SAVED" if sel_id().begins_with("slot") else "")
-                    _txt(tag, Vector2(box.end.x + 14.0, ty), DIM)
+                    _txt_fit(tag, Vector2(box.end.x + 14.0, ty), DIM)
                 elif kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
-                    _txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+                    _txt_fit("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
                 elif kind == "choice" and Look.CLOTHES_KINDS.has(str(row.id)) and not Look.clothes_locked(str(row.id)).is_empty():
-                    _txt("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+                    _txt_fit("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
             _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
             _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
         else:
@@ -61544,8 +61716,9 @@ func _draw_presets(lay: Dictionary, size: Vector2) -> void:
             for k in Look.ROLES.size():
                 var role: String = Look.ROLES[k]
                 draw_rect(Rect2(x0 + 62.0 + float(k) * 6.0, ty - 1.0, 5.0, 7.0), Color.html(str(p[role])))
-        _chip(Rect2(x0 + 98.0, y + 1.0, 22.0, pitch - 3.0), "SAVE", hot and _pre_col == 0, "pre_save", s)
-        _chip(Rect2(x0 + 122.0, y + 1.0, 22.0, pitch - 3.0), "LOAD", hot and _pre_col == 1, "pre_load", s)
+        var cw := minf(22.0, floorf((size.x - x0 - 98.0 - 6.0) / 2.0) - 1.0)  # R42 LARGE: the two chips shrink on a narrow screen
+        _chip(Rect2(x0 + 98.0, y + 1.0, cw, pitch - 3.0), "SAVE", hot and _pre_col == 0, "pre_save", s)
+        _chip(Rect2(x0 + 98.0 + cw + 2.0, y + 1.0, cw, pitch - 3.0), "LOAD", hot and _pre_col == 1, "pre_load", s)
     var cy := _row_y(lay, Look.PRESET_SLOTS)
     _chip(Rect2(x0, cy + 1.0, 44.0, pitch - 3.0), "CANCEL", _pre_row == Look.PRESET_SLOTS, "pre_cancel", 0)
 
@@ -61569,9 +61742,9 @@ func _draw_name_grid(lay: Dictionary, size: Vector2) -> void:
 
 
 func _draw_phones(size: Vector2, narrow: bool) -> void:
-    var ph := 54.0 if size.y <= 130.0 else (80.0 if not narrow else 92.0)
+    var ph := 54.0 if size.y <= SHORT_H else (80.0 if not narrow else 92.0)
     var pw := floorf(ph * 0.52)
-    var top := 22.0 if size.y <= 130.0 else (26.0 if not narrow else 56.0)
+    var top := 22.0 if size.y <= SHORT_H else (26.0 if not narrow else 56.0)
     for i in 2:
         var ios := i == 0
         var x := floorf(size.x * 0.5) + (-pw - 16.0 if ios else 16.0)
@@ -61719,12 +61892,12 @@ func _on_format() -> void:
 
 
 func _size() -> Vector2:
-    return Vector2(Game.FORMATS[Game.format].size)
+    return Game.logical_size()
 
 
 func _layout() -> void:
     var size := _size()
-    var wide := size.x > 340.0 and size.y <= 130.0
+    var wide := size.x > 300.0 and size.y <= 130.0  # R42: the LARGE wide picture (320 x 112) takes the short layout too
     var narrow := size.x < 250.0
     var cam_y := 64.0 if size.y <= 130.0 else (50.0 if size.y <= 200.0 else 60.0)
     var cam_x := 184.0
@@ -62343,7 +62516,7 @@ func _start(id: String, summary := "") -> void:
         Micro.clear()
     Toolbox.after_start()
     if summary != "":
-        var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
+        var wide_enough: bool = Game.info(Game.format).size.x >= 300
         Hints.toast(summary + ("  COZY" if Difficulty.cozy_on() else "") + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 
@@ -63097,7 +63270,7 @@ func _lot_tint() -> void:
 
 
 func _apply_format() -> void:
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     _cam.zoom = Vector2.ONE * float(f.zoom)
     if _split_on:
         _split_set(false, f)  # the views are re-framed for the new format
@@ -63127,7 +63300,7 @@ func _process(_delta: float) -> void:
         return
     if _room == "warehouse_lot":
         _lot_tint()
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     if f.follow or _long or Game.ui_shift > 0.0:
         var base_y: float = float(f.cam_y) if f.follow else 64.0
         _cam.global_position = Vector2(_player.global_position.x, _ui_cam_y(base_y, f))
@@ -63239,7 +63412,7 @@ func _split_set(on: bool, f: Dictionary) -> void:
 func _ui_cam_y(base_y: float, f: Dictionary) -> float:
     if Game.ui_shift <= 0.0:
         var bg: Sprite2D = get_node("Background")
-        if _cam.limit_bottom == 100000 and Game.FORMATS[Game.format].follow:
+        if _cam.limit_bottom == 100000 and Game.info(Game.format).follow:
             _cam.limit_bottom = int(bg.position.y + bg.texture.get_size().y)
             _cam.position_smoothing_enabled = true
         return base_y
@@ -66559,6 +66732,10 @@ func draw(c: CanvasItem, size: Vector2, narrow: bool, rects: Array) -> void:
         rstep = 12.0
         effect_y = ry + rstep * 3.0 + 4.0
         effect_lines = 6
+    if not narrow and size.x < 300.0:  # R42 LARGE (256 wide): the right column moves in, the stat rows get 122 px
+        col_w = 122.0
+        rx = 134.0
+        rw = size.x - rx - 6.0
     # points left
     var left := points_left()
     var budget_text := "POINTS LEFT %d OF %d" % [left, Build.budget(Difficulty.tier) + Build.quirk_points(b)]
@@ -66633,6 +66810,9 @@ func _draw_chip(c: CanvasItem, rects: Array, ri: int, r: Rect2) -> void:
     PixelFont.draw(c, "<", r.position + Vector2(3, 2), GOLD)
     PixelFont.draw(c, ">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
     var tw := float(PixelFont.width(text))
+    if tw > r.size.x - 14.0 and text.find("  ") > 0:  # a narrow chip drops its label: the arrows and the value stay
+        text = text.substr(text.find("  ") + 2)
+        tw = float(PixelFont.width(text))
     PixelFont.draw(c, text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
     rects.append([Rect2(r.position, Vector2(r.size.x * 0.5, r.size.y)), "b_prev", ri])
     rects.append([Rect2(r.position + Vector2(r.size.x * 0.5, 0.0), Vector2(r.size.x * 0.5, r.size.y)), "b_next", ri])
@@ -77140,6 +77320,7 @@ const UiStyle := preload("res://scripts/ui_style.gd")
 const PadGlyphs := preload("res://scripts/pad_glyphs.gd")
 
 const ROW_H := 12.0
+const ROW_MIN := 8.0  # R42: rows never get thinner than this (5 px of text and a pixel either side): a short screen scrolls the list
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
 
 var is_open := false
@@ -77235,10 +77416,10 @@ func _labels() -> Array:
         var sound := "SOUND: %s" % ("OFF" if Sfx.muted else "ON")
         var unfocused := "UNFOCUSED: %s" % ("PAUSE" if Game.focus_pause else "RUN")  # R42
         var display := "DISPLAY: %s" % ("FULL SCREEN" if Game.fullscreen else "WINDOW")
-        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
+        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), _text_label(), _contrast_label(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
     if _confirm:
         return ["NO, KEEP PLAYING", "YES, QUIT"]
-    var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
+    var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), _text_label(), _contrast_label()]
     if Campaign.active:
         rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
         if Campaign.mode == "tech":
@@ -77251,11 +77432,20 @@ func _labels() -> Array:
     return rows
 
 
+# R42 item 4: the TEXT size and CONTRAST rows (SETTINGS and the pause menu both have them)
+func _text_label() -> String:
+    return "TEXT: %s" % ("LARGE" if Game.text_large else "NORMAL")
+
+
+func _contrast_label() -> String:
+    return "CONTRAST: %s" % ("HIGH" if Game.high_contrast else "NORMAL")
+
+
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
     if settings_mode:
-        return ["resume", "controls", "shape", "display", "sound", "day", "focus", "career"][clampi(i, 0, 7)]
-    var ids := ["resume", "controls", "shape"]
+        return ["resume", "controls", "shape", "text", "contrast", "display", "sound", "day", "focus", "career"][clampi(i, 0, 9)]
+    var ids := ["resume", "controls", "shape", "text", "contrast"]
     if Campaign.active:
         ids.append("day")
         if Campaign.mode == "tech":
@@ -77277,6 +77467,10 @@ func _activate() -> void:
                 _page = 0
             "shape":
                 Game.cycle_format()
+            "text":
+                Game.set_text_large(not Game.text_large)
+            "contrast":
+                Game.set_high_contrast(not Game.high_contrast)
             "display":
                 Game.set_fullscreen(not Game.fullscreen)
             "sound":
@@ -77331,16 +77525,20 @@ func _activate() -> void:
             _page = 0
         2:
             Game.cycle_format()
+        3:
+            Game.set_text_large(not Game.text_large)
+        4:
+            Game.set_high_contrast(not Game.high_contrast)
     _canvas.queue_redraw()
 
 
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
-    var h := 76.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))
+    var h := 100.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))  # (76 before the TEXT and CONTRAST rows)
     if Campaign.active and Campaign.mode == "tech":
         h += 12.0  # the TICKET PACE row
     if settings_mode:
-        h = 124.0  # eight rows with DISPLAY
+        h = 148.0  # ten rows with TEXT, CONTRAST and DISPLAY
     if _page >= 0:
         h = 108.0
     elif _confirm:
@@ -77348,13 +77546,28 @@ func _panel() -> Rect2:
     return UiStyle.panel_rect(size, 172.0, h)
 
 
+# how many rows the panel shows at once (all of them unless the screen is so short that they would be thinner than ROW_MIN),
+# and the first one: the list scrolls so the selected row is always on screen (R42: ten SETTINGS rows on a 112 px picture)
+func _vis() -> int:
+    var top := 16.0 + (14.0 if _confirm else 0.0)
+    return clampi(int((_panel().size.y - top - 9.0) / ROW_MIN), 1, maxi(1, _labels().size()))
+
+
+func _first_row() -> int:
+    return clampi(_sel - _vis() + 1, 0, maxi(0, _labels().size() - _vis()))
+
+
 func _row_rect(i: int) -> Rect2:
     var top := 16.0 + (14.0 if _confirm else 0.0)
     var body := _panel().position + Vector2(4.0, top)
-    # the 128 px high format gives the panel 114 px: the eight SETTINGS rows get 11 px each there, or the last one
-    # (CAREER) sat under the footer line
-    var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(maxi(1, _labels().size()))))
-    return Rect2(body.x, body.y + row_h * float(i), _panel().size.x - 8.0, row_h - 1.0)
+    # the 128 px high format gives the panel 114 px: the ten SETTINGS rows get 8 px each there, or the last one
+    # (CAREER) sat under the footer line; a shorter picture scrolls
+    var vis := _vis()
+    var first := _first_row()
+    if i < first or i >= first + vis:
+        return Rect2()
+    var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(vis)))
+    return Rect2(body.x, body.y + row_h * float(i - first), _panel().size.x - 8.0, row_h - 1.0)
 
 
 func _turn_page(step: int) -> void:
@@ -77512,6 +77725,10 @@ func _key(event: InputEvent) -> void:
     elif left or right:
         if not _confirm and _sel == 2:
             Game.cycle_format()
+        elif not _confirm and _row_id(_sel) == "text":
+            Game.set_text_large(not Game.text_large)
+        elif not _confirm and _row_id(_sel) == "contrast":
+            Game.set_high_contrast(not Game.high_contrast)
         elif settings_mode and _row_id(_sel) == "display":
             Game.set_fullscreen(not Game.fullscreen)
         elif settings_mode and _row_id(_sel) == "sound":
@@ -77552,10 +77769,20 @@ func _paint() -> void:
     var labels := _labels()
     for i in labels.size():
         var rr := _row_rect(i)
+        if rr.size == Vector2.ZERO:
+            continue  # scrolled out of the window
         if i == _sel:
             c.draw_rect(rr, UiStyle.HEAD)
-        UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
+        UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + floorf((rr.size.y - 5.0) * 0.5), UiStyle.WHITE if i == _sel else UiStyle.INK)
+    if _vis() < labels.size():  # more rows above or below: a small marker at the right edge
+        var mx := r.end.x - 9.0
+        if _first_row() > 0:
+            c.draw_colored_polygon(PackedVector2Array([Vector2(mx, r.position.y + 15.0), Vector2(mx + 5.0, r.position.y + 15.0), Vector2(mx + 2.5, r.position.y + 12.0)]), UiStyle.MUTED)
+        if _first_row() + _vis() < labels.size():
+            c.draw_colored_polygon(PackedVector2Array([Vector2(mx, r.end.y - 11.0), Vector2(mx + 5.0, r.end.y - 11.0), Vector2(mx + 2.5, r.end.y - 8.0)]), UiStyle.MUTED)
     var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
+    if not _confirm and (_row_id(_sel) == "text" or _row_id(_sel) == "contrast"):
+        foot = "LEFT RIGHT = CHANGE  ESC = BACK"
     if not _confirm and _row_id(_sel) == "day":
         foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
     elif not _confirm and _row_id(_sel) == "pace":
@@ -84951,6 +85178,47 @@ static func head(speaker: String) -> Texture2D:
             tex.region = Rect2(HEAD)
         _cache[id] = tex
     return _cache[id]
+''')
+
+write("scripts/text_size.gd", '''extends RefCounted
+# R42 item 4: the TEXT setting's helpers (docs/dev/notes-textsize.md). Game keeps the two switches (text_large,
+# high_contrast); this script holds the pure parts so pixelfont.gd and ui_style.gd need only a one-line hook each.
+#   TextSize.high              HIGH CONTRAST is on (set by Game through apply)
+#   TextSize.color(c)          the colour a text is drawn in: with HIGH CONTRAST light text goes to white, dark text to
+#                              ink, so a hint on a plate (SOFT, MUTED, a gold or grey label) stays readable
+#   TextSize.plate(a)          a dark plate's alpha: opaque enough that the world behind it never shows through letters
+#   TextSize.edge(c, r)        draws the heavier panel border of HIGH CONTRAST (a second ink line and a white line inside)
+
+const INK := Color("17121f")
+
+static var high := false
+
+
+static func apply(on: bool) -> void:
+    high = on
+
+
+static func color(c: Color) -> Color:
+    if not high or c.a < 0.05:
+        return c
+    var lum := c.get_luminance()
+    if lum >= 0.55:
+        return c.lerp(Color.WHITE, 0.65)
+    if lum <= 0.4:
+        return c.lerp(INK, 0.6)
+    return c
+
+
+static func plate(alpha: float) -> float:
+    return maxf(alpha, 0.97) if high else alpha
+
+
+# a plate with a stronger edge (called after a panel's own border)
+static func edge(canvas: CanvasItem, r: Rect2) -> void:
+    if not high:
+        return
+    canvas.draw_rect(Rect2(r.position - Vector2(2, 2), r.size + Vector2(4, 4)), INK, false, 1.0)
+    canvas.draw_rect(Rect2(r.position + Vector2(1, 1), r.size - Vector2(2, 2)), Color.WHITE, false, 1.0)
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

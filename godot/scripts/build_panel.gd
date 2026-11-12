@@ -294,6 +294,10 @@ func draw(c: CanvasItem, size: Vector2, narrow: bool, rects: Array) -> void:
 		rstep = 12.0
 		effect_y = ry + rstep * 3.0 + 4.0
 		effect_lines = 6
+	if not narrow and size.x < 300.0:  # R42 LARGE (256 wide): the right column moves in, the stat rows get 122 px
+		col_w = 122.0
+		rx = 134.0
+		rw = size.x - rx - 6.0
 	# points left
 	var left := points_left()
 	var budget_text := "POINTS LEFT %d OF %d" % [left, Build.budget(Difficulty.tier) + Build.quirk_points(b)]
@@ -368,6 +372,9 @@ func _draw_chip(c: CanvasItem, rects: Array, ri: int, r: Rect2) -> void:
 	PixelFont.draw(c, "<", r.position + Vector2(3, 2), GOLD)
 	PixelFont.draw(c, ">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
 	var tw := float(PixelFont.width(text))
+	if tw > r.size.x - 14.0 and text.find("  ") > 0:  # a narrow chip drops its label: the arrows and the value stay
+		text = text.substr(text.find("  ") + 2)
+		tw = float(PixelFont.width(text))
 	PixelFont.draw(c, text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
 	rects.append([Rect2(r.position, Vector2(r.size.x * 0.5, r.size.y)), "b_prev", ri])
 	rects.append([Rect2(r.position + Vector2(r.size.x * 0.5, 0.0), Vector2(r.size.x * 0.5, r.size.y)), "b_next", ri])

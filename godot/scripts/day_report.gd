@@ -22,6 +22,7 @@ const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
 var _row_h := 7.0  # row height in virtual pixels (one font pixel at scale 1); 6 when the short wide screen needs it
 var _pad := 1.0  # text offset inside a row (0 in the tight 6 pixel rows)
+var _tight := false  # R42 LARGE: a report with an ending is still too tall at 6 pixel rows: the gaps between its blocks close
 const GRADE_COLORS := {
 	"S": Color("f5d442"),
 	"A": Color("5fd068"),
@@ -428,23 +429,23 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
 		if size.y / float(sc) - y >= 62.0:  # (narrow screens: only when there is room left for the rest)
 			y += 3.0 + _spark(4.0, y + 3.0, inner, draw)
 	for note in report.get("notes", []):  # cozy Easy: a probation or bailout line, in a calm colour
-		y += 3.0
+		y += 1.0 if _tight else 3.0
 		for line in _wrap(str(note), int(inner / 4.0)):
 			if draw:
 				_t(line, 4.0, y, HEAD)
 			y += _row_h
 	var ending := str(report.get("ending", ""))
 	if ending != "":
-		y += 4.0
+		y += 1.0 if _tight else 4.0
 		var col := BAD if bool(report.get("fired", false)) else WARN
 		for line in _wrap(ending, int(inner / 4.0)):
 			if draw:
 				_t(line, 4.0, y, col)
 			y += _row_h
-	y += 2.0
+	y += 1.0 if _tight else 2.0
 	if draw:
 		_r(4.0, y, inner, 1.0, LINE)
-	y += 2.0
+	y += 1.0 if _tight else 2.0
 	var label := _button_label()
 	var bw := _tw(label) + 12.0
 	var hint := Controls.hint("ENTER{ OR CLICK|}")
@@ -487,6 +488,7 @@ func _paint() -> void:
 	var sc := 2 if size.x < 220.0 else 1
 	_row_h = 7.0
 	_pad = 1.0
+	_tight = false
 	_spill = 0
 	_from = 0
 	_count = -1
@@ -515,6 +517,9 @@ func _paint() -> void:
 			_from = int(_pages[_page])
 			_count = (int(_pages[_page + 1]) if _page + 1 < _pages.size() else total) - _from
 			h = _fit(sc, size)
+	if h > size.y - 2.0:  # the last resort: close the gaps between the blocks
+		_tight = true
+		h = _fit(sc, size)
 	var u := float(sc)
 	var pw := _panel_w(sc, size)
 	_canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.86))

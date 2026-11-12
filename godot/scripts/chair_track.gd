@@ -149,7 +149,7 @@ func _sync() -> void:
 		node.rotation = sin(_t * 44.0) * 0.09 * minf(1.0, shake) if shake > 0.0 else 0.0
 	for pr in props:
 		_mark(pr)
-	var f: Dictionary = Game.FORMATS[Game.format]
+	var f: Dictionary = Game.info(Game.format)
 	var view := get_viewport_rect().size / float(f.zoom)
 	if _player != null:
 		_player.global_position = Vector2(x0 + ChairRace.world_x(race.pos) + (0.0 if _fight() else view.x * 0.1), 118.0)

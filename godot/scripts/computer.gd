@@ -856,7 +856,7 @@ func _window(title: String, tint: Color) -> Rect2:
 	var a := Rect2(_area.position, Vector2(_area.size.x, _area.size.y - TB))
 	_fill(a, Color("e9ecf1"))
 	_fill(Rect2(a.position, Vector2(a.size.x, 8)), tint)
-	_text(title, a.position + Vector2(3, 1), WHITE)
+	_text(_clip(title, int((a.size.x - 16.0) / 4.0)), a.position + Vector2(3, 1), WHITE)  # R42 LARGE: a long window title is cut, not run off the screen
 	_button("close_app", Rect2(a.end.x - 10, a.position.y + 1, 9, 6), "X", true, Color("d86b5e"))
 	return Rect2(a.position + Vector2(0, 8), Vector2(a.size.x, a.size.y - 8))
 
@@ -1192,7 +1192,7 @@ func _paint_site_window(accent: Color) -> void:
 		_:
 			var body := _window("YOUR TOOLBOX", Color("5a5f6a"))
 			_text(
-				"YOU ARE ONSITE. THIS IS THEIR COMPUTER.",
+				_clip("YOU ARE ONSITE. THIS IS THEIR COMPUTER.", int((body.size.x - 6.0) / 4.0)),
 				Vector2(body.position.x + 4, body.position.y + 4),
 				Color("46506a")
 			)
@@ -1961,9 +1961,10 @@ func _paint_learn() -> void:
 		body.position + Vector2(4, 3),
 		Color("012456")
 	)
+	var pitch := clampf(floorf((body.size.y - 12.0 - 20.0) / float(Skills.LESSONS.size())), 8.0, 11.0)  # R42 LARGE: a short window packs the lessons
 	for i in Skills.LESSONS.size():
 		var rr := Rect2(
-			body.position.x + 3, body.position.y + 12 + float(i) * 11.0, body.size.x - 6, 10
+			body.position.x + 3, body.position.y + 12 + float(i) * pitch, body.size.x - 6, pitch - 1.0
 		)
 		var state := (
 			"DONE" if i < Skills.ps_level else ("START" if i == Skills.ps_level else "LOCKED")
@@ -1976,7 +1977,7 @@ func _paint_learn() -> void:
 		if state == "START":
 			_region("lesson:%d" % i, rr)
 	var lv := Skills.ps_level
-	var y := body.position.y + 12 + float(Skills.LESSONS.size()) * 11.0 + 4
+	var y := body.position.y + 12 + float(Skills.LESSONS.size()) * pitch + 4
 	var perks := [
 		(
 			"FIX TIME %.1fS   FAILS %d%%"
@@ -2372,7 +2373,7 @@ func _irc_who(area: Rect2) -> void:
 	_text("TALK TO WHO?", area.position + Vector2(4, 3), Color("c0561a"))
 	var back_text := "LEFT = BACK"
 	_text(back_text, Vector2(area.end.x - 4 - _tw(back_text), area.position.y + 3), BTN_SH)
-	var row_h := 8.0
+	var row_h := clampf(floorf((area.size.y - 14.0) / float(Nerds.NICKS.size())), 6.0, 8.0)  # R42 LARGE: a short window packs the nicks
 	var y := area.position.y + 12
 	var nicks: Array = Nerds.NICKS.keys()
 	for i in nicks.size():
@@ -2777,11 +2778,8 @@ func _board_clients(a: Rect2) -> void:
 		)
 		if letters != "":
 			shown += " GAPS " + letters
-		_text(
-			_clip(shown, int((a.end.x - x - (174 if wide else 134)) / 4.0)),
-			Vector2(x + (172 if wide else 132), y),
-			AMBER if shown != "" else Color("46506a")
-		)
+		if a.end.x - x - (174 if wide else 134) >= 12.0:  # R42 LARGE: a column with no room is left off, not clipped to "P.."
+			_text(_clip(shown, int((a.end.x - x - (174 if wide else 134)) / 4.0)), Vector2(x + (172 if wide else 132), y), AMBER if shown != "" else Color("46506a"))
 		y += 7
 	if not Owner.gone.is_empty() and y < a.end.y - 6:
 		var names := []

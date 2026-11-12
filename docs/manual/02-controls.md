@@ -179,6 +179,18 @@ focus or the machine goes to sleep, it pauses by itself; **SETTINGS** on the tit
 (`PAUSE` / `RUN`) if you would rather keep it running in the background. `Alt`+`Enter` switches between full screen and a
 window from anywhere. A window opens in the middle of the screen, as large as fits at a whole multiple of the shape.
 
+### Text size and contrast
+
+The game is drawn in a small picture that is scaled up by a whole number, so the letters are as sharp as they are small.
+**SETTINGS** on the title screen and the pause menu in a room both have a **TEXT** row: **NORMAL** or **LARGE**. LARGE draws the
+same picture in fewer pixels and scales it up one step more, so every letter (and every person) is about a quarter bigger on
+the screen: on a Steam Deck the letters go from 20 to 25 screen pixels high. The room shows a little less of the office at a time,
+and a few long lines wrap onto a second line. Two screens are the exception: in the portrait shape (`v`) the outing games, and
+in the `wide` shape the character creator, keep NORMAL size while they are open, because they do not fit a LARGE picture. The
+**CONTRAST** row switches HIGH contrast on: grey hint text turns brighter or darker, the dark plates behind text on the screen
+turn solid and the panel borders get a second line. Both rows work with a gamepad (`Left` / `Right` or `A`), apply at once and
+are remembered. Neither changes by itself on any screen: NORMAL is what you get until you change it.
+
 ---
 
 ## KEYS INSIDE THE LITTLE SCREENS

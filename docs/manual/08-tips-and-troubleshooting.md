@@ -65,6 +65,11 @@ In Godot's user-data folder for the game (`MSPSim`):
 Press **`F9`** to cycle through the picture shapes (`wide`, `h`, `v`, `vclose`). The window opens at a multiple of the chosen
 shape's size, so you may also just need to maximise it. The pause menu's **SHAPE** row does the same thing.
 
+### The letters are too small to read.
+
+Open **SETTINGS** on the title screen (or the pause menu in a room) and set **TEXT** to **LARGE**, and **CONTRAST** to **HIGH** if
+the grey hint lines are hard to see. See [Chapter 2](02-controls.md#text-size-and-contrast).
+
 ### My screen is the wrong shape (very tall, very thin).
 
 That is `v` or `vclose`, the portrait shapes made for phones and vertical video. Press **`F9`** until you reach `wide` or `h`.

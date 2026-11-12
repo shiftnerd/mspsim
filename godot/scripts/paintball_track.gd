@@ -157,7 +157,7 @@ func _sync() -> void:
 		p.shoot_t = maxf(0.0, float(p.shoot_t) - get_process_delta_time())
 		_animate(i, u, p)
 	_move_balls(get_process_delta_time())
-	var f: Dictionary = Game.FORMATS[Game.format]
+	var f: Dictionary = Game.info(Game.format)
 	var view := get_viewport_rect().size / float(f.zoom)
 	if _player != null:
 		var focus: float = float(game.units[0].x)

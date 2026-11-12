@@ -288,11 +288,21 @@ func _paint() -> void:
 		body_h = float(lines.size()) * 7.0
 		ph = 12.0 + body_h + 4.0 + opts_h + 4.0
 	# short screens (16:9, wide) keep the people visible by putting the card at the top
-	var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
+	var opt_pad := 3.0
+	var top_y := 6.0
+	if size.y < 200.0 and ph > size.y - 12.0:  # R42 LARGE: a very short screen: the card hugs the top and its answers sit closer
+		opt_pad = 1.0
+		top_y = 2.0
+		ph -= 2.0 * float(options.size()) + 2.0
+	var panel_y := top_y if size.y < 200.0 else size.y - ph - 6.0
 	var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
 	_canvas.draw_rect(panel, Color("e9ecf1"))
 	_canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9)), Color("8e3a2b"))
-	PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
+	var title_chars := int((pw - 6.0) / 4.0)
+	var title_text := speaker.to_upper()
+	if title_text.length() > title_chars:  # R42 LARGE: a long speaker line is cut at the card's edge
+		title_text = title_text.substr(0, maxi(1, title_chars - 2)) + ".."
+	PixelFont.draw(_canvas, title_text, panel.position + Vector2(3, 2), WHITE)
 	icon_drawn = Rect2()
 	var icon := icon_tex()
 	if icon != null and PixelFont.width(speaker) + 3.0 < pw - 18.0:
@@ -312,7 +322,7 @@ func _paint() -> void:
 		var opt: Dictionary = options[i]
 		var on: bool = bool(opt.get("enabled", true))
 		var rows: Array = opt_lines[i]
-		var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(3.0 + 7.0 * float(rows.size()), tap_h))
+		var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(opt_pad + 7.0 * float(rows.size()), tap_h))
 		var ty := floorf((r.size.y - 7.0 * float(rows.size()) + 2.0) * 0.5)
 		var col := (
 			Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))

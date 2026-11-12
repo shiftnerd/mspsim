@@ -295,8 +295,8 @@ func _init() -> void:
 	await _key(KEY_ESCAPE)
 	_check(pm.is_open and paused, "Esc opens the pause menu in Free Play")
 	var labels: Array = pm._labels()
-	_check(labels == ["RESUME", "CONTROLS", "SHAPE: %s" % game.format.to_upper(), "OUTFIT", "CAREER", "FREE PLAY MENU", "QUIT TO TITLE"], "Free Play rows: OUTFIT, CAREER and the FREE PLAY MENU before QUIT")
-	pm._sel = 3
+	_check(labels == ["RESUME", "CONTROLS", "SHAPE: %s" % game.format.to_upper(), "TEXT: NORMAL", "CONTRAST: NORMAL", "OUTFIT", "CAREER", "FREE PLAY MENU", "QUIT TO TITLE"], "Free Play rows: OUTFIT, CAREER and the FREE PLAY MENU before QUIT")
+	pm._sel = 5
 	await _key(KEY_ENTER)
 	await _wait(3)
 	_check(not pm.is_open and not paused and tb.outfit_open and game.ui_open, "the OUTFIT row closes the menu and opens the overlay")
@@ -309,7 +309,7 @@ func _init() -> void:
 	await _key(KEY_ESCAPE)
 	pm._sel = pm._labels().size() - 1
 	_check(pm._row_id(pm._sel) == "quit", "the last row is QUIT")
-	_check(pm._row_id(4) == "career" and pm._row_id(5) == "free", "CAREER (the J key has no pad button) and the FREE PLAY MENU sit before it")
+	_check(pm._row_id(6) == "career" and pm._row_id(7) == "free", "CAREER (the J key has no pad button) and the FREE PLAY MENU sit before it")
 	await _key(KEY_ESCAPE)
 	_check(not pm.is_open, "Esc resumes")
 	# campaigns have no outfit row
