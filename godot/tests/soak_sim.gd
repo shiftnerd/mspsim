@@ -11,6 +11,7 @@ extends SceneTree
 #                  nerf printer expo saves ablate
 #                  all             every campaign cell
 #   --tiers=     easy,normal,hard   --strats= careful,lazy,mixed,chaotic   --seeds=N (default 3)   --first=K (first seed, default 1)
+#   --pairs=easy:careful,normal:lazy   only these tier:strategy pairs (seeds rotate)
 #   --cover      instead of the full tier x strategy x seed product, run every (tier, strategy) pair once per cell, rotating the seed
 #   --chaos      every campaign cell also gets the chaotic hands (random screens, pace / day length / tier changes, skipped days)
 #   --reload     reload the end-of-day save at the morning of every day and compare (default on for campaign cells; --reload=0 off)
@@ -44,6 +45,7 @@ func _run() -> void:
 	await process_frame
 	var lib: RefCounted = load("res://tests/soak_lib.gd").new(self)
 	lib.install_capture()
+	lib.verbose = _flag("verbose")
 	if _arg("ts", "") != "":
 		lib.ts = float(_arg("ts", "20"))
 	var cells := _expand(lib)
@@ -127,7 +129,12 @@ func _expand(lib: RefCounted) -> Array:
 			var mode := n.left(n.length() - 1)
 			var year := int(n.substr(n.length() - 1))
 			var combos: Array = []
-			if _flag("cover"):
+			if _arg("pairs", "") != "":  # --pairs=easy:careful,normal:lazy: just these (tier:strategy) pairs, seeds rotating
+				var k2 := 0
+				for pr in _arg("pairs", "").split(",", false):
+					combos.append({"tier": pr.get_slice(":", 0), "strat": pr.get_slice(":", 1), "seed": first + (k2 % seeds)})
+					k2 += 1
+			elif _flag("cover"):
 				var k := 0
 				for tier in tiers:
 					for strat in strats:

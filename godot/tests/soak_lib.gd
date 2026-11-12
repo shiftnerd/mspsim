@@ -240,6 +240,8 @@ var _resume_pending := 0
 
 
 func _sample() -> void:
+	if verbose:
+		printerr("SOAKDAY %s day %d frame %d nodes %d t %.0fs" % [cfg_text(_spec), _day_seen, _frame, int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), float(Time.get_ticks_msec()) / 1000.0])
 	_series.append({
 		"day": _day_seen,
 		"nodes": int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)),
@@ -287,6 +289,22 @@ func _dump(why: String) -> Dictionary:
 	return d
 
 
+# the day-begin hooks run again on a load (the conference trip pays its XP on the morning after), so XP may rise; it must not fall
+func _skills_kept(file_json: String, loaded_json: String) -> bool:
+	var a: Variant = JSON.parse_string(file_json)
+	var b: Variant = JSON.parse_string(loaded_json)
+	if not (a is Dictionary and b is Dictionary):
+		return file_json == loaded_json
+	for k in a:
+		if k == "xp":
+			for x in a.xp:
+				if float(b.xp.get(x, 0)) < float(a.xp[x]):
+					return false
+		elif str(a[k]) != str(b.get(k)):
+			return false
+	return true
+
+
 # key order of a dictionary is not state
 func _canon(v: Variant) -> String:
 	return JSON.stringify(v, "", true)
@@ -328,7 +346,7 @@ func _check_save_reload() -> void:
 			_save_fail.append("day %d: %s is %s after the load, the file says %s" % [before_day, k, str(after[k]), str(want[k])])
 		if k in ["day", "rep", "cash"] and int(live[k]) != int(want[k]):
 			_save_fail.append("day %d: %s was %s in memory but the file says %s" % [before_day, k, str(live[k]), str(want[k])])
-	if str(after.skills) != want_skills:
+	if not _skills_kept(want_skills, str(after.skills)):
 		_save_fail.append("day %d: skills differ after the load: file %s | loaded %s" % [before_day, want_skills.substr(0, 300), str(after.skills).substr(0, 300)])
 	_drain_cards()
 
@@ -412,7 +430,7 @@ func _chaos() -> void:
 			if cards.is_open:
 				cards.pick(rng.randi() % maxi(1, cards.options.size()))
 		4:
-			if not root.get_node("DayReport").is_open and not cards.is_open and world.clock < world.DAY_END - 0.5:
+			if rng.randf() < 0.3 and not root.get_node("DayReport").is_open and not cards.is_open and world.clock < world.DAY_END - 0.5:
 				world.clock = world.DAY_END - 0.01  # skip the rest of the day
 		5:
 			root.get_node("Msp").pace = clampf(float(root.get_node("Msp").pace) * rng.randf_range(0.5, 2.0), 0.25, 3.0)
