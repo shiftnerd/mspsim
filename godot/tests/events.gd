@@ -1,7 +1,7 @@
 extends SceneTree
 # gdlint:disable=class-definitions-order,max-line-length
 # The event deck (roadmap R8): schema and balance guard, seeded draws, cooldowns, quiet days only, saves,
-# showing and resolving the cards, and the 17 extra vignettes that share the draw.
+# showing and resolving the cards, and the 25 extra vignettes that share the draw.
 
 var failures := 0
 
@@ -118,8 +118,8 @@ func _init() -> void:
 	var fixed_vignettes := []
 	for id in story.VIGNETTES:
 		(drawn_vignettes if story.VIGNETTES[id].has("min_day") else fixed_vignettes).append(id)
-	_check(story.VIGNETTES.size() == 33, "the vignette deck has 33 cards (%d)" % story.VIGNETTES.size())
-	_check(fixed_vignettes.size() == 16 and drawn_vignettes.size() == 17, "16 fixed (Dan, Adam and the day 1 hello) and 17 drawn vignettes")
+	_check(story.VIGNETTES.size() == 41, "the vignette deck has 41 cards (%d)" % story.VIGNETTES.size())
+	_check(fixed_vignettes.size() == 16 and drawn_vignettes.size() == 25, "16 fixed (Dan, Adam and the day 1 hello) and 25 drawn vignettes")
 	for id in ["iphone", "heartbleed", "candy", "pizza", "win8", "selfreview", "donuts", "invoice"]:
 		_check(not story.VIGNETTES[id].has("min_day"), "%s stays on its fixed day" % id)
 	var ids := {}

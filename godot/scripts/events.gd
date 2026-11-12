@@ -5,7 +5,7 @@ extends Node
 # vignette format (speaker, text, options with fx) and the vignette resolver (Story._vignette_fx);
 # owner cards also use cash / burnout (Owner.apply). Quiet days only: no draw on a day that already has
 # a story vignette, the ransomware, the overtime night, an outing or the trip, the first two days, the
-# last day or in Free Play. The 17 extra vignettes live in Story.VIGNETTES (they carry `min_day`) and
+# last day or in Free Play. The 25 extra vignettes live in Story.VIGNETTES (they carry `min_day`) and
 # share the same draw. Keep every magnitude small: a card must never make the day unwinnable.
 
 const VERSION := 1
