@@ -186,6 +186,8 @@ the coworkers, the ticket timers.
 | **RESUME** | Back to work. |
 | **CONTROLS** | A three-page list of the keys. `Left` / `Right` turn the pages, `Esc` closes it. |
 | **SHAPE: ...** | The picture shape. Same as **F9**: `Left` / `Right` or `Enter` cycles it. |
+| **TEXT: NORMAL** | The text size. `Left` / `Right` or `Enter` switches between NORMAL and LARGE (see [Chapter 2](02-controls.md#text-size-and-contrast)). It changes at once and is remembered. |
+| **CONTRAST: NORMAL** | NORMAL or HIGH. High contrast makes the small grey hint text brighter and puts a darker plate behind the text on the screen. At once, remembered. |
 | **DAY LENGTH: 10 MIN** | In a campaign only. Cycle the length of a working day (5, 10 or 15 minutes in the tech campaign), which starts at the **next morning**. |
 | **TICKET PACE: NORMAL** | Tech campaign only. RELAXED, NORMAL or BUSY: how many tickets a day brings and how many may be open at once. It changes at once and is remembered for the next run. |
 | **OUTFIT** | Free Play only, in place of DAY LENGTH. Opens the character creator over the room. |

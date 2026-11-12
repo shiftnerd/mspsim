@@ -160,7 +160,7 @@ func _lot_tint() -> void:
 
 
 func _apply_format() -> void:
-	var f: Dictionary = Game.FORMATS[Game.format]
+	var f: Dictionary = Game.info(Game.format)
 	_cam.zoom = Vector2.ONE * float(f.zoom)
 	if _split_on:
 		_split_set(false, f)  # the views are re-framed for the new format
@@ -190,7 +190,7 @@ func _process(_delta: float) -> void:
 		return
 	if _room == "warehouse_lot":
 		_lot_tint()
-	var f: Dictionary = Game.FORMATS[Game.format]
+	var f: Dictionary = Game.info(Game.format)
 	if f.follow or _long or Game.ui_shift > 0.0:
 		var base_y: float = float(f.cam_y) if f.follow else 64.0
 		_cam.global_position = Vector2(_player.global_position.x, _ui_cam_y(base_y, f))
@@ -302,7 +302,7 @@ func _split_set(on: bool, f: Dictionary) -> void:
 func _ui_cam_y(base_y: float, f: Dictionary) -> float:
 	if Game.ui_shift <= 0.0:
 		var bg: Sprite2D = get_node("Background")
-		if _cam.limit_bottom == 100000 and Game.FORMATS[Game.format].follow:
+		if _cam.limit_bottom == 100000 and Game.info(Game.format).follow:
 			_cam.limit_bottom = int(bg.position.y + bg.texture.get_size().y)
 			_cam.position_smoothing_enabled = true
 		return base_y

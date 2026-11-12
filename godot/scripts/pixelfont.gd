@@ -3,6 +3,8 @@ extends RefCounted
 # A 3x5 pixel font for the in-game computer and phone screens (upper case only, like the logo tagline).
 # PixelFont.draw(canvas_item, text, position, color, scale) / PixelFont.width(text, scale)
 
+const TextSize := preload("res://scripts/text_size.gd")
+
 const GLYPHS := {
 	"A": ["XXX", "X.X", "XXX", "X.X", "X.X"],
 	"B": ["XX.", "X.X", "XX.", "X.X", "XX."],
@@ -152,6 +154,7 @@ static func _pad_line(canvas: CanvasItem, text: String, pos: Vector2, color: Col
 
 
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+	color = TextSize.color(color)  # R42 item 4: HIGH CONTRAST pushes light text to white and dark text to ink (a no-op otherwise)
 	text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
 	if _pad_line(canvas, text, pos, color, scale):
 		return

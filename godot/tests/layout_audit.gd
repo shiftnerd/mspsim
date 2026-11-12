@@ -6,7 +6,11 @@ extends SceneTree
 # Any other test can be audited too: set env LAYOUT_AUDIT=1 and Game prints OFFSCREEN / OVERLAP lines as they happen.
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
-const FORMATS := ["wide", "h", "deck", "v"]  # deck = 320 x 200, the Steam Deck's 16:10 (R42)
+# deck = 320 x 200, the Steam Deck's 16:10 (R42). "+L" is the same shape with the TEXT row on LARGE (a smaller logical size at a
+# higher scale, Game.LARGE): extra passes over every screen. `-- --formats=deck,deck+L` picks some.
+# "+LC" is LARGE with HIGH CONTRAST on (the text colours and the plates; the layout is the +L one).
+const FORMATS := ["wide", "h", "deck", "v", "wide+L", "h+L", "deck+L", "v+L", "deck+LC"]
+const TextSize := preload("res://scripts/text_size.gd")
 const WHITE := Color.WHITE
 
 var failures := 0
@@ -14,6 +18,8 @@ var warns := 0
 var screens := 0
 var fmt := "wide"
 var only: PackedStringArray = PackedStringArray()
+var formats_arg: PackedStringArray = PackedStringArray()
+var settle := 0
 var shots := false  # -- --shots also saves user://audit_FORMAT_TAG.png for every screen
 var force_pad := -1  # tests/pad_prompts.gd walks the same screens: 1 = a pad is the active input on every screen, 0 = never, -1 = as the walker says
 
@@ -22,6 +28,10 @@ func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):
 			only = arg.substr(7).split(",")
+		elif arg.begins_with("--formats="):
+			formats_arg = arg.substr(10).split(",")
+		elif arg.begins_with("--settle="):
+			settle = int(arg.substr(9))  # extra frames before a screen is judged (a screenshot run waits out the fade-ins)
 		elif arg == "--shots":
 			shots = true
 	_run.call_deferred()
@@ -60,7 +70,7 @@ func _end(tag: String) -> void:
 	while not phone.banner.is_empty() and phone.banner_slide() < 1.0 and not phone.banner_blocked() and guard < 60:
 		await process_frame
 		guard += 1
-	await _wait(4)
+	await _wait(4 + settle)
 	var seen: int = PixelFont.audit.size()
 	if shots:
 		var img := root.get_viewport().get_texture().get_image()
@@ -233,17 +243,28 @@ func _selftest() -> void:
 
 func _run() -> void:
 	await _selftest()
-	await _walk(FORMATS)
+	await _walk(FORMATS if formats_arg.is_empty() else Array(formats_arg))
+	root.get_node("Game").text_large = false
+	root.get_node("Game").high_contrast = false
+	TextSize.apply(false)
 	print("screens=%d failures=%d overlap_warnings=%d" % [screens, failures, warns])
 	quit(1 if failures > 0 else 0)
 
 
+# a format name of the list: "deck" is NORMAL text, "deck+L" the same shape on LARGE
+func _set_fmt(f: String) -> void:
+	var game := root.get_node("Game")
+	game.text_large = f.contains("+L")
+	game.high_contrast = f.ends_with("C")
+	TextSize.apply(game.high_contrast)
+	game.set_format(f.get_slice("+", 0))
+
+
 # every screen, in each of the formats
 func _walk(formats: Array) -> void:
-	var game := root.get_node("Game")
 	for f in formats:
 		fmt = f
-		game.set_format(f)
+		_set_fmt(f)
 		root.get_node("Campaign").save_prefix = "user://test_audit_%d_" % OS.get_process_id()
 		root.get_node("Difficulty").settings_path = "user://test_audit_%d_settings.cfg" % OS.get_process_id()
 		if _want("title"):
@@ -272,16 +293,18 @@ func _title_phase() -> void:
 	t._show_quick()
 	await _end("title quick play")
 	t._show_home(0)
-	# R42: the SETTINGS rows (seven now, with UNFOCUSED: PAUSE / RUN), with the keyboard's footer and the pad's
+	# R42: the SETTINGS rows (ten now: TEXT and CONTRAST joined SHAPE and DISPLAY; a short picture scrolls them), with the keyboard's
+	# footer and the pad's, on the TEXT row and on the last row
 	var pm := root.get_node("PauseMenu")
 	for pad in [false, true]:
 		root.get_node("Controls").pad_active = pad
-		pm.open_settings()
-		pm._sel = 5
-		_begin()
-		pm._canvas.queue_redraw()
-		await _end("title settings%s" % (" pad" if pad else ""))
-		pm.close()
+		for row in [3, 9]:
+			pm.open_settings()
+			pm._sel = row
+			_begin()
+			pm._canvas.queue_redraw()
+			await _end("title settings%s row %d" % [" pad" if pad else "", row])
+			pm.close()
 	root.get_node("Controls").pad_active = false
 	# the tech submenu at its fullest: a save plus a finished Year 2 (SLOT 1, START YEAR 2, START YEAR 3, NEW CAMPAIGN, DELETE A SLOT)
 	var camp := root.get_node("Campaign")

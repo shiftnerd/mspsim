@@ -10,6 +10,7 @@ const UiStyle := preload("res://scripts/ui_style.gd")
 const PadGlyphs := preload("res://scripts/pad_glyphs.gd")
 
 const ROW_H := 12.0
+const ROW_MIN := 8.0  # R42: rows never get thinner than this (5 px of text and a pixel either side): a short screen scrolls the list
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
 
 var is_open := false
@@ -105,10 +106,10 @@ func _labels() -> Array:
 		var sound := "SOUND: %s" % ("OFF" if Sfx.muted else "ON")
 		var unfocused := "UNFOCUSED: %s" % ("PAUSE" if Game.focus_pause else "RUN")  # R42
 		var display := "DISPLAY: %s" % ("FULL SCREEN" if Game.fullscreen else "WINDOW")
-		return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
+		return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), _text_label(), _contrast_label(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
 	if _confirm:
 		return ["NO, KEEP PLAYING", "YES, QUIT"]
-	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
+	var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), _text_label(), _contrast_label()]
 	if Campaign.active:
 		rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
 		if Campaign.mode == "tech":
@@ -121,11 +122,20 @@ func _labels() -> Array:
 	return rows
 
 
+# R42 item 4: the TEXT size and CONTRAST rows (SETTINGS and the pause menu both have them)
+func _text_label() -> String:
+	return "TEXT: %s" % ("LARGE" if Game.text_large else "NORMAL")
+
+
+func _contrast_label() -> String:
+	return "CONTRAST: %s" % ("HIGH" if Game.high_contrast else "NORMAL")
+
+
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
 	if settings_mode:
-		return ["resume", "controls", "shape", "display", "sound", "day", "focus", "career"][clampi(i, 0, 7)]
-	var ids := ["resume", "controls", "shape"]
+		return ["resume", "controls", "shape", "text", "contrast", "display", "sound", "day", "focus", "career"][clampi(i, 0, 9)]
+	var ids := ["resume", "controls", "shape", "text", "contrast"]
 	if Campaign.active:
 		ids.append("day")
 		if Campaign.mode == "tech":
@@ -147,6 +157,10 @@ func _activate() -> void:
 				_page = 0
 			"shape":
 				Game.cycle_format()
+			"text":
+				Game.set_text_large(not Game.text_large)
+			"contrast":
+				Game.set_high_contrast(not Game.high_contrast)
 			"display":
 				Game.set_fullscreen(not Game.fullscreen)
 			"sound":
@@ -201,16 +215,20 @@ func _activate() -> void:
 			_page = 0
 		2:
 			Game.cycle_format()
+		3:
+			Game.set_text_large(not Game.text_large)
+		4:
+			Game.set_high_contrast(not Game.high_contrast)
 	_canvas.queue_redraw()
 
 
 func _panel() -> Rect2:
 	var size := get_viewport().get_visible_rect().size
-	var h := 76.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))
+	var h := 100.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))  # (76 before the TEXT and CONTRAST rows)
 	if Campaign.active and Campaign.mode == "tech":
 		h += 12.0  # the TICKET PACE row
 	if settings_mode:
-		h = 124.0  # eight rows with DISPLAY
+		h = 148.0  # ten rows with TEXT, CONTRAST and DISPLAY
 	if _page >= 0:
 		h = 108.0
 	elif _confirm:
@@ -218,13 +236,28 @@ func _panel() -> Rect2:
 	return UiStyle.panel_rect(size, 172.0, h)
 
 
+# how many rows the panel shows at once (all of them unless the screen is so short that they would be thinner than ROW_MIN),
+# and the first one: the list scrolls so the selected row is always on screen (R42: ten SETTINGS rows on a 112 px picture)
+func _vis() -> int:
+	var top := 16.0 + (14.0 if _confirm else 0.0)
+	return clampi(int((_panel().size.y - top - 9.0) / ROW_MIN), 1, maxi(1, _labels().size()))
+
+
+func _first_row() -> int:
+	return clampi(_sel - _vis() + 1, 0, maxi(0, _labels().size() - _vis()))
+
+
 func _row_rect(i: int) -> Rect2:
 	var top := 16.0 + (14.0 if _confirm else 0.0)
 	var body := _panel().position + Vector2(4.0, top)
-	# the 128 px high format gives the panel 114 px: the eight SETTINGS rows get 11 px each there, or the last one
-	# (CAREER) sat under the footer line
-	var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(maxi(1, _labels().size()))))
-	return Rect2(body.x, body.y + row_h * float(i), _panel().size.x - 8.0, row_h - 1.0)
+	# the 128 px high format gives the panel 114 px: the ten SETTINGS rows get 8 px each there, or the last one
+	# (CAREER) sat under the footer line; a shorter picture scrolls
+	var vis := _vis()
+	var first := _first_row()
+	if i < first or i >= first + vis:
+		return Rect2()
+	var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(vis)))
+	return Rect2(body.x, body.y + row_h * float(i - first), _panel().size.x - 8.0, row_h - 1.0)
 
 
 func _turn_page(step: int) -> void:
@@ -382,6 +415,10 @@ func _key(event: InputEvent) -> void:
 	elif left or right:
 		if not _confirm and _sel == 2:
 			Game.cycle_format()
+		elif not _confirm and _row_id(_sel) == "text":
+			Game.set_text_large(not Game.text_large)
+		elif not _confirm and _row_id(_sel) == "contrast":
+			Game.set_high_contrast(not Game.high_contrast)
 		elif settings_mode and _row_id(_sel) == "display":
 			Game.set_fullscreen(not Game.fullscreen)
 		elif settings_mode and _row_id(_sel) == "sound":
@@ -422,10 +459,20 @@ func _paint() -> void:
 	var labels := _labels()
 	for i in labels.size():
 		var rr := _row_rect(i)
+		if rr.size == Vector2.ZERO:
+			continue  # scrolled out of the window
 		if i == _sel:
 			c.draw_rect(rr, UiStyle.HEAD)
-		UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
+		UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + floorf((rr.size.y - 5.0) * 0.5), UiStyle.WHITE if i == _sel else UiStyle.INK)
+	if _vis() < labels.size():  # more rows above or below: a small marker at the right edge
+		var mx := r.end.x - 9.0
+		if _first_row() > 0:
+			c.draw_colored_polygon(PackedVector2Array([Vector2(mx, r.position.y + 15.0), Vector2(mx + 5.0, r.position.y + 15.0), Vector2(mx + 2.5, r.position.y + 12.0)]), UiStyle.MUTED)
+		if _first_row() + _vis() < labels.size():
+			c.draw_colored_polygon(PackedVector2Array([Vector2(mx, r.end.y - 11.0), Vector2(mx + 5.0, r.end.y - 11.0), Vector2(mx + 2.5, r.end.y - 8.0)]), UiStyle.MUTED)
 	var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
+	if not _confirm and (_row_id(_sel) == "text" or _row_id(_sel) == "contrast"):
+		foot = "LEFT RIGHT = CHANGE  ESC = BACK"
 	if not _confirm and _row_id(_sel) == "day":
 		foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
 	elif not _confirm and _row_id(_sel) == "pace":

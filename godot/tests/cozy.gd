@@ -305,12 +305,12 @@ func _init() -> void:
 	# the pause menu row
 	var pause := root.get_node("PauseMenu")
 	_fresh("tech", "easy")
-	_check(pause._labels().size() == 6 and str(pause._labels()[3]).begins_with("DAY LENGTH"), "the pause menu has a DAY LENGTH row in a campaign")
-	pause._sel = 3
+	_check(pause._labels().size() == 8 and str(pause._labels()[5]).begins_with("DAY LENGTH"), "the pause menu has a DAY LENGTH row in a campaign")
+	pause._sel = 5
 	pause._activate()
 	_check(is_equal_approx(d.day_scale_next, 1.5), "ENTER on the row cycles the length")
 	c.quit_to_title()
-	_check(pause._labels().size() == 4, "no DAY LENGTH row outside a campaign")
+	_check(pause._labels().size() == 6, "no DAY LENGTH row outside a campaign")
 
 	# ---- ticket pace and SLA clocks scale with the day: the same tickets per game hour
 	_fresh("tech", "normal")

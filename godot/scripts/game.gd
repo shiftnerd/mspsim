@@ -6,8 +6,10 @@ extends Node
 # F9 cycles the format while playing.
 
 signal format_changed
+signal text_changed
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const TextSize := preload("res://scripts/text_size.gd")
 
 # size = logical pixels; zoom = camera zoom; cam_y = world y the camera centres on;
 # scale = default window pixel scale without --resolution (6x of h = 1920x1080, 6x of v = 1080x1920)
@@ -20,6 +22,20 @@ const FORMATS := {
 	"vclose": {"size": Vector2i(180, 320), "zoom": 2.0, "cam_y": 92.0, "scale": 3, "follow": true},
 }
 const ORDER := ["wide", "h", "deck", "v", "vclose"]
+# R42 item 4, the TEXT setting. LARGE is the same picture in fewer logical pixels at a higher whole scale, so every glyph
+# (and every sprite) is bigger on the physical screen: deck 256 x 160 at x5 is 25 px glyphs on a 1280 x 800 Deck (20 px at
+# NORMAL), h 256 x 144 at x7 is 35 px on 1920 x 1080 (x5 on 1280 x 720 is exact). Only what differs from FORMATS is listed; see docs/dev/notes-textsize.md.
+const LARGE := {
+	"wide": {"size": Vector2i(320, 112), "scale": 5, "follow": true},
+	"h": {"size": Vector2i(256, 144), "scale": 7},
+	"deck": {"size": Vector2i(256, 160), "scale": 5},
+	"v": {"size": Vector2i(144, 256), "scale": 4},
+	"vclose": {"size": Vector2i(144, 256), "scale": 4},
+}
+# The one screen that does not fit a LARGE picture of a format: the printer mini-game lays out a fixed 176 px panel with
+# hard-coded columns (tray, toner, test lists), 40 px too wide for LARGE `v` (144). While it is open the picture is the
+# format's NORMAL size; every other screen keeps LARGE. screen -> the formats it falls back in (named in tests/text_size.gd).
+const FALLBACK := {"printer": ["v"]}
 const GAP_MS := 3000  # a frame that took longer than this in real time was a suspend (the Deck's power button): pause
 
 const UI_STRIP := 0.2  # share of the screen height left visible above a computer / phone UI
@@ -36,10 +52,14 @@ var title_mode := false  # the title screen shows real rooms without the player 
 var ui_open := false  # a computer / phone UI is open: the player is paused
 var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the faded strip
 var fullscreen := true  # the DISPLAY setting: the game starts full screen, SETTINGS can make it a window
+var text_large := false  # R42 item 4, the TEXT row: LARGE uses the format's smaller logical size (LARGE above)
+var fallback_on := true  # tests: false draws every screen at LARGE, FALLBACK or not
+var high_contrast := false  # the TEXT row's second switch: brighter hint text and darker plates (TextSize.apply)
 var focus_pause := true  # R42, the setting: the game pauses when its window loses focus or the app is suspended
 var focus_force := false  # tests: act on focus notifications in a script run too
 var focus_lost := false  # the window is in the background (or the app is suspended) right now
 var auto_format := ""  # the format the screen asked for at start ("" = none: a test run, or a screen that is not 16:10)
+var _held := {}  # FALLBACK screens that are open: the picture is the format's NORMAL size while any is
 var _held_pause := false  # this script paused the tree for a focus loss (no pause menu could open): undo it on return
 var _last_ms := -1
 
@@ -57,10 +77,37 @@ func dev_run() -> bool:
 	return DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
 
 
+func large_hold(screen: String) -> void:
+	if not fallback_on or not text_large or not FALLBACK.get(screen, []).has(format) or _held.has(screen):
+		return
+	_held[screen] = true
+	set_format(format)
+
+
+func large_release(screen: String) -> void:
+	if _held.erase(screen):
+		set_format(format)
+
+
+# the table row of a format for the text size now in force (or for `large` when asked): size, zoom, cam_y, scale, follow
+func info(name: String, large: bool = text_large and _held.is_empty()) -> Dictionary:
+	var f: Dictionary = FORMATS[name]
+	if not large:
+		return f
+	var out: Dictionary = f.duplicate()
+	out.merge(LARGE[name], true)
+	return out
+
+
+# the logical size of the picture now (what every screen lays out from)
+func logical_size() -> Vector2:
+	return Vector2(info(format).size)
+
+
 # what a screen gets from a format with integer scaling: {scale, size (the picture in screen pixels), bars (left / right,
 # top / bottom), fill (share of the screen that is picture)}
 func fit(screen: Vector2i, name: String) -> Dictionary:
-	var size: Vector2i = FORMATS[name].size
+	var size: Vector2i = info(name).size
 	var scale := maxi(1, mini(screen.x / size.x, screen.y / size.y))
 	var shown := size * scale
 	var fill := float(shown.x * shown.y) / float(maxi(1, screen.x * screen.y))
@@ -89,6 +136,9 @@ func load_display() -> String:
 	if cfg.load(Difficulty.settings_path) != OK:
 		return ""
 	focus_pause = bool(cfg.get_value("display", "focus_pause", true))
+	text_large = bool(cfg.get_value("display", "text_large", false))
+	high_contrast = bool(cfg.get_value("display", "high_contrast", false))
+	TextSize.apply(high_contrast)
 	fullscreen = bool(cfg.get_value("display", "fullscreen", true))
 	return str(cfg.get_value("display", "format", ""))
 
@@ -99,6 +149,8 @@ func save_display(with_format: bool = true) -> void:
 	if with_format:
 		cfg.set_value("display", "format", format)
 	cfg.set_value("display", "focus_pause", focus_pause)
+	cfg.set_value("display", "text_large", text_large)
+	cfg.set_value("display", "high_contrast", high_contrast)
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.save(Difficulty.settings_path)
 
@@ -116,8 +168,8 @@ func set_fullscreen(on: bool) -> void:
 
 # a windowed game: the largest whole scale, up to the format's own, that fits the room a screen has
 func window_scale(name: String, room: Vector2i) -> int:
-	var size: Vector2i = FORMATS[name].size
-	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(FORMATS[name].scale))
+	var size: Vector2i = info(name).size
+	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(info(name).scale))
 
 
 # size the window to the format and centre it in the screen's free area (the taskbar is not part of it). Without this a
@@ -129,7 +181,7 @@ func place_window() -> void:
 	var area := DisplayServer.screen_get_usable_rect(win.current_screen)
 	var frame := win.get_size_with_decorations() - win.size  # the title bar and the borders
 	var inset := win.position - win.get_position_with_decorations()
-	win.size = Vector2i(FORMATS[format].size) * window_scale(format, area.size - frame)
+	win.size = Vector2i(info(format).size) * window_scale(format, area.size - frame)
 	win.position = area.position + (area.size - win.size - frame) / 2 + inset
 
 
@@ -138,6 +190,23 @@ func place_window() -> void:
 func _window_input(event: InputEvent) -> void:
 	if Controls.take_display_key(event):
 		set_fullscreen(not fullscreen)
+
+
+# the TEXT row of SETTINGS: NORMAL / LARGE, applied at once (the picture is re-framed at the format's smaller size and every
+# screen redraws from the new viewport), and HIGH CONTRAST on / off (TextSize.apply: the palette and the plates)
+func set_text_large(on: bool) -> void:
+	text_large = on
+	save_display(false)
+	set_format(format)
+	text_changed.emit()
+
+
+func set_high_contrast(on: bool) -> void:
+	high_contrast = on
+	TextSize.apply(on)
+	save_display(false)
+	text_changed.emit()
+	format_changed.emit()  # every screen repaints
 
 
 func set_focus_pause(on: bool) -> void:
@@ -251,7 +320,7 @@ func _ready() -> void:
 
 func set_format(name: String) -> void:
 	format = name
-	var f: Dictionary = FORMATS[name]
+	var f: Dictionary = info(name)
 	var size: Vector2i = f.size
 	var win := get_window()
 	win.content_scale_size = size
