@@ -47,7 +47,7 @@ off at five.
 - The game is set in **2013 and 2014**, and is faithful to that: no AI, no modern chat apps, no modern operating systems. If you
   find a thing that does not belong in 2014, that is a bug, and we would like to hear about it.
 - **No real computers were harmed.** Several fake ones were rebooted without asking.
-- **MSPSim is private and in progress.** It is not for sale, and anything in it can change.
+- **MSPSim is in progress.** It is not for sale, and anything in it can change.
 
 ---
 
@@ -81,8 +81,7 @@ Something not working? Something unclear in this manual? Something in 2014 that 
 | **Your picture shape** | "wide" (the pause menu shows it in the **SHAPE** row) |
 | **A screenshot** | If you can. |
 
-> **NOTE:** MSPSim is a private project, so the issue tracker is visible only to the people who can see the project. If you cannot see
-> it, you are not on the list. This is working as intended.
+> **NOTE:** MSPSim is a work in progress, so the issue tracker is where bugs go. Please do not put photos, passwords or anything private in an issue: the project page is public.
 
 > **TIP:** Before you ask, check [Chapter 8: Tips and Troubleshooting](08-tips-and-troubleshooting.md). It has most of the answers.
 > The ones it does not have are the interesting ones.

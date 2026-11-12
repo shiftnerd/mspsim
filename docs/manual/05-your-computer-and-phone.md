@@ -31,7 +31,7 @@ Other things you may see in the corner, depending on what you are doing:
 | `IM n` | Unread **Lynk** instant messages. |
 | `CASH $n` | Your company's cash (Owner campaign). |
 | `WEEK n/20 Qn n% HRS n` | The week, the quarter, your progress to quota and the working hours you have left (Sales). |
-| `YEAR 2` | You are in a Year 2 run. |
+| `YEAR 2` / `YEAR 3` | You are in a Year 2 or Year 3 run. |
 | `* NAME` | A "twist" is active in the world this week. |
 | `DARTS n   Z FIRE (HOLD = FAR)   G AWAY` | You are holding the nerf blaster. `WAR n` appears too during a nerf war. |
 | `AIMING n%   RELEASE Z TO FIRE` | You are lining up a long shot. |

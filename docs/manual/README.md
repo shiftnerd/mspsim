@@ -9,7 +9,7 @@
 Welcome to the full manual. It explains **how to get around** the game: the controls, the menus, the building, the screens and the
 games. It does **not** explain what happens in it. This lovely story would like to be found out in its own time.
 
-> **NOTE:** MSPSim is private and in progress. If a page and the game disagree, believe the game. If you can, tell us.
+> **NOTE:** MSPSim is a work in progress and not for sale. If a page and the game disagree, believe the game. If you can, tell us.
 
 ---
 
@@ -19,10 +19,10 @@ games. It does **not** explain what happens in it. This lovely story would like 
 |---:|---|---:|---|
 | 1 | [**Getting Started**](01-getting-started.md) | 2 | Switching it on, the title screen and menu, difficulty (and cozy Easy), the seed, save slots, the pause menu |
 | 2 | [**Controls**](02-controls.md) | 6 | Every key and button, standing and seated, the `Tab` selection, the nerf blaster, gamepad |
-| 3 | [**Game Modes**](03-game-modes.md) | 10 | Tech, Owner, Service Manager, Sales, Free Play, Career, Year 2 |
+| 3 | [**Game Modes**](03-game-modes.md) | 10 | Tech, Owner, Service Manager, Sales, Free Play, Quick Play, Career, Year 2 and Year 3 |
 | 4 | [**The Office**](04-the-office.md) | 13 | A map and a tour: rooms, doors, things to poke, the network closet, client sites |
 | 5 | [**Your Computer and Phone**](05-your-computer-and-phone.md) | 18 | The HUD counters, the apps, the phone |
-| 6 | [**After Work**](06-after-work.md) | 23 | Bowling, karaoke, escape room, dinner, chair race, cornhole, cookout; stars and mastery |
+| 6 | [**After Work**](06-after-work.md) | 23 | Bowling, karaoke, escape room, dinner, chair race, paintball, cornhole, cookout, darts; stars and mastery |
 | 7 | [**Make Your Own**](07-make-your-own.md) | 27 | The character creator, presets, outfits, unlocks |
 | 8 | [**Tips and Troubleshooting**](08-tips-and-troubleshooting.md) | 30 | Tips, questions and answers, the Free Play toolbox |
 | 9 | [**Credits and Legal**](09-credits-and-legal.md) | 33 | The limited warranty, notices, credits and customer support |

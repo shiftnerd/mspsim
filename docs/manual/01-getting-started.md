@@ -36,7 +36,7 @@ a meeting in the conference room. They rotate every few seconds. Nobody is paid 
 | **NEW** | A fresh campaign: the four modes below. `Esc` goes back to the home menu. |
 | **FREE PLAY** | A sandbox with no scoring. |
 | **QUICK PLAY** | A few minutes of play on Free Play, nothing saved: **ONE OUTING** (one team game, a different one each time) or **ONE TICKET SHIFT** (five tickets at your desk, against your own best time). |
-| **SETTINGS** | The pause menu's settings before you start a run: the key lists and remap, the screen shape, sound on/off and the day length. The last row, CAREER, opens your medals, records and unlocks across every run. |
+| **SETTINGS** | The pause menu's settings before you start a run: the key lists and remap (**CONTROLS**), the screen **SHAPE**, **DISPLAY** (**FULL SCREEN** or **WINDOW**), **SOUND** on/off, the **DAY LENGTH** and **UNFOCUSED** (**PAUSE** or **RUN** when the window loses focus). The last row, CAREER, opens your medals, records and unlocks across every run. |
 | **QUIT** | Leaves the game. |
 
 ![The new-campaign menu with four lines: Tech Campaign, Owner Campaign, Service Manager, Sales.](img/title-menu.png)
@@ -71,7 +71,8 @@ Choose a campaign and, if you already have saved games in it, a submenu appears:
 |---|---|
 | **SLOT 1 - DAY 7 ... - NAME** | One row for each save you have. It shows the day (or week), the time if there is one, and your character's name. Choose it to carry on. |
 | **CONTINUE** / **DAY n FROM THE START** | Appears when a slot has both a mid-day resume point and a start-of-day save. CONTINUE puts you back exactly where you were. FROM THE START replays that day. |
-| **START YEAR 2** | Appears once you have finished a campaign's first year. See [Chapter 3](03-game-modes.md#year-2). |
+| **START YEAR 2** | Appears once you have finished a campaign's first year (any of the four campaigns). See [Chapter 3](03-game-modes.md#year-2). |
+| **START YEAR 3** | Appears once you have finished a Year 2 run of that campaign. See [Chapter 3](03-game-modes.md#year-3). |
 | **NEW CAMPAIGN** | Starts a fresh run in the first empty slot. |
 
 If you have no saves, **NEW CAMPAIGN** is the only door, so the game just opens it for you.
@@ -181,14 +182,18 @@ the coworkers, the ticket timers.
 
 ![The pause menu with Resume, Controls, Shape, Day Length and Quit to Title.](img/pause.png)
 
+The pause menu has no DISPLAY or UNFOCUSED row; those two live in **SETTINGS** on the title screen (and `Alt`+`Enter` flips full screen from anywhere). The game **starts full screen**; pick **WINDOW** to play in a window.
+
 | ROW | WHAT IT DOES |
 |---|---|
 | **RESUME** | Back to work. |
 | **CONTROLS** | A three-page list of the keys. `Left` / `Right` turn the pages, `Esc` closes it. |
-| **SHAPE: ...** | The picture shape. Same as **F9**: `Left` / `Right` or `Enter` cycles it. |
+| **SHAPE: ...** | The picture shape (`WIDE`, `H`, `DECK`, `V` or `VCLOSE`). Same as **F9**: `Left` / `Right` or `Enter` cycles it. |
 | **DAY LENGTH: 10 MIN** | In a campaign only. Cycle the length of a working day (5, 10 or 15 minutes in the tech campaign), which starts at the **next morning**. |
 | **TICKET PACE: NORMAL** | Tech campaign only. RELAXED, NORMAL or BUSY: how many tickets a day brings and how many may be open at once. It changes at once and is remembered for the next run. |
 | **OUTFIT** | Free Play only, in place of DAY LENGTH. Opens the character creator over the room. |
+| **CAREER** | Free Play only. Opens the medals and records (the phone's SETTINGS app and the title's SETTINGS open it too). |
+| **FREE PLAY MENU** | Free Play only. The twist, the toolbox, a team outing and the next person, for a pad that has no keys for them. |
 | **QUIT TO TITLE** | Asks first: **NO, KEEP PLAYING** / **YES, QUIT**. In a campaign it says `YOUR LAST SAVE IS KEPT`. In Free Play it says `FREE PLAY IS NOT SAVED`. |
 
 ![The Controls page of the pause menu.](img/pause-controls.png)

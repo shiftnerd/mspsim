@@ -31,7 +31,8 @@ game.
 | **Cell phone** | `P` | Press `P` or `Esc` again to put it away. |
 | **Pause, help** | `Esc` or `Pause` | Opens the pause menu. |
 | **Mute or restore the sound** | `M` | |
-| **Change the picture shape** | `F9` | Cycles `wide`, `h`, `v`, `vclose`. |
+| **Change the picture shape** | `F9` | Cycles `wide`, `h`, `deck`, `v`, `vclose`. |
+| **Full screen or window** | `Alt`+`Enter` (`F11` too in a release build) | The game starts full screen. The same as the **DISPLAY** row of SETTINGS. |
 | **Hide or show the clock and counters** | `F10` | Handy for filming. |
 
 ### People and gestures
