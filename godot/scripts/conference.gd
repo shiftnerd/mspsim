@@ -791,6 +791,36 @@ const DEFAULT_FORUM := [
 		],
 	},
 	{
+		"id": "pat", "speaker": "PaperJam_Pat (forum regular)",
+		"text": "Pat. Printers. I do not fix them, I listen to them. Yours is not broken, it is sulking, and I can tell you which toner it hates. Stop buying the cheap cartridges. I will know.",
+		"options": [
+			{"id": "toner", "label": "ASK ABOUT THE TONER", "skill": "servers", "xp": 4, "text": "'The right cartridge, the roller changed every fifty thousand pages, and never the spooler first.' She draws the paper path on a napkin, with the jam spots marked. (+4 servers XP)"},
+			{"id": "jam", "label": "ASK HOW TO CLEAR A JAM", "skill": "people", "xp": 3, "text": "'Open it slowly, pull the paper the way it travels, and tell the user it was the paper.' It is never kind to say it was them. Say it kindly anyway. (+3 customer XP)"},
+			{"id": "thread", "label": "UPVOTE HER SPOOLER ANSWER", "skill": "", "xp": 0, "karma": 3, "text": "You upvote her answer in the spooler thread. She replies with the model number of every printer she has ever loved. (+3 forum karma)", "text_free": "You upvote her answer in the spooler thread. She replies with a list of model numbers."},
+			{"id": "testpage", "label": "PRINT HER A TEST PAGE", "skill": "", "xp": 0, "social": 1, "text": "She holds it up to the light, nods, and tapes it to your badge like a good report card. Your coworkers ask what you did to earn it. (coworkers like you a little more)", "text_free": "She holds it up to the light and nods."},
+		],
+	},
+	{
+		"id": "vic", "speaker": "SpinUp_Vic (forum regular)",
+		"text": "Vic. Whatever is on that old box, it should be a virtual machine. One host, six servers, one power bill. Just spin up a VM. I say it at the registration desk and I say it at lunch.",
+		"options": [
+			{"id": "host", "label": "ASK ABOUT CONSOLIDATING", "skill": "servers", "xp": 4, "text": "'One strong host, plenty of memory, one virtual machine per job.' He draws six little boxes inside a big one and adds the power bill under it. (+4 servers XP)"},
+			{"id": "snap", "label": "ASK ABOUT SNAPSHOTS", "skill": "security", "xp": 3, "text": "'A snapshot is an undo button, not a backup. Keep the real backups off the host.' He says it twice, the second time more quietly. (+3 security XP)"},
+			{"id": "thread", "label": "UPVOTE 'JUST SPIN UP A VM'", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his reply in the cloud thread. He answers with a link to the same reply, in case you missed it. (+3 forum karma)", "text_free": "You upvote his reply in the cloud thread. He answers with a link to the same reply."},
+			{"id": "box", "label": "TELL HIM IT IS A REAL BOX", "skill": "", "xp": 0, "social": 1, "text": "He takes it personally for a full second, then buys you a coffee and offers to come look at it. Your coworkers hear you made a friend. (coworkers like you a little more)", "text_free": "He takes it personally for a full second, then buys you a coffee."},
+		],
+	},
+	{
+		"id": "gus", "speaker": "PatchPanel_Gus (forum regular)",
+		"text": "Gus. Cable. Cat5e, Cat6, patch panels and the little coloured tags. I wear fourteen badges because every site gave me one, and I have lost the argument with the lanyard. Show me your closet and I will tell you who you are.",
+		"options": [
+			{"id": "panel", "label": "ASK ABOUT THE PATCH PANEL", "skill": "networking", "xp": 4, "text": "'Punch down in order, label both ends, test every run. Orange for the phones, blue for the desks.' He hands you a punch-down tool and watches your first one. (+4 networking XP)"},
+			{"id": "badges", "label": "ASK ABOUT THE BADGES", "skill": "people", "xp": 3, "text": "'This one opens the dock, this one the server room, and this one I cannot identify.' Nobody asked for any of them back. You learn to ask for a visitor badge first. (+3 customer XP)"},
+			{"id": "thread", "label": "UPVOTE HIS CABLING TIP", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his tip in the VLAN thread. He replies with a photo of a closet that was labelled correctly, and it is beautiful. (+3 forum karma)", "text_free": "You upvote his tip in the VLAN thread. He replies with a photo of a labelled closet."},
+			{"id": "count", "label": "COUNT HIS BADGES", "skill": "", "xp": 0, "social": 1, "text": "Fourteen. He lets you hold the one for the roof. Your coworkers ask how you got access to the roof. (coworkers like you a little more)", "text_free": "Fourteen. He lets you hold the one for the roof."},
+		],
+	},
+	{
 		"id": "dot", "speaker": "DNS_Dot (forum regular)",
 		"text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
 		"options": [
@@ -869,6 +899,13 @@ const CROWD := {
 			"facing": "left",
 			"routine": ["wait:5", "say:2", "wait:4"]
 		},
+		{
+			"who": "expo_gus",
+			"role": "forum:gus",
+			"x": 66,
+			"facing": "right",
+			"routine": ["wait:5", "talk:3", "wait:3"]
+		},
 	],
 	"resort_hall":
 	[
@@ -899,6 +936,13 @@ const CROWD := {
 			"x": 224,
 			"facing": "left",
 			"routine": ["wait:5", "talk:4", "wait:3", "say:2"]
+		},
+		{
+			"who": "expo_pat",
+			"role": "forum:pat",
+			"x": 250,
+			"facing": "left",
+			"routine": ["wait:5", "say:2", "wait:4"]
 		},
 	],
 	"ballroom":
@@ -1138,6 +1182,13 @@ const CROWD := {
 			"x": 205,
 			"facing": "right",
 			"routine": ["wait:4", "talk:3", "wait:2", "say:2"]}, {"who": "expo_dot", "role": "forum:dot", "x": 115, "facing": "right", "routine": ["wait:4", "say:2", "wait:3"]
+		},
+		{
+			"who": "expo_vic",
+			"role": "forum:vic",
+			"x": 183,
+			"facing": "right",
+			"routine": ["wait:5", "talk:3", "wait:3"]
 		},
 	],
 }

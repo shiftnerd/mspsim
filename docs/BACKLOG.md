@@ -3,9 +3,12 @@
 Where open bugs and gaps are tracked. The ordered plan for everything is `docs/ROADMAP.md`. Feature ideas (not yet committed to) live in `IDEAS.md`; the replayability write-up with code hooks is `docs/replayability-ideas.md`.
 Status is as of the commit that last touched this file; move items to `CLAUDE.md` once they ship.
 
-## In progress
-- Nothing is running. Next up in `docs/ROADMAP.md`: X2 (play as a cast member) and the owner campaign as Alan or Garrison.
-- Merged and done: owner playthrough fixes 1-6 and the pitch name mismatch, the canon text pass (Alan and Garrison as owners), polish round 2, tech playtest bug fixes, difficulty and seeds, day report and brand names, ticket alternatives, outing UI, site polish, character select.
+## Where things stand (2026-11-12)
+- **The plan is `docs/ROADMAP.md`** (section 2 "Open" has every row, including the D rows from the design audit `docs/design/gap-audit.md`). This file keeps findings from playtests and sweeps, as history.
+- Built: all four campaigns (tech, owner, service manager, sales) in Year 1, Year 2 and Year 3; Free Play / Film Mode and QUICK PLAY; the character creator (levels 1 to 3); nine team games plus the printer and the nerf war (eleven mini-games in the toolbox); the title flow with the tier as its own step; Steam Deck and handheld readiness (pad-only play, `deck` shape, full screen by default); couch co-op in first slices (off by default).
+- Open and external: no human has played tech days 6 to 20 (bots have, see `docs/balance-notes.md`), a real realism review (Q7), a real Deck or pad, audio is on hold. The repository is public (CI runs on every push).
+- Build notes for every recent batch are in `docs/dev/notes-*.md`; the full list of systems and numbers is `docs/design/systems-reference.md`.
+- Everything under the headings below is a record of what was found and fixed, not a to-do list unless a line is not struck through.
 
 ## Owner playthrough findings (weeks 1-20, live play)
 High
@@ -41,10 +44,11 @@ Not found: anachronisms, script errors, bankruptcy (cash stayed above $4,000). W
 Not covered by the playtest: days 6-20, the overtime-night card flow, the review, the conference trip, mouse clicks in a hidden window.
 
 ## Needs a decision from you
-Decisions already made are in `docs/ROADMAP.md`. Still open:
-- Answer the open questions in `docs/campaign-paths.md` section 14 (owner crew size, day lengths, hire names, placeholder parody names, tech-campaign Growth helper, a walk-in scene for sales prospects, Morgan's desk and routine).
-- Whether the difficulty tier should be its own step on character select rather than the chip.
+Decisions already made are in `docs/ROADMAP.md` ("Decisions so far"). Nothing here blocks the game:
+- The open questions in `docs/campaign-paths.md` section 14 are answered by default (ROADMAP H7: the game runs on the defaults as built).
+- The difficulty tier is its own step on character select (done, ROADMAP R1).
 - Dialogue Manager (skip for now), Gitot (optional): parked in the roadmap.
+- Still waiting for the owner: the legal pass on the real-person characters before any store page (ROADMAP D11), the price and the store plan (D13).
 
 ## Known gaps
 Everything still open is listed in `docs/ROADMAP.md` section 2 (Open).

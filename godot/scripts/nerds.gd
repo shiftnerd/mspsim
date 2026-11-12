@@ -43,7 +43,7 @@ const POSTERS := {
 	"bytes_n_bagels": "MEMBER",
 	"dbl_click_dave": "MEMBER",
 	"packet_pam": "REGULAR",
-	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
+	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR", "PatchPanel_Gus": "REGULAR",
 	"ShadowPoint_Brad": "VENDOR",
 	"WebWoot_Dee": "VENDOR",
 	"SoftSwipe_Rex": "VENDOR",
@@ -341,6 +341,7 @@ const DEFAULT_THREADS := [
 				"text":
 				"Seconded. Twenty seven of our forty printers were running one cheap driver. Replaced it and no more morning deaths."
 			},
+			{"by": "PaperJam_Pat", "text": "Check the toner before the driver. A printer that reports low toner in the middle of a job is asking for attention. New cartridge, new pickup roller, then blame the spooler."},
 		],
 		"answer":
 		"Clear the spool folder, stop and start the service, then remove the old 32 bit driver. Mine was a copier from 2009.",
@@ -494,6 +495,7 @@ const DEFAULT_THREADS := [
 				"text":
 				"Check the switch supports it on the same port. Some cheap ones only do one tagged VLAN per access port."
 			},
+			{"by": "PatchPanel_Gus", "text": "Label the switch port and the wall plate with the same number. Phones on orange cable, desks on blue. In two years you will thank me, or somebody will."},
 		],
 		"answer":
 		"Make each port a trunk with data untagged and voice tagged, so the phone tags itself and passes the PC through.",
@@ -1105,6 +1107,7 @@ const DEFAULT_THREADS := [
 				"by": "GrizzleAdmin",
 				"text": "It is a computer in somebody else's building. Treat it like one."
 			},
+			{"by": "SpinUp_Vic", "text": "Do not buy hardware for it. Spin up a VM on the host you already have, snapshot before every upgrade, and keep the backups off the host."},
 		],
 		"answer":
 		"Fine, as long as only the agent port is open to the internet, admin goes through a VPN, and the backups are tested.",

@@ -95,6 +95,19 @@ func _init() -> void:
 		_check(bool(report.report.fired) and bool(report.report.final), "%s normal: rep 0 still fires" % mode)
 		report.is_open = false
 
+	# ---- sales: two missed quarters do not end the job on easy (the audit found "CLEAN OUT YOUR DESK" was still the only ending)
+	for tier in ["easy", "normal"]:
+		_fresh("sales", tier)
+		var sc: Node = root.get_node("SalesCampaign")
+		sc.q_result = ["MISS", "MISS"]
+		var ends: Array = []
+		for o in sc.offers():
+			ends.append(str(o.id))
+		if tier == "easy":
+			_check(not sc.pip_failed() and not ends.has("let_go") and ends.has("stay"), "sales easy: two misses are not the end (%s)" % str(ends))
+		else:
+			_check(sc.pip_failed() and ends.has("let_go"), "sales normal: two misses still end the job (%s)" % str(ends))
+
 	# ---- the bailout: once, flagged against the valuation (owner and sales)
 	for mode in ["owner", "sales"]:
 		_fresh(mode, "easy")
@@ -305,12 +318,12 @@ func _init() -> void:
 	# the pause menu row
 	var pause := root.get_node("PauseMenu")
 	_fresh("tech", "easy")
-	_check(pause._labels().size() == 6 and str(pause._labels()[3]).begins_with("DAY LENGTH"), "the pause menu has a DAY LENGTH row in a campaign")
-	pause._sel = 3
+	_check(pause._labels().size() == 8 and str(pause._labels()[5]).begins_with("DAY LENGTH"), "the pause menu has a DAY LENGTH row in a campaign")
+	pause._sel = 5
 	pause._activate()
 	_check(is_equal_approx(d.day_scale_next, 1.5), "ENTER on the row cycles the length")
 	c.quit_to_title()
-	_check(pause._labels().size() == 4, "no DAY LENGTH row outside a campaign")
+	_check(pause._labels().size() == 6, "no DAY LENGTH row outside a campaign")
 
 	# ---- ticket pace and SLA clocks scale with the day: the same tickets per game hour
 	_fresh("tech", "normal")

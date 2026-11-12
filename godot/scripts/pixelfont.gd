@@ -2,6 +2,28 @@ extends RefCounted
 # gdlint:disable=max-line-length,class-definitions-order
 # A 3x5 pixel font for the in-game computer and phone screens (upper case only, like the logo tagline).
 # PixelFont.draw(canvas_item, text, position, color, scale) / PixelFont.width(text, scale)
+#
+# TEXT CACHE (perf, handhelds). draw() used to issue one draw_rect per lit glyph pixel (hundreds of canvas commands for a
+# screen of text). Now each distinct (resolved text, scale) is built ONCE into a white RGBA ImageTexture from the same glyph
+# data and drawn with ONE draw_texture(tex, pos, color): the colour is the modulate, so every colour (and the shadow copy,
+# drawn a second time at an offset) shares one texture. The output is pixel-identical (tests/text_cache.gd compares both paths).
+# Interface for callers (small on purpose; a text size setting should only need `scale`):
+#   PixelFont.draw(canvas, text, pos, color, scale)   unchanged; scale is an int >= 1 and part of the cache key
+#   PixelFont.width(text, scale)                      unchanged
+#   PixelFont.cache_on                                false = the old draw_rect path (env PIXELFONT_NOCACHE=1 forces it; headless
+#                                                     runs are off by default, env PIXELFONT_CACHE=1 turns it on there)
+#   PixelFont.texture(text, scale) -> Texture2D       the cached white texture (the same one draw() uses), for the tests
+#   PixelFont.cache_entries() / cache_bytes()         what the cache holds now (bounded: see CACHE_ENTRIES / CACHE_BYTES)
+#   PixelFont.stat_rect / stat_tex / stat_hit / stat_miss   counters for tests/frame_time.gd (draw_rect calls the font issued,
+#                                                     draw_texture calls, cache hits, builds); reset by assigning 0
+# The key is the text AFTER key-token and pad-glyph resolution (keys() and _pad_line() run before the cache), so a device switch
+# needs no invalidation: the pad sprites stay inline (PadGlyphs) and only their plain text pieces come here.
+# The cache is two generations of dictionaries (scale -> {text -> texture}); when the current one is full it becomes the old
+# one and the old one is dropped (a hit in the old one is promoted). A canvas item keeps a reference to the textures of its
+# latest redraw (meta "_pf"), so an item that is not redrawn for a long time never loses its text to an eviction. Text under a
+# canvas transform that is not a plain translation falls back to draw_rect (snapping would differ).
+
+const TextSize := preload("res://scripts/text_size.gd")
 
 const GLYPHS := {
 	"A": ["XXX", "X.X", "XXX", "X.X", "X.X"],
@@ -151,7 +173,133 @@ static func _pad_line(canvas: CanvasItem, text: String, pos: Vector2, color: Col
 	return true
 
 
+const CACHE_ENTRIES := 1500  # per generation (two are alive)
+const CACHE_BYTES := 3000000  # RGBA bytes per generation
+static var cache_on := _default_on()
+static var stat_rect := 0
+static var stat_tex := 0
+static var stat_hit := 0
+static var stat_miss := 0
+static var _cur := {}
+static var _old := {}
+static var _cur_n := 0
+static var _cur_bytes := 0
+static var _old_n := 0
+static var _old_bytes := 0
+static var _rot_frame := -1
+static var _glyph_imgs := {}  # scale -> {char -> Image}
+
+
+static func _default_on() -> bool:
+	if OS.get_environment("PIXELFONT_NOCACHE") != "":
+		return false
+	return OS.get_environment("PIXELFONT_CACHE") != "" or DisplayServer.get_name() != "headless"
+
+
+static func cache_entries() -> int:
+	return _cur_n + _old_n
+
+
+static func cache_bytes() -> int:
+	return _cur_bytes + _old_bytes
+
+
+static func clear_cache() -> void:
+	_cur = {}
+	_old = {}
+	_cur_n = 0
+	_cur_bytes = 0
+	_old_n = 0
+	_old_bytes = 0
+
+
+static func _glyph_image(ch: String, scale: int) -> Image:
+	if not _glyph_imgs.has(scale):
+		_glyph_imgs[scale] = {}
+	var per: Dictionary = _glyph_imgs[scale]
+	if per.has(ch):
+		return per[ch]
+	var img := Image.create_empty(3 * scale, 5 * scale, false, Image.FORMAT_RGBA8)
+	var rows: Array = GLYPHS.get(ch, GLYPHS["?"])
+	for r in 5:
+		var row: String = rows[r]
+		for c in 3:
+			if row[c] == "X":
+				img.fill_rect(Rect2i(c * scale, r * scale, scale, scale), Color.WHITE)
+	per[ch] = img
+	return img
+
+
+static func _build(text: String, scale: int) -> ImageTexture:
+	var img := Image.create_empty(width(text, scale), 5 * scale, false, Image.FORMAT_RGBA8)
+	var x := 0
+	for ch in text.to_upper().replace('"', "'"):
+		img.blit_rect(_glyph_image(ch, scale), Rect2i(0, 0, 3 * scale, 5 * scale), Vector2i(x, 0))
+		x += 4 * scale
+	return ImageTexture.create_from_image(img)
+
+
+static func texture(text: String, scale := 1) -> Texture2D:
+	if text == "" or scale < 1:
+		return null
+	var d = _cur.get(scale)
+	if d != null:
+		var hit = d.get(text)
+		if hit != null:
+			stat_hit += 1
+			return hit
+	var od = _old.get(scale)
+	var tex: ImageTexture = od.get(text) if od != null else null
+	if tex == null:
+		stat_miss += 1
+		tex = _build(text, scale)
+	else:
+		stat_hit += 1
+		od.erase(text)
+		_old_n -= 1
+		_old_bytes -= tex.get_width() * tex.get_height() * 4
+	var bytes := tex.get_width() * tex.get_height() * 4
+	var frame := Engine.get_process_frames()
+	if (_cur_n >= CACHE_ENTRIES or _cur_bytes >= CACHE_BYTES) and frame != _rot_frame:
+		_old = _cur
+		_old_n = _cur_n
+		_old_bytes = _cur_bytes
+		_cur = {}
+		_cur_n = 0
+		_cur_bytes = 0
+		_rot_frame = frame
+	if not _cur.has(scale):
+		_cur[scale] = {}
+	_cur[scale][text] = tex
+	_cur_n += 1
+	_cur_bytes += bytes
+	return tex
+
+
+# true when the text was drawn as one texture. The per-canvas record is [frame, plain translation?, textures kept alive].
+static func _draw_cached(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale: int) -> bool:
+	var frame := Engine.get_process_frames()
+	var rec = canvas.get_meta("_pf") if canvas.has_meta("_pf") else null
+	if rec == null or rec[0] != frame:
+		var t := canvas.get_global_transform_with_canvas()
+		rec = [frame, t.x == Vector2.RIGHT and t.y == Vector2.DOWN, [], t.origin]
+		canvas.set_meta("_pf", rec)
+	if not rec[1]:
+		return false
+	var tex := texture(text, scale)
+	if tex == null:
+		return false
+	rec[2].append(tex)
+	# the old path's rects were snapped to the screen pixel one corner at a time (round half down, after the canvas offset);
+	# the same snap on the texture's corner keeps a fractional position (a centred text, a camera) on the same pixels
+	var o: Vector2 = rec[3]
+	canvas.draw_texture(tex, (pos + o - Vector2(0.5, 0.5)).ceil() - o, color)
+	stat_tex += 1
+	return true
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+	color = TextSize.color(color)  # R42 item 4: HIGH CONTRAST pushes light text to white and dark text to ink (a no-op otherwise)
 	text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
 	if _pad_line(canvas, text, pos, color, scale):
 		return
@@ -168,6 +316,8 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
 			"rect": tf * Rect2(pos + Vector2(lead, 0), sz),
 			"vp": canvas.get_viewport().get_visible_rect(),
 		})
+	if cache_on and text != "" and scale >= 1 and _draw_cached(canvas, text, pos, color, scale):
+		return
 	var x := pos.x
 	for ch in text.to_upper().replace('"', "'"):
 		var rows: Array = GLYPHS.get(ch, GLYPHS["?"])
@@ -176,4 +326,5 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
 			for c in 3:
 				if row[c] == "X":
 					canvas.draw_rect(Rect2(x + c * scale, pos.y + r * scale, scale, scale), color)
+					stat_rect += 1
 		x += 4.0 * scale

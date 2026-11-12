@@ -109,12 +109,12 @@ func _on_format() -> void:
 
 
 func _size() -> Vector2:
-	return Vector2(Game.FORMATS[Game.format].size)
+	return Game.logical_size()
 
 
 func _layout() -> void:
 	var size := _size()
-	var wide := size.x > 340.0 and size.y <= 130.0
+	var wide := size.x > 300.0 and size.y <= 130.0  # R42: the LARGE wide picture (320 x 112) takes the short layout too
 	var narrow := size.x < 250.0
 	var cam_y := 64.0 if size.y <= 130.0 else (50.0 if size.y <= 200.0 else 60.0)
 	var cam_x := 184.0
@@ -735,7 +735,7 @@ func _start(id: String, summary := "") -> void:
 		Micro.clear()
 	Toolbox.after_start()
 	if summary != "":
-		var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
+		var wide_enough: bool = Game.info(Game.format).size.x >= 300
 		Hints.toast(summary + ("  COZY" if Difficulty.cozy_on() else "") + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 

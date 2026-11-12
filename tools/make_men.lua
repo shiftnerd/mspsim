@@ -68,6 +68,17 @@ local CHARS = {
     shirt = {"#E4DEC4", "#BDB594"}, pants = {"#2E3A58", "#222C44", "#18203A"}, shoes = {"#3A3A44", "#2A2A33"},
     belt = "#2A2A33", stubble = false, lips = "#8A4A2E", glasses = true, patch = true,
   },
+  expo_vic = {   -- SpinUp_Vic (LabRat Nerds forum, "just spin up a VM"): a young evangelist, bleached spiky hair, no glasses, a violet long-sleeve shirt with a logo badge, light jeans, orange sneakers
+    donor = "office_dan",
+    skin = {"#D9A27A", "#B87E58", "#96603E"}, hair = {"#E6D48A", "#F4EAB8", "#B49A4A"},
+    shirt = {"#7A4FC8", "#5A36A0"}, pants = {"#6E8FC0", "#5574A4", "#3E5A88"}, shoes = {"#E8742A", "#B8541A"},
+    lips = "#8A4A2E", buttons = "#E2D8F6", patch = true, tufts = true,
+  },
+  expo_gus = {   -- PatchPanel_Gus (LabRat Nerds forum, cables, labels, fourteen badges on a lanyard): short rust-red hair, an olive polo, black trousers, a lanyard hung with badges
+    skin = {"#F0C4A0", "#D49E7A", "#B27C5A"}, hair = {"#B8581E", "#D8782E", "#8A3E12"},
+    shirt = {"#6A7A3A", "#4E5C28"}, pants = {"#2A2A33", "#20202A", "#17171E"}, shoes = {"#3A3A44", "#2A2A33"},
+    belt = "#17171E", stubble = false, lips = "#8A4A2E", badges = true,
+  },
   office_adam = {   -- the senior tech and mentor: a shaved head, glasses, a light-blue polo, khakis
     skin = {"#F3B488", "#D88A62", "#B8663F"}, hair = {"#F3B488", "#F3B488", "#6B4B34"},
     shirt = {"#7FA6D8", "#5E86BC"}, pants = {"#B9A67E", "#948360", "#6E6046"}, shoes = {"#6A5240", "#4F3E30"},
@@ -236,6 +247,25 @@ local function build(name, c)
   if c.patch then
     for y = 29, 31 do for x = 24, 27 do put(col, x, y, hex("#F2F2EA")) end end
     put(col, 24, 30, hex("#3E9E4E")); put(col, 25, 30, hex("#3E9E4E")); put(col, 26, 30, hex("#2E6EB8")); put(col, 27, 30, hex("#2E6EB8"))
+  end
+
+  -- too many badges: a grey-blue lanyard from the neck to the chest and a cascade of overlapping badges in different colours
+  if c.badges then
+    local strap, strap2 = hex("#5A7AA8"), hex("#3E5A88")
+    local pts = {{17, 24, 1}, {18, 25, 1}, {18, 26, 1}, {19, 27, 1}, {19, 28, 1}, {20, 29, 1}, {20, 30, 1},
+                 {25, 24, 2}, {24, 25, 2}, {24, 26, 2}, {23, 27, 2}, {23, 28, 2}, {22, 29, 2}, {22, 30, 2}}
+    for _, p in ipairs(pts) do put(col, p[1], p[2], p[3] == 1 and strap or strap2) end
+    put(col, 21, 30, strap); put(col, 21, 29, strap)
+    local function badge(x, y, w, h, fill, stripe)
+      for yy = y, y + h - 1 do for xx = x, x + w - 1 do
+        local edge = yy == y or yy == y + h - 1 or xx == x or xx == x + w - 1
+        put(col, xx, yy, edge and hex(OUT) or (yy == y + 1 and hex(stripe) or hex(fill)))
+      end end
+    end
+    badge(16, 31, 5, 4, "#F6F6EE", "#D8483E")   -- white, red stripe (the badges share their edges)
+    badge(20, 31, 5, 4, "#F2D858", "#2E6EB8")   -- yellow, blue stripe
+    badge(18, 34, 5, 4, "#8ED08E", "#2E8A4E")   -- green
+    badge(22, 34, 5, 4, "#E88A3E", "#B8541A")   -- orange
   end
 
   -- goatee on its own Beard layer (the technique of casual_garrison): a moustache over the mouth and a chin patch

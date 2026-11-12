@@ -11,6 +11,8 @@ The rules stay: data tables (patchable, in `strings.txt` style) not code, number
 
 ## New campaign paths (built)
 **Canon (user): Alan and Garrison are the two owners of Pixel IT Partners.** Alan is the technical owner, Garrison the sales-and-culture owner (Office 1 and Office 2 are theirs). Morgan Reyes is the manager, Marge the bookkeeper, Vic the account manager.
+**Names (canon change, Nov 2026): Vic became John (account manager) and Marge became Christy (controller).** Older lines below that still say Vic or Marge mean John and Christy; the game uses the new names everywhere.
+
 Built from it: the owner campaign played as Alan or Garrison (the other is the co-owner NPC), the service manager campaign played as Dan, the sales campaign played as Vic, the owners as a last resort in the tech campaign, and point-buy stats at character select. Design write-up: `docs/campaign-paths.md`; what exists: `CLAUDE.md`.
 
 ## Tech campaign

@@ -403,7 +403,7 @@ func _walk(formats: Array) -> void:
 		await super(formats)
 	for f in formats:
 		fmt = f
-		root.get_node("Game").set_format(f)
+		_set_fmt(f)
 		await _extra_phase()
 
 

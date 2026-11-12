@@ -1,7 +1,7 @@
 extends RefCounted
 # gdlint:disable=max-line-length,class-variable-name,class-definitions-order
 # X11: the second cast in the owner campaign. Jen (the front desk: phones, intake, the wall between clients and your cell phone) and
-# Michael (the senior tech who takes tickets off people) each bring three decision cards. Data only, in the shape of Owner.CARDS:
+# Michael (the senior tech who takes tickets off people) each bring three decision cards (C7b: Christy and Morgan bring two each). Data only, in the shape of Owner.CARDS:
 # Owner._ready() merges CARDS into Owner.CARDS by reference and Owner.events_on() merges DAYS into Owner.DAYS (the same way as
 # RivalCards). Patchable from story/strings.txt as OwnerCast.CARDS. The effects are ordinary fx keys: mood, speed (the crew's capacity),
 # weekly and payroll (cash every week), burnout, trust (the other owner's opinion) and owner hours.
@@ -154,6 +154,102 @@ const DEFAULT_CARDS := {
 			},
 		],
 	},
+	"christy_net45":
+	{
+		"speaker": "Christy (Controller)",
+		"text":
+		"Three clients pay on day forty-five. My reminders go out on day thirty-one and they are polite. Nobody reads polite. I have two ideas. One is a discount, which I dislike on principle.",
+		"options":
+		[
+			{
+				"label": "TWO PERCENT OFF FOR PAYING IN TEN DAYS ($40/WK)",
+				"fx": {"weekly": 40, "cash": 600, "trust": {"Alan": 1, "Garrison": 0}},
+				"text": "Two of the three pay in ten days. The discount costs forty a week and the cash lands five weeks sooner. Christy smiles at a discount for the first time."
+			},
+			{
+				"label": "LET HER PHONE THEM, LEDGER OPEN",
+				"fx": {"cash": 400, "mood_all": -2, "trust": {"Alan": 1, "Garrison": -1}},
+				"text": "She calls with the ledger open and a very even voice. They pay. Two of them stop answering Dan's friendly emails for a week."
+			},
+			{
+				"label": "KEEP THE POLITE REMINDERS ($300 LATE)",
+				"need": 300, "fx": {"cash": -300, "mood_all": 1},
+				"text": "The cheques arrive when they arrive. Christy keeps a chart of how late. The chart is very detailed."
+			},
+		],
+	},
+	"christy_card":
+	{
+		"speaker": "Christy (Controller)",
+		"text":
+		"The company card shows lunch, a phone case and one item marked MISC. Not a crime. A trend. Do you want a policy, or a conversation?",
+		"options":
+		[
+			{
+				"label": "ONE PAGE POLICY, $100 LIMIT",
+				"fx": {"weekly": -30, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 0}},
+				"text": "A page, a limit, and a line for MISC that says explain. Spending drops. Dan asks if toner counts as lunch."
+			},
+			{
+				"label": "A WORD AT THE HUDDLE (1 HOUR OF MINE)",
+				"fx": {"owner_hours": 1, "weekly": -15, "social_all": 1, "trust": {"Alan": 0, "Garrison": 1}},
+				"text": "You say it kindly. Christy says it more kindly. Two people look at their shoes. It mostly works."
+			},
+			{
+				"label": "LEAVE IT, THE TRUST IS THE POINT ($200)",
+				"need": 200, "fx": {"cash": -200, "mood_all": 1, "trust": {"Alan": -1, "Garrison": 1}},
+				"text": "The next statement is two hundred higher. The phone case, Christy admits, is a nice phone case."
+			},
+		],
+	},
+	"morgan_overtime":
+	{
+		"speaker": "Morgan (Manager)",
+		"text":
+		"The crew is doing evenings again. Nobody complains, which is how I know it is a problem. I can put a hard stop at six, or I can keep not noticing the emails stamped seven o'clock.",
+		"options":
+		[
+			{
+				"label": "HARD STOP AT SIX, MORGAN ENFORCES IT",
+				"fx": {"speed": -0.03, "burnout": -5, "mood_all": 1, "trust": {"Alan": 1, "Garrison": 0}},
+				"text": "Six o'clock is a wall. The queue is a little longer on Mondays. Maya takes a pottery class and tells everybody."
+			},
+			{
+				"label": "TIME BACK FOR EVENINGS (+$90/WK)",
+				"fx": {"payroll": 90, "burnout": -3, "mood_all": 2, "trust": {"Alan": 0, "Garrison": 1}},
+				"text": "An hour off for every hour past six. Morgan keeps the tally in a spiral notebook with a rubber band."
+			},
+			{
+				"label": "LET IT RIDE THIS MONTH",
+				"fx": {"speed": 0.04, "burnout": 5, "trust": {"Alan": -1, "Garrison": 1}},
+				"text": "The queue moves. Morgan stops sending the evening emails, which is worse."
+			},
+		],
+	},
+	"morgan_reviews":
+	{
+		"speaker": "Morgan (Manager)",
+		"text":
+		"Reviews are due. I can write all three in an afternoon, or I can sit with each of them for twenty minutes first, and they will tell their friends. The afternoon is cheaper.",
+		"options":
+		[
+			{
+				"label": "TWENTY MINUTES EACH, IN PERSON (2 HOURS)",
+				"fx": {"owner_hours": 2, "mood_all": 2, "social_all": 1, "speed": 0.02, "trust": {"Alan": 1, "Garrison": 1}},
+				"text": "Three chairs, three coffees. Dan asks what a growth plan is. Maya has already written hers."
+			},
+			{
+				"label": "AN AFTERNOON, WRITTEN, WITH RAISES (+$80/WK)",
+				"fx": {"payroll": 80, "mood_all": 1, "trust": {"Alan": 0, "Garrison": 1}},
+				"text": "A page each and a number on it. Morgan reads them out loud once and files them in the drawer."
+			},
+			{
+				"label": "SKIP IT THIS QUARTER",
+				"fx": {"mood_all": -2, "social_all": -1, "trust": {"Alan": 1, "Garrison": -1}},
+				"text": "Nobody says anything. Morgan writes DEFERRED on a sticky note. It stays on her monitor."
+			},
+		],
+	},
 }
 static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
 
@@ -165,6 +261,10 @@ const DEFAULT_DAYS := {
 	12: [{"at": 14.8, "card": "michael_teach"}],
 	14: [{"at": 13.5, "card": "jen_wall"}],
 	17: [{"at": 13.0, "card": "michael_offer"}],
+	10: [{"at": 15.2, "card": "christy_net45"}],
+	11: [{"at": 12.4, "card": "christy_card"}],
+	13: [{"at": 10.8, "card": "morgan_overtime"}],
+	16: [{"at": 12.6, "card": "morgan_reviews"}],
 }
 static var DAYS: Dictionary = DEFAULT_DAYS.duplicate(true)
 

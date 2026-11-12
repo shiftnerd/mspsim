@@ -4891,8 +4891,11 @@ func _paint_lines() -> Array:
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
 	var rules: RefCounted = g.rules
-	_t("YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()], b.position.x, b.position.y)
-	_t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
+	var head := "YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()]
+	if float(PixelFont.width(head)) > b.size.x:  # R42 LARGE: a narrow panel
+		head = "YOU %d  THEM %d  %s %d" % [rules.score[0], rules.score[1], "OT" if rules.overtime else "TIME", rules.time_left()]
+	_t(head, b.position.x, b.position.y)
+	_tl(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, b.size.x, INK)
 
 
 # the strip at the bottom of the room: the score, the clock, whether you hold the flag or are out
@@ -5486,7 +5489,7 @@ func _paint_darts(b: Rect2) -> void:
 	for i in dg.players.size():
 		var who: String = dg.players[i]
 		_t("%s %d" % [who.to_upper(), int(dg.totals[who])], b.position.x, y + 9.0 + 8.0 * float(i), BLUE if who == str(dg.thrower()) else INK)
-	_t(str(dg.msg), b.position.x, b.end.y - 8.0, RED if dg.phase == "pull" else INK)
+	_tb(str(dg.msg), b.position.x, b.end.y - 8.0, b.size.x, RED if dg.phase == "pull" else INK)
 	_draw_dart_zoom(Vector2(b.end.x - 32.0, b.position.y + 34.0), 30.0, dg)
 
 
@@ -5749,7 +5752,7 @@ func _paint_grill(b: Rect2) -> void:
 		var t: Dictionary = rows[i]
 		_t("%s: %s" % [str(t.who).to_upper(), ", ".join(gg.lines(t))], b.position.x, y + 43.0 + 8.0 * float(i), AMBER)
 	if float(gg.msg_t) > 0.0:
-		_t(str(gg.msg), b.position.x, b.end.y - 8.0, RED)
+		_tb(str(gg.msg), b.position.x, b.end.y - 8.0, b.size.x, RED)
 
 
 # ---- the warehouse extras for both games: the camera sits so the floor is above the HUD, boards and grill are the way in
@@ -5760,7 +5763,7 @@ func _room_extras(_delta: float) -> void:
 	var cam := get_viewport().get_camera_2d()
 	if cam == null:
 		return
-	var f: Dictionary = Game.FORMATS[Game.format]
+	var f: Dictionary = Game.info(Game.format)
 	var view := get_viewport().get_visible_rect().size / float(f.zoom)
 	var centre: float = float(f.cam_y) if f.follow else 64.0
 	var lift := CORN_LIFT if game == "cornhole" else (DARTS_LIFT if game == "darts" else GRILL_LIFT)
@@ -5801,6 +5804,21 @@ func _offer_here(id: String) -> void:
 
 func _t(s: String, x: float, y: float, color := INK) -> void:
 	PixelFont.draw(_canvas, s, Vector2(x, y), color, 1)
+
+
+# R42 LARGE: a line of a narrow panel wrapped to `w` px, drawn downward from y; returns the y after the last line
+func _tl(s: String, x: float, y: float, w: float, color := INK) -> float:
+	for part in _wrap(s, maxi(4, int(w / 4.0))):
+		_t(str(part), x, y, color)
+		y += 7.0
+	return y
+
+
+# the same, drawn upward so its last line sits at y (the message line at the bottom of a panel)
+func _tb(s: String, x: float, y: float, w: float, color := INK) -> void:
+	var parts := _wrap(s, maxi(4, int(w / 4.0)))
+	for i in parts.size():
+		_t(str(parts[i]), x, y - 7.0 * float(parts.size() - 1 - i), color)
 
 
 func _tc(s: String, cx: float, y: float, color := INK) -> void:
@@ -6010,7 +6028,7 @@ func _paint_result(b: Rect2) -> void:
 				else:
 					detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
 	if detail != "":
-		_t(detail, b.position.x, y + 3.0, BLUE)
+		_tl(detail, b.position.x, y + 3.0, b.size.x, BLUE)
 
 
 func _paint_bowling(b: Rect2) -> void:
@@ -6111,15 +6129,10 @@ func _paint_escape(b: Rect2) -> void:
 	var x := b.position.x
 	var y := b.position.y
 	var n: int = g.code.size()
-	_t(
-		(
-			"TIME %d   HINTS LEFT %d   TRIES %d OF 8"
-			% [int(float(g.time)), int(g.hints), g.guesses.size()]
-		),
-		x,
-		y,
-		RED if float(g.time) < 20.0 else INK
-	)
+	var escape_head := "TIME %d   HINTS LEFT %d   TRIES %d OF 8" % [int(float(g.time)), int(g.hints), g.guesses.size()]
+	if float(PixelFont.width(escape_head)) > b.size.x:  # R42 LARGE: a narrow panel
+		escape_head = "TIME %d  HINTS %d  TRIES %d/8" % [int(float(g.time)), int(g.hints), g.guesses.size()]
+	_t(escape_head, x, y, RED if float(g.time) < 20.0 else INK)
 	var row := 0
 	for entry in g.guesses:
 		if row >= 8:
@@ -6159,21 +6172,26 @@ func _paint_escape(b: Rect2) -> void:
 func _paint_dinner(b: Rect2) -> void:
 	var x := b.position.x
 	var y := b.position.y
-	_t(str(DINNER_TEXT.order_head) if dinner_ordering() else "ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)], x, y)
+	var head := str(DINNER_TEXT.order_head) if dinner_ordering() else "ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)]
+	if float(PixelFont.width(head)) > b.size.x and head.find(": ") > 0:
+		head = head.substr(head.find(": ") + 2)  # R42 LARGE: "WHAT DO YOU ORDER?" on a narrow panel
+	_t(head, x, y)
 	var said := _wrap(str(g.get("line", "")), 21)  # the plate, the guest, a table event: what just happened
 	for i in mini(said.size(), 5):
 		_t(str(said[i]), x, y + 50.0 + 7.0 * float(i), BLUE)
+	var stacked := b.size.x < 170.0  # R42 LARGE: no room for the table beside the answers: it goes under them
+	var table_top := y + 9.0 if not stacked else y + 54.0 + 7.0 * float(mini(said.size(), 5))
 	for i in 4:
 		var on: bool = int(g.sel) == i and g.react.is_empty()
 		if on:
 			_canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
 		_t(str(dinner_rows()[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
 		_dinner_mark(i, Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 2.0, 8.0))
-	var rx := x + 92.0
+	var rx := x if stacked else x + 92.0
 	var table := diners()
 	for i in table.size():
 		var who: String = table[i]
-		var ry := y + 9.0 + 14.0 * float(i)
+		var ry := table_top + 14.0 * float(i)
 		_t(who.to_upper(), rx, ry, BLUE)
 		var md: String = str(g.get("moods", {}).get(who, "easygoing"))
 		var shift := int(DINNER_MOODS[md].shift)
@@ -6196,4 +6214,4 @@ func _paint_dinner(b: Rect2) -> void:
 			note += "LIKES " + ", ".join(_with_marks(entry, entry.likes))
 		if not entry.hates.is_empty():
 			note += ("  " if note != "" else "") + "NOT " + ", ".join(_with_marks(entry, entry.hates))
-		_t(note.substr(0, int((b.size.x - 92.0) / 4.0)), rx, ry + 7.0, Color("46506a"))
+		_t(note.substr(0, int((b.size.x - (0.0 if stacked else 92.0)) / 4.0)), rx, ry + 7.0, Color("46506a"))

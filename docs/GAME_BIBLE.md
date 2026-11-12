@@ -3,6 +3,8 @@
 *A readable overview of the game for anyone who wants to review the story and design. No code needed. Line-by-line text is in
 `godot/story/STORY.md` (generated, read-only) and can be changed in `godot/story/strings.txt` (plain text). See `godot/story/README.md`.*
 
+> **Current source of truth: [`docs/design/game-design-document.md`](design/game-design-document.md) (GDD v1.0, 2026-11-12).** This bible is kept as the flavour companion (voice, cast, the 20-day story). Where it disagrees with the GDD, the GDD wins. Stale parts, for the agent that fixes them: section 3 (the cast table omits Jen, Michael, Christy in tech, Adam, Quinn, Sam, Terry and others); section 5 (outings are named on days 5 and 15 only, the code has days 5, 10, 15 plus lunch breaks on days 3, 7, 12, 17); section 11 ("not built yet" lists items that are built: the Rodent Nation sessions and the owner trip in the venue); no section covers Year 2, Year 3 or their 16 endings; section 4 step 5 and section 7 do not give win and failure rules (see GDD section 3). The Christy line in the cast table is also off (the code seats her in the tech campaign).
+
 *Looking for how to play, not the story? The spoiler-free [instruction manual](manual/README.md) covers the controls, menus and places.*
 
 ---
@@ -25,7 +27,7 @@ The jokes come from real MSP life; the stakes come from real MSP life too (a bac
 - **Service manager campaign** (you are Dan): run the service desk crew, the Dispatch board, runbooks and the owners' pressure.
 - **Sales campaign** (you are John): leads, quotes, deals, handovers and keeping clients. Every lead has an incumbent (nobody, ByteBrothers, Big Cheese, Plumb Line or an in-house nephew) that a discovery call or a visit reveals; ASSESS spends an hour to list what the incumbent left out (each item becomes a promise); the quote builder shows the RIVAL PRICE and a PRESENTED AS choice (itemized, flat, or three tiers with a one page value page). Shortcuts (a laundered lead, badmouthing a rival, telling a client it looks fine) win deals that churn faster and show up in the week 20 verdict as LIES, and the SALES DIRECTOR job needs a clean conscience. Rival beats run in weeks 2, 3, 5, 7, 9, 11, 13, 15 and 17 (`scripts/sales_rival.gd`, `docs/dev/rival-habits-api.md`).
 - **Free Play / Film Mode**: the office as a sandbox with no scoring, for filming scenes, wandering around and playing dress-up.
-- **Career and Year 2**: medals and records follow you across runs; finish a campaign and a harder second year opens up.
+- **Career, Year 2 and Year 3**: medals and records follow you across runs; finish any of the four campaigns and a harder second year opens up, finish that and a third (the last) does. Each year has its own story beats and its own endings (section 5, "After the first year").
 
 **Why it should be fun:** the work is a real puzzle with real consequences, the people are specific and funny, and the world is full of things
 to poke (a coffee machine, a rack of network cables you can unplug, a foam dart gun).
@@ -63,7 +65,7 @@ After work you can go bowling, sing karaoke, solve an escape room, eat at the re
 | **Dan** | Network tech | Quiet, labels everything, plays Floppy Bat | Networking; notices when a desk has no link |
 | **John Marlowe** | Account manager | Over-promising salesman with a tie | Brings in clients, relays complaints |
 | **Morgan Reyes** | Your manager (reports to the two owners) | Fair, tired, a little dry | Runs the weekly all-hands, reviews you |
-| **Christy** | Controller (owner mode) | Practical | Reads you the numbers |
+| **Christy** | Controller (owner mode; she sits in the main office in the tech campaign too) | Practical | Reads you the numbers |
 | **Maya** | Tier 1 tech (tech campaign, owner crew and Free Play) | Friendly, ponytail, always has a granola bar | Customer skills; warns you when a ticket is about to breach; the first woman on the team |
 
 **The clients** (eleven, each with a contact and a personality; eight can be signed at once): Acme Dental Group (Dr. Patel), Brightside Realty, Gnarly Gnomes Landscaping,
@@ -107,25 +109,48 @@ business from your client. Medical and vet offices are staffed mostly by women; 
 | 2 | Morgan: verify the backups every morning | Plant the backup habit |
 | 3 | PowerShell Academy opens; the easy "Adobe Reader will not print" ticket | First real fix |
 | 4 | **Windows XP is going away.** Replace Dr. Patel's PC and migrate his stuff (survey, back up, migrate, verify). Lose the X-ray software and he is furious. | A scored, careful job |
-| 5 | A client's backup quietly breaks. On-call rota announced. First team outing. | Plant the ransomware |
+| 5 | A client's backup quietly breaks. On-call rota announced. First team outing (a random game from the nine, see section 8). | Plant the ransomware |
 | 6 | Growth plan with Morgan (pick a skill and a helper). First weekly all-hands. | Progression |
 | 7 | **Remote access break-in** at Brightside: RDP open to the internet. Close the door properly (VPN, auto-blocking firewall) or suffer. | Period-correct security |
 | 8 | **Wire request from the boss** at the law firm (a spoofed partner email asks for $38,000: read the headers, find the hidden forwarding rule, contain it, have the firm call the bank, leave a call-back rule and two-factor login). Stretch ticket with your helper. | 2013-14 CEO fraud, growth |
 | 9 | **CryptoLocker** hits the law firm. With a good backup you are a hero; with none you shop for options (shadow copies, paying, praying). | The payoff of day 5 |
-| 10 | **A client's network rack falls off the wall.** Photograph first, remount, recable, verify. | A hands-on crisis |
+| 10 | **A client's network rack falls off the wall.** Photograph first, remount, recable, verify. Second team outing. | A hands-on crisis |
 | 11 | Dr. Patel writes about how the install went; all-hands. **Morgan runs two blameless post-incident reviews** (the wire fraud, the fallen rack): root cause, then up to two action items. Optional; skipping costs 2 with Morgan. | Consequences, learning |
 | 12 | **Server migration** at Brightside (check the backups first or the cutover is a disaster). Afternoon: the ransomware review. | A planning job |
 | 13 | **24x7 email outage** at the brewery: a long night with a vendor call that runs past midnight | Overtime and endurance |
 | 14 | **The client who said no:** Lucy refuses stronger logins. Also, the law firm writes about the ransomware. | Persuasion and consequences |
-| 15 | Pager mail; second outing; the email night review | Hours |
+| 15 | Pager mail; third outing; the email night review | Hours |
 | 16 | **Network install** at the law firm (survey, cable, certify, VLANs, Wi-Fi, document it); all-hands | Craft |
-| 17 | Growth protected time. Brightside's bookkeeper gets a landlord email with "new bank details": with the wire check from the review she calls back and is grateful, without it she asks you (and may pay a scammer). | The review pays off or does not |
+| 17 | **Rodent Nation 2014:** if your numbers qualify, the conference trip (section 8); the day also has a lunch break. Growth protected time. Brightside's bookkeeper gets a landlord email with "new bank details": with the wire check from the review she calls back and is grateful, without it she asks you (and may pay a scammer). | The review pays off or does not |
 | 18 | Review warning; stretch ticket | Rising pressure |
 | 19 | **The only person who knows:** the firewall fix needs Alan, who is out sick. | Documentation and bus factor |
 | 20 | Morgan names your roughest job. **Yearly review**: your reputation, your coworkers' quotes, your best client. | The ending |
 
-**The yearly review offers three futures:** become the **team lead** (more pay, a pager, three people who come to you with everything), take an
-**in-house IT job** at your best client (calm hours, no nights), or **stay an MSP tech** (same desk, more skill, the tickets keep coming).
+**Around the table above:** team outings fall on days 5, 10 and 15 (`Outings.TECH_DAYS`), and there is a lunch break on days 3, 7, 12 and 17 (`Outings.LUNCH_TECH`).
+The weekly all-hands are on days 6, 11 and 16.
+
+**The yearly review offers three futures:** become the **team lead** (needs reputation 55 if you finished the growth plan, 60 if not, and a team that likes you:
+more pay, a pager, three people who come to you with everything), take an **in-house IT job** at your best client (reputation 45; calm hours, no nights), or
+**stay an MSP tech** (same desk, more skill, the tickets keep coming; under reputation 45 it reads "on notice").
+Reputation 0 at any time in a Normal or Hard run is "REPUTATION GONE. YOU ARE FIRED."; Easy never fires you.
+
+### After the first year: Year 2 and Year 3
+
+Every campaign (tech, owner, service, sales) can be played a second and a third time at the same desk, after you have finished it once. The carry-over (skills, standard, habits,
+medals) comes with you and the world gets a notch harder. Year 3 opens after you finish a Year 2 run of that mode; there is no Year 4 (`Yeartwo.YEAR` 2, `LAST_YEAR` 3).
+
+- **Year 2** (a "New Game Plus"; the calendar moves on a year, NOV 2014 to OCT 2015, and Year 3 stays on that calendar, so the game never leaves the era it is written in; Year 1 reads NOV 2013 to OCT 2014): SLA clocks run 15 percent tighter, more printer and security tickets (and more of them P1), three newer clients are on the books
+  from day one (ten client slots), one tier more mutators, and the year's big jobs move by a day or two. Beat cards: tech has two (Tony Marsh of Iron Mule offers you a job, and Morgan
+  asks you to run the desk for a week), owner two (a merger offer on week 10 and a licensing offer on week 15), service one (a recruiter asks for names) and sales two (ByteBrothers poaches you,
+  Garrison puts Wes under you). Only tech and owner have their own Year 2 endings (tech: DEPARTMENT HEAD, LET IRON MULE BUY OUT YOUR CONTRACT; owner: MERGE WITH TRI-COUNTY TECH GROUP, LICENSE THE PIXEL IT NAME).
+- **Year 3** (the closing arc, SLA clocks 24 percent tighter than Year 1): three beat cards per campaign and three endings per campaign.
+  Tech: Quinn, the new hire, sits next to you (day 3), Quinn reboots a PC without asking (day 11), Dan moves to projects (day 18) ending in TAKE DAN'S CHAIR, STAY TECHNICAL: SENIOR ENGINEER or LEAVE ON GOOD TERMS.
+  Owner: Ross Calder of Summit Managed Holdings wants to see the books (week 6), the staff would like to be asked first (12), Morgan asks for the day-to-day (17): SELL TO SUMMIT, SELL TO THE STAFF, KEEP IT, MORGAN RUNS IT.
+  Service: train a deputy (day 4), Terry Vance calls about you (10), Alan and Garrison offer operations or a stake (16): RUN OPERATIONS, BECOME A PARTNER, TAKE THE JOB ACROSS TOWN.
+  Sales: Wes loses two quotes (week 5), split the territory (11), Garrison is done carrying a bag (16): TAKE GARRISON'S CHAIR, LET WES TAKE THE CHAIR, TAKE A SHARE OF THE SALES SIDE.
+  Year 1 and Year 2 endings stay on offer in Year 3 where their own rules allow.
+
+The endings of the other three campaigns (and every gate) are listed in `docs/campaign-paths.md` and `docs/design/systems-reference.md`.
 
 ---
 
@@ -174,7 +199,7 @@ and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, 
 - **Instant messages** (Lynk): lunch invites, "cover my phones", help requests.
 - **Pull the plug.** Turn the router off and desks lose network, people stop typing and grumble, and Dan walks to the closet. Turn the lights off and someone gets up and turns them back on.
 - **The weekly all-hands** (days 6, 11, 16): attend for a briefing and a question, skip it and Morgan notices.
-- **Team outings** (Fridays): bowling, karaoke, the escape room (find the code in the room), dinner (learn what each coworker likes). They happen in real rooms with the whole cast.
+- **Team outings** (tech days 5, 10, 15; owner weeks 4, 9, 14, 19): nine team games in all: bowling, karaoke, the escape room (find the code in the room), dinner (learn what each coworker likes), a chair race, cornhole, a cookout at the grill, paintball and darts. They happen in real rooms with the whole cast. Counting the two solo party games (the printer and the nerf war) the Free Play toolbox has eleven mini-games (`Toolbox.GAMES`).
 - **Darts** (any time, at the board in the warehouse): E at the board, pick LET'S PLAY, and one or two coworkers join you for three rounds of three darts. An aim reticle drifts over the board; press E to throw at wherever it is. It settles for a moment and then your arm tires, and every dart has a new sweet spot. Bull 50, treble x3, double x2, highest total wins. It costs about a quarter of an hour on the clock in a campaign and gives a little energy (the first two rounds of a day) and, the first time each day, a little goodwill with the people who played. A bullseye earns the BULLSEYE medal.
 - **The warehouse, poked.** The vending machine sells a soda or a bottle of water (now and then it eats your quarter; thump it). The chair rack rolls a chair out for you. The parts cage hides junk and, rarely, something useful. The bench PC reports how far along the image is (press again to restart it, and wait for somebody to notice). The pull chain flickers the high bay light. The radio has three invented stations. The fan spins. E on the old tree toggles its lights, and a bulb pops now and then.
 - **Nerf guns.** A rack of blasters on the cubicle wall. Tap Z for a quick shot, hold Z to lob. Hit a friendly coworker and they fire back. Darts stick in monitors and can be picked up.
@@ -218,5 +243,6 @@ and a rival MSP (ByteBrothers) that poaches clients with gaps (missing backups, 
 
 ## 11. Not built yet (ideas on the list)
 
-Sitting in the Rodent Nation sessions, walking the owner campaign's Rodent Nation trip in the venue, a Friday nerf war event, a vendor-breach storyline for the tech campaign,
-pricing models and a revenue-mix story. See `IDEAS.md` for the long list and `docs/ROADMAP.md` for what is queued.
+Built since this list was first written (so they are no longer ideas): sitting in the Rodent Nation sessions, the owner campaign's Rodent Nation trip in the venue, a Friday nerf war event (the nerf war is a toolbox game), Year 2 and Year 3 for all four campaigns, the service and sales campaigns, the team games (nine) and the character creator.
+Still not built: a vendor-breach night for the tech campaign (the owner side exists), pricing models and a revenue-mix story, and a second-office phase. A human play-through of tech days 6 to 20 has not happened either (the bots have played them).
+See `IDEAS.md` for the long list and `docs/ROADMAP.md` for what is queued.

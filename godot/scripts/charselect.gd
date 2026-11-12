@@ -21,7 +21,9 @@ signal look_changed  # the create step changed the look (the outfit overlay wear
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PLAYER := preload("res://scripts/player.gd")
 const BuildPanel := preload("res://scripts/build_panel.gd")
+const UiStyle := preload("res://scripts/ui_style.gd")
 const GOLD := Color("f5d442")
+const SHORT_H := 150.0  # a screen this short (wide 128, LARGE h 144) takes the compact rows; deck 200 and LARGE deck 160 do not
 const INK := Color("17121f")
 const PANEL := Color(0.05, 0.07, 0.12, 0.85)
 const DIM := Color("9aa8c0")
@@ -1294,7 +1296,7 @@ func _click(at: Vector2) -> void:
 
 # ---- drawing --------------------------------------------------------------------
 func _size() -> Vector2:
-	return Vector2(Game.FORMATS[Game.format].size)
+	return Game.logical_size()
 
 
 func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
@@ -1303,7 +1305,19 @@ func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
 
 # a line of key hints, centred: the words follow a remapped menu key, and a pad shows its buttons (R34)
 func _keys_line(s: String, y: float) -> void:
-	_ctxt(Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"}), y, DIM)
+	var text := Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"})
+	var lines: Array = UiStyle.fit_lines(text, _size().x - 6.0)  # R42 LARGE: a line wider than the screen breaks, upward from y
+	for i in lines.size():
+		_ctxt(str(lines[i]), y - 8.0 * float(lines.size() - 1 - i), DIM)
+
+
+# a side note after a value (READY-MADE, 3 LOCKED): on a screen too narrow for it, only its first word (a count) or nothing
+func _txt_fit(s: String, p: Vector2, c := Color.WHITE) -> void:
+	if p.x + float(PixelFont.width(s)) > _size().x - 2.0:
+		s = s.split(" ")[0] if s.find(" ") > 0 else ""
+		if p.x + float(PixelFont.width(s)) > _size().x - 2.0:
+			return
+	_txt(s, p, c)
 
 
 func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
@@ -1382,7 +1396,7 @@ func _draw() -> void:
 		if create_modal != "":
 			_keys_line("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
 		elif narrow:
-			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+			_keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 28.0 if size.x < 160.0 else size.y - 20.0)
 			_keys_line("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0)
 		else:
 			var keys := "Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TAB HOLD POSE  ENTER GO  ESC BACK"
@@ -1412,7 +1426,7 @@ func _draw() -> void:
 
 # the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
 func _draw_summary(size: Vector2, narrow: bool) -> void:
-	var base := size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0))
+	var base := size.y - (34.0 if narrow else (18.0 if size.y <= SHORT_H else 19.0))
 	var text := summary(false)
 	if float(PixelFont.width(text)) <= size.x - 8.0:
 		_ctxt(text, base, Color.WHITE)
@@ -1540,7 +1554,7 @@ func _place_sprites(size: Vector2, narrow: bool) -> void:
 		return
 	var n := ids.size()
 	var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
-	var feet := 83.0 if size.y <= 130.0 else 104.0
+	var feet := 83.0 if size.y <= SHORT_H else 104.0
 	if narrow:
 		feet = 176.0
 	for i in n:
@@ -1559,7 +1573,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 	_place_sprites(size, narrow)
 	var n := ids.size()
 	var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
-	var feet := 83.0 if size.y <= 130.0 else 104.0
+	var feet := 83.0 if size.y <= SHORT_H else 104.0
 	if narrow:
 		feet = 176.0
 		var panel := Rect2(26.0, feet - 136.0, size.x - 52.0, 146.0)
@@ -1588,7 +1602,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 	_ctxt(str(data.name), name_y, GOLD)
 	var by := name_y + (20.0 if narrow else 9.0)
 	var blurb := str(data.blurb)
-	if size.y <= 130.0 and not narrow:
+	if size.y <= SHORT_H and not narrow:
 		blurb = _one_line(blurb, int((size.x - 20.0) / 4.0))
 	var end_y := _para(blurb, by, Color.WHITE, 4 if narrow else 2)
 	if is_campaign() and end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
@@ -1600,8 +1614,8 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
 	if narrow:
 		return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 134.0, "pitch": 14.0}
-	if size.y <= 130.0:
-		return {"cx": 52.0, "feet": 98.0, "x0": 104.0, "y0": 17.0, "pitch": 11.0}
+	if size.y <= SHORT_H:
+		return {"cx": 52.0, "feet": minf(98.0, size.y - 17.0), "x0": 104.0, "y0": 17.0, "pitch": 11.0}  # (the pose line sits 10 px under the feet)
 	return {"cx": 60.0, "feet": 130.0, "x0": 116.0, "y0": 28.0, "pitch": 17.0}
 
 
@@ -1637,11 +1651,19 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
 	var tx := x0 - 3.0
 	var pages := _pages()
 	if create_modal == "":
+		var pad := 10.0
+		var gap := 3.0
+		var total := 0.0
+		for p in pages.size():
+			total += float(PixelFont.width(str(pages[p].label))) + pad + gap
+		if tx + total > size.x - 2.0:  # R42 LARGE: a narrow screen packs the tab chips closer
+			pad = 6.0
+			gap = 1.0
 		for p in pages.size():
 			var label := str(pages[p].label)
-			var tw := float(PixelFont.width(label)) + 10.0
+			var tw := float(PixelFont.width(label)) + pad
 			_chip(Rect2(tx, float(lay.y0), tw, pitch - 2.0), label, p == create_page, "tab", p)
-			tx += tw + 3.0
+			tx += tw + gap
 	if create_modal == "presets":
 		_draw_presets(lay, size)
 		return
@@ -1675,11 +1697,11 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
 				_txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
 				if kind == "start":  # what the start is: the original sprite as is (until an edit), or a saved look
 					var tag := "READY-MADE" if stock_pick() else ("SAVED" if sel_id().begins_with("slot") else "")
-					_txt(tag, Vector2(box.end.x + 14.0, ty), DIM)
+					_txt_fit(tag, Vector2(box.end.x + 14.0, ty), DIM)
 				elif kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
-					_txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+					_txt_fit("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
 				elif kind == "choice" and Look.CLOTHES_KINDS.has(str(row.id)) and not Look.clothes_locked(str(row.id)).is_empty():
-					_txt("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+					_txt_fit("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
 			_rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
 			_rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
 		else:
@@ -1759,8 +1781,9 @@ func _draw_presets(lay: Dictionary, size: Vector2) -> void:
 			for k in Look.ROLES.size():
 				var role: String = Look.ROLES[k]
 				draw_rect(Rect2(x0 + 62.0 + float(k) * 6.0, ty - 1.0, 5.0, 7.0), Color.html(str(p[role])))
-		_chip(Rect2(x0 + 98.0, y + 1.0, 22.0, pitch - 3.0), "SAVE", hot and _pre_col == 0, "pre_save", s)
-		_chip(Rect2(x0 + 122.0, y + 1.0, 22.0, pitch - 3.0), "LOAD", hot and _pre_col == 1, "pre_load", s)
+		var cw := minf(22.0, floorf((size.x - x0 - 98.0 - 6.0) / 2.0) - 1.0)  # R42 LARGE: the two chips shrink on a narrow screen
+		_chip(Rect2(x0 + 98.0, y + 1.0, cw, pitch - 3.0), "SAVE", hot and _pre_col == 0, "pre_save", s)
+		_chip(Rect2(x0 + 98.0 + cw + 2.0, y + 1.0, cw, pitch - 3.0), "LOAD", hot and _pre_col == 1, "pre_load", s)
 	var cy := _row_y(lay, Look.PRESET_SLOTS)
 	_chip(Rect2(x0, cy + 1.0, 44.0, pitch - 3.0), "CANCEL", _pre_row == Look.PRESET_SLOTS, "pre_cancel", 0)
 
@@ -1784,9 +1807,9 @@ func _draw_name_grid(lay: Dictionary, size: Vector2) -> void:
 
 
 func _draw_phones(size: Vector2, narrow: bool) -> void:
-	var ph := 54.0 if size.y <= 130.0 else (80.0 if not narrow else 92.0)
+	var ph := 54.0 if size.y <= SHORT_H else (80.0 if not narrow else 92.0)
 	var pw := floorf(ph * 0.52)
-	var top := 22.0 if size.y <= 130.0 else (26.0 if not narrow else 56.0)
+	var top := 22.0 if size.y <= SHORT_H else (26.0 if not narrow else 56.0)
 	for i in 2:
 		var ios := i == 0
 		var x := floorf(size.x * 0.5) + (-pw - 16.0 if ios else 16.0)

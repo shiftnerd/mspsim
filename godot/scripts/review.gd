@@ -408,8 +408,13 @@ func _paint() -> void:
 	if not held.is_empty():
 		rows.append([held[0], held[1]])
 	var extra := 0.0
+	var olines := []  # R42 LARGE: an offer's label wraps onto a second line in a narrow panel
+	for o in offers:
+		olines.append(_wrap(str(o.label), int((pw - 14.0 * u) / (4.0 * u))))
 	if page == _opt_page():
-		extra = float(offers.size()) * 11.0 * u + 3.0 * u + 24.0 * u
+		extra = 3.0 * u + 24.0 * u
+		for ol in olines:
+			extra += (4.0 + 7.0 * float(ol.size())) * u
 	var ph := (12.0 + float(rows.size()) * 7.0 + 18.0) * u + extra
 	ph = minf(ph, size.y - 4.0)
 	var panel := Rect2(floorf((size.x - pw) * 0.5), floorf((size.y - ph) * 0.5), pw, ph)
@@ -427,14 +432,14 @@ func _paint() -> void:
 	if page == _opt_page():
 		y += 3.0 * u
 		for i in offers.size():
-			var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, 10.0 * u)
+			var ol: Array = olines[i]
+			var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, (3.0 + 7.0 * float(ol.size())) * u)
 			var chosen := i == sel
 			_canvas.draw_rect(r, Color("f5d442") if chosen else Color("c9d2e0"))
-			PixelFont.draw(
-				_canvas, str(offers[i].label), r.position + Vector2(3.0 * u, 2.0 * u), INK, sc
-			)
+			for k in ol.size():
+				PixelFont.draw(_canvas, str(ol[k]), r.position + Vector2(3.0 * u, (2.0 + 7.0 * float(k)) * u), INK, sc)
 			_hits.append({"r": r, "id": str(i)})
-			y += 11.0 * u
+			y += (4.0 + 7.0 * float(ol.size())) * u
 		y += 2.0 * u
 		for wrapped in _wrap(str(offers[sel].desc), chars):
 			PixelFont.draw(

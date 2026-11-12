@@ -1472,6 +1472,222 @@ const DEFAULT_VIGNETTES := {
 			}
 		]
 	},
+	"byod_phone":
+	{
+		"speaker": "A realtor at Brightside",
+		"text": "I bought a new phone with my own money and I would like my work email on it. By lunch. It is a phone, how hard can it be?",
+		"min_day": 6,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "setup",
+				"label": "SET IT UP AND ADD A SCREEN LOCK",
+				"text": "Four minutes, a passcode and a very large thumb. She says the passcode is her birthday. You suggest a different birthday.",
+				"fx": {"xp": ["security", 3], "mood": [1, 3]}
+			},
+			{
+				"id": "how",
+				"label": "SHOW HER HOW, AND LET HER DO IT",
+				"text": "She does it herself on the second try and tells the whole office she did it herself.",
+				"fx": {"xp": ["people", 2], "mood": [1, 2], "hours": 0.2}
+			},
+			{
+				"id": "later",
+				"label": "TELL HER THE POLICY IS NOT WRITTEN YET",
+				"text": "She says she will ask Karen. Karen says ask the IT people. It goes around the office twice.",
+				"fx": {"mood": [1, -1]}
+			},
+		],
+	},
+	"usb_found":
+	{
+		"speaker": "The front desk at Acme Dental",
+		"text": "Somebody found a USB stick in the parking lot. It says PAYROLL on it in marker. We plugged it in to see whose it is. It is asking to run something.",
+		"min_day": 7,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "pull",
+				"label": "PULL IT OUT, SCAN THE MACHINE, TAKE THE STICK",
+				"text": "The scan comes back clean. The stick goes in a drawer with a label. Dr. Patel says he did not know you could find an attack in a parking lot.",
+				"fx": {"xp": ["security", 4], "mood": [0, 2], "hours": 0.4}
+			},
+			{
+				"id": "rule",
+				"label": "WRITE A ONE LINE RULE FOR THE FRONT DESK",
+				"text": "FOUND DRIVES GO TO IT, NOT INTO THE COMPUTER. It goes on a sticky note on the monitor, in your handwriting.",
+				"fx": {"xp": ["people", 2], "mood": [0, 1]}
+			},
+			{
+				"id": "shrug",
+				"label": "SAY IT IS PROBABLY A JOKE",
+				"text": "It is probably a joke. The note will say so in the incident report next month.",
+				"fx": {"mood": [0, -1]}
+			},
+		],
+	},
+	"remote_scam":
+	{
+		"speaker": "Atty. Spence (Hoot and Holler Law)",
+		"text": "A man on the phone says he is from Windows Support and that my computer sends them errors. He wants to connect and look. He had a very kind voice.",
+		"min_day": 8,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "hang",
+				"label": "TELL HIM TO HANG UP, THEN CHECK THE PC",
+				"text": "He hung up on the caller twice, the second time with feeling. The PC is clean. He tells the partners about the kind voice.",
+				"fx": {"xp": ["security", 4], "mood": [3, 3], "hours": 0.3}
+			},
+			{
+				"id": "card",
+				"label": "PRINT A CARD: WE NEVER CALL YOU FIRST",
+				"text": "A card for every desk. It sounds obvious on paper. Nobody has ever printed it.",
+				"fx": {"xp": ["people", 2], "mood": [3, 2]}
+			},
+			{
+				"id": "later",
+				"label": "SAY YOU WILL LOOK AT IT NEXT WEEK",
+				"text": "He hangs up anyway, but not before the caller asked for his mother's maiden name.",
+				"fx": {"mood": [3, -1]}
+			},
+		],
+	},
+	"vga_hdmi":
+	{
+		"speaker": "Bob Gnarly (Gnarly Gnomes)",
+		"text": "I have a pitch at ten. The projector has a blue plug with screws and my new laptop has a thin plug with ideas. The man at the shop said it would just work.",
+		"min_day": 9,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "adapter",
+				"label": "FIND AN ADAPTER AND STAND THERE WHILE IT WORKS",
+				"text": "The adapter is in the closet, in a bag marked MYSTERY. It works on the first try. He thinks you are a wizard.",
+				"fx": {"xp": ["networking", 2], "mood": [2, 3], "hours": 0.3}
+			},
+			{
+				"id": "loan",
+				"label": "LEND HIM YOUR OLD LAPTOP FOR THE MORNING",
+				"text": "Your old laptop gets applause from a room of landscapers. It comes back with a small clump of mulch.",
+				"fx": {"xp": ["people", 2], "mood": [2, 2]}
+			},
+			{
+				"id": "manual",
+				"label": "POINT AT THE PAGE IN THE MANUAL",
+				"text": "It is page forty-one. He reads it and says he can do it himself. He cannot.",
+				"fx": {"mood": [2, -1]}
+			},
+		],
+	},
+	"dst_clock":
+	{
+		"speaker": "Alan (Co-owner)",
+		"text": "The office server thinks it is an hour earlier than everyone else. The clocks changed at the weekend. Nobody changed the clock on the server because it is the server.",
+		"min_day": 10,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "sync",
+				"label": "FIX THE TIME ZONE AND SYNC IT TO A TIME SERVER",
+				"text": "The logs finally agree with each other. Alan says that is the nicest thing anybody has done for him this week.",
+				"fx": {"xp": ["servers", 4], "social": {"Alan": 2}, "hours": 0.4}
+			},
+			{
+				"id": "check",
+				"label": "CHECK EVERY OTHER MACHINE FOR THE SAME THING",
+				"text": "Two printers and the front desk phone were an hour off as well. You fix all three before lunch.",
+				"fx": {"xp": ["servers", 3], "social": {"Alan": 1}, "hours": 0.6}
+			},
+			{
+				"id": "later",
+				"label": "MAKE A NOTE FOR NEXT MARCH",
+				"text": "You write a reminder for next March. It is a good reminder. Alan frames it.",
+				"fx": {"social": {"Alan": 1}}
+			},
+		],
+	},
+	"streaming_lunch":
+	{
+		"speaker": "Lucy Malt (Soggy Bottom Brewing)",
+		"text": "The internet crawls from noon to two. I looked at the router. It has lots of lights. I think somebody in the back is watching the whole season of something.",
+		"min_day": 12,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "limit",
+				"label": "SET A LIMIT FOR VIDEO AND TELL THE STAFF",
+				"text": "The back room finds out lunch is a minute shorter without video. Lucy's cash register stops freezing.",
+				"fx": {"xp": ["networking", 4], "mood": [4, 3], "hours": 0.5}
+			},
+			{
+				"id": "guest",
+				"label": "PUT THE BREAK ROOM ON ITS OWN GUEST WIFI",
+				"text": "A second network for phones and for people who watch things. The cash register gets the good one.",
+				"fx": {"xp": ["networking", 3], "mood": [4, 2], "hours": 0.7}
+			},
+			{
+				"id": "ask",
+				"label": "ASK THEM NICELY TO WAIT UNTIL FIVE",
+				"text": "They agree. They stream with the picture quality turned down. It is exactly as bad.",
+				"fx": {"mood": [4, 1]}
+			},
+		],
+	},
+	"pst_archive":
+	{
+		"speaker": "Dr. Patel (Acme Dental)",
+		"text": "My email is slow, and the box says I am over the limit. I keep my archive on the desktop. It is called archive. It is four gigabytes. I have never opened it.",
+		"min_day": 13,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "trim",
+				"label": "SPLIT IT BY YEAR AND MOVE IT TO THE SERVER",
+				"text": "Three files, one for each year, in a folder that is backed up. His mail opens in a second. He wants to know where his year of 2011 went. It is there.",
+				"fx": {"xp": ["servers", 4], "mood": [0, 3], "hours": 0.6}
+			},
+			{
+				"id": "clean",
+				"label": "SHOW HIM HOW TO DELETE THE FORWARDS",
+				"text": "Half of it is chain letters about a petition. He deletes them with great care and a small sigh.",
+				"fx": {"xp": ["people", 3], "mood": [0, 2], "hours": 0.3}
+			},
+			{
+				"id": "later",
+				"label": "TELL HIM TO ASK FOR A BIGGER MAILBOX",
+				"text": "A bigger mailbox is a bigger problem in six months. You do not say that.",
+				"fx": {"mood": [0, -1]}
+			},
+		],
+	},
+	"wifi_twin":
+	{
+		"speaker": "Karen Whitfield (Brightside Realty)",
+		"text": "Two of my agents joined a wifi called BrightsideGuest. We do not have one. The coffee shop downstairs does. They have been on it all week. Is that bad?",
+		"min_day": 14,
+		"max_day": 20,
+		"options": [
+			{
+				"id": "rename",
+				"label": "RENAME THE OFFICE WIFI AND CHECK WHO IS ON THE OTHER",
+				"text": "Everybody is on the right network by lunch. The coffee shop's was called BrightsideGuest because the barista liked the sign. You buy a cookie.",
+				"fx": {"xp": ["networking", 3], "mood": [1, 3], "hours": 0.4}
+			},
+			{
+				"id": "talk",
+				"label": "EXPLAIN WHY A COFFEE SHOP NETWORK IS NOT PRIVATE",
+				"text": "She says she thought wifi was just wifi. You tell her it is, but the coffee shop is not you.",
+				"fx": {"xp": ["security", 3], "mood": [1, 2]}
+			},
+			{
+				"id": "shrug",
+				"label": "SAY IT IS PROBABLY FINE",
+				"text": "It is probably fine. You write it down so you can say you wrote it down.",
+				"fx": {"mood": [1, -1]}
+			},
+		],
+	},
 }
 var VIGNETTES: Dictionary = DEFAULT_VIGNETTES.duplicate(true)
 const DEFAULT_DAYS := {

@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt", "expo_pat", "expo_vic", "expo_gus",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
@@ -498,8 +498,10 @@ write("scripts/game.gd", '''extends Node
 # F9 cycles the format while playing.
 
 signal format_changed
+signal text_changed
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
+const TextSize := preload("res://scripts/text_size.gd")
 
 # size = logical pixels; zoom = camera zoom; cam_y = world y the camera centres on;
 # scale = default window pixel scale without --resolution (6x of h = 1920x1080, 6x of v = 1080x1920)
@@ -512,6 +514,20 @@ const FORMATS := {
 	"vclose": {"size": Vector2i(180, 320), "zoom": 2.0, "cam_y": 92.0, "scale": 3, "follow": true},
 }
 const ORDER := ["wide", "h", "deck", "v", "vclose"]
+# R42 item 4, the TEXT setting. LARGE is the same picture in fewer logical pixels at a higher whole scale, so every glyph
+# (and every sprite) is bigger on the physical screen: deck 256 x 160 at x5 is 25 px glyphs on a 1280 x 800 Deck (20 px at
+# NORMAL), h 256 x 144 at x7 is 35 px on 1920 x 1080 (x5 on 1280 x 720 is exact). Only what differs from FORMATS is listed; see docs/dev/notes-textsize.md.
+const LARGE := {
+	"wide": {"size": Vector2i(320, 112), "scale": 5, "follow": true},
+	"h": {"size": Vector2i(256, 144), "scale": 7},
+	"deck": {"size": Vector2i(256, 160), "scale": 5},
+	"v": {"size": Vector2i(144, 256), "scale": 4},
+	"vclose": {"size": Vector2i(144, 256), "scale": 4},
+}
+# The one screen that does not fit a LARGE picture of a format: the printer mini-game lays out a fixed 176 px panel with
+# hard-coded columns (tray, toner, test lists), 40 px too wide for LARGE `v` (144). While it is open the picture is the
+# format's NORMAL size; every other screen keeps LARGE. screen -> the formats it falls back in (named in tests/text_size.gd).
+const FALLBACK := {"printer": ["v"]}
 const GAP_MS := 3000  # a frame that took longer than this in real time was a suspend (the Deck's power button): pause
 
 const UI_STRIP := 0.2  # share of the screen height left visible above a computer / phone UI
@@ -528,10 +544,14 @@ var title_mode := false  # the title screen shows real rooms without the player 
 var ui_open := false  # a computer / phone UI is open: the player is paused
 var ui_shift := 0.0  # 0..1: the stage camera slides so the player shows in the faded strip
 var fullscreen := true  # the DISPLAY setting: the game starts full screen, SETTINGS can make it a window
+var text_large := false  # R42 item 4, the TEXT row: LARGE uses the format's smaller logical size (LARGE above)
+var fallback_on := true  # tests: false draws every screen at LARGE, FALLBACK or not
+var high_contrast := false  # the TEXT row's second switch: brighter hint text and darker plates (TextSize.apply)
 var focus_pause := true  # R42, the setting: the game pauses when its window loses focus or the app is suspended
 var focus_force := false  # tests: act on focus notifications in a script run too
 var focus_lost := false  # the window is in the background (or the app is suspended) right now
 var auto_format := ""  # the format the screen asked for at start ("" = none: a test run, or a screen that is not 16:10)
+var _held := {}  # FALLBACK screens that are open: the picture is the format's NORMAL size while any is
 var _held_pause := false  # this script paused the tree for a focus loss (no pause menu could open): undo it on return
 var _last_ms := -1
 
@@ -549,10 +569,37 @@ func dev_run() -> bool:
 	return DisplayServer.get_name() == "headless" or OS.get_environment("MSPSIM_TEST") == "1"
 
 
+func large_hold(screen: String) -> void:
+	if not fallback_on or not text_large or not FALLBACK.get(screen, []).has(format) or _held.has(screen):
+		return
+	_held[screen] = true
+	set_format(format)
+
+
+func large_release(screen: String) -> void:
+	if _held.erase(screen):
+		set_format(format)
+
+
+# the table row of a format for the text size now in force (or for `large` when asked): size, zoom, cam_y, scale, follow
+func info(name: String, large: bool = text_large and _held.is_empty()) -> Dictionary:
+	var f: Dictionary = FORMATS[name]
+	if not large:
+		return f
+	var out: Dictionary = f.duplicate()
+	out.merge(LARGE[name], true)
+	return out
+
+
+# the logical size of the picture now (what every screen lays out from)
+func logical_size() -> Vector2:
+	return Vector2(info(format).size)
+
+
 # what a screen gets from a format with integer scaling: {scale, size (the picture in screen pixels), bars (left / right,
 # top / bottom), fill (share of the screen that is picture)}
 func fit(screen: Vector2i, name: String) -> Dictionary:
-	var size: Vector2i = FORMATS[name].size
+	var size: Vector2i = info(name).size
 	var scale := maxi(1, mini(screen.x / size.x, screen.y / size.y))
 	var shown := size * scale
 	var fill := float(shown.x * shown.y) / float(maxi(1, screen.x * screen.y))
@@ -581,6 +628,9 @@ func load_display() -> String:
 	if cfg.load(Difficulty.settings_path) != OK:
 		return ""
 	focus_pause = bool(cfg.get_value("display", "focus_pause", true))
+	text_large = bool(cfg.get_value("display", "text_large", false))
+	high_contrast = bool(cfg.get_value("display", "high_contrast", false))
+	TextSize.apply(high_contrast)
 	fullscreen = bool(cfg.get_value("display", "fullscreen", true))
 	return str(cfg.get_value("display", "format", ""))
 
@@ -591,6 +641,8 @@ func save_display(with_format: bool = true) -> void:
 	if with_format:
 		cfg.set_value("display", "format", format)
 	cfg.set_value("display", "focus_pause", focus_pause)
+	cfg.set_value("display", "text_large", text_large)
+	cfg.set_value("display", "high_contrast", high_contrast)
 	cfg.set_value("display", "fullscreen", fullscreen)
 	cfg.save(Difficulty.settings_path)
 
@@ -608,8 +660,8 @@ func set_fullscreen(on: bool) -> void:
 
 # a windowed game: the largest whole scale, up to the format's own, that fits the room a screen has
 func window_scale(name: String, room: Vector2i) -> int:
-	var size: Vector2i = FORMATS[name].size
-	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(FORMATS[name].scale))
+	var size: Vector2i = info(name).size
+	return clampi(mini(room.x / size.x, room.y / size.y), 1, int(info(name).scale))
 
 
 # size the window to the format and centre it in the screen's free area (the taskbar is not part of it). Without this a
@@ -621,7 +673,7 @@ func place_window() -> void:
 	var area := DisplayServer.screen_get_usable_rect(win.current_screen)
 	var frame := win.get_size_with_decorations() - win.size  # the title bar and the borders
 	var inset := win.position - win.get_position_with_decorations()
-	win.size = Vector2i(FORMATS[format].size) * window_scale(format, area.size - frame)
+	win.size = Vector2i(info(format).size) * window_scale(format, area.size - frame)
 	win.position = area.position + (area.size - win.size - frame) / 2 + inset
 
 
@@ -630,6 +682,23 @@ func place_window() -> void:
 func _window_input(event: InputEvent) -> void:
 	if Controls.take_display_key(event):
 		set_fullscreen(not fullscreen)
+
+
+# the TEXT row of SETTINGS: NORMAL / LARGE, applied at once (the picture is re-framed at the format's smaller size and every
+# screen redraws from the new viewport), and HIGH CONTRAST on / off (TextSize.apply: the palette and the plates)
+func set_text_large(on: bool) -> void:
+	text_large = on
+	save_display(false)
+	set_format(format)
+	text_changed.emit()
+
+
+func set_high_contrast(on: bool) -> void:
+	high_contrast = on
+	TextSize.apply(on)
+	save_display(false)
+	text_changed.emit()
+	format_changed.emit()  # every screen repaints
 
 
 func set_focus_pause(on: bool) -> void:
@@ -743,7 +812,7 @@ func _ready() -> void:
 
 func set_format(name: String) -> void:
 	format = name
-	var f: Dictionary = FORMATS[name]
+	var f: Dictionary = info(name)
 	var size: Vector2i = f.size
 	var win := get_window()
 	win.content_scale_size = size
@@ -5943,6 +6012,28 @@ write("scripts/pixelfont.gd", '''extends RefCounted
 # gdlint:disable=max-line-length,class-definitions-order
 # A 3x5 pixel font for the in-game computer and phone screens (upper case only, like the logo tagline).
 # PixelFont.draw(canvas_item, text, position, color, scale) / PixelFont.width(text, scale)
+#
+# TEXT CACHE (perf, handhelds). draw() used to issue one draw_rect per lit glyph pixel (hundreds of canvas commands for a
+# screen of text). Now each distinct (resolved text, scale) is built ONCE into a white RGBA ImageTexture from the same glyph
+# data and drawn with ONE draw_texture(tex, pos, color): the colour is the modulate, so every colour (and the shadow copy,
+# drawn a second time at an offset) shares one texture. The output is pixel-identical (tests/text_cache.gd compares both paths).
+# Interface for callers (small on purpose; a text size setting should only need `scale`):
+#   PixelFont.draw(canvas, text, pos, color, scale)   unchanged; scale is an int >= 1 and part of the cache key
+#   PixelFont.width(text, scale)                      unchanged
+#   PixelFont.cache_on                                false = the old draw_rect path (env PIXELFONT_NOCACHE=1 forces it; headless
+#                                                     runs are off by default, env PIXELFONT_CACHE=1 turns it on there)
+#   PixelFont.texture(text, scale) -> Texture2D       the cached white texture (the same one draw() uses), for the tests
+#   PixelFont.cache_entries() / cache_bytes()         what the cache holds now (bounded: see CACHE_ENTRIES / CACHE_BYTES)
+#   PixelFont.stat_rect / stat_tex / stat_hit / stat_miss   counters for tests/frame_time.gd (draw_rect calls the font issued,
+#                                                     draw_texture calls, cache hits, builds); reset by assigning 0
+# The key is the text AFTER key-token and pad-glyph resolution (keys() and _pad_line() run before the cache), so a device switch
+# needs no invalidation: the pad sprites stay inline (PadGlyphs) and only their plain text pieces come here.
+# The cache is two generations of dictionaries (scale -> {text -> texture}); when the current one is full it becomes the old
+# one and the old one is dropped (a hit in the old one is promoted). A canvas item keeps a reference to the textures of its
+# latest redraw (meta "_pf"), so an item that is not redrawn for a long time never loses its text to an eviction. Text under a
+# canvas transform that is not a plain translation falls back to draw_rect (snapping would differ).
+
+const TextSize := preload("res://scripts/text_size.gd")
 
 const GLYPHS := {
     "A": ["XXX", "X.X", "XXX", "X.X", "X.X"], "B": ["XX.", "X.X", "XX.", "X.X", "XX."],
@@ -6061,7 +6152,133 @@ static func _pad_line(canvas: CanvasItem, text: String, pos: Vector2, color: Col
     return true
 
 
+const CACHE_ENTRIES := 1500  # per generation (two are alive)
+const CACHE_BYTES := 3000000  # RGBA bytes per generation
+static var cache_on := _default_on()
+static var stat_rect := 0
+static var stat_tex := 0
+static var stat_hit := 0
+static var stat_miss := 0
+static var _cur := {}
+static var _old := {}
+static var _cur_n := 0
+static var _cur_bytes := 0
+static var _old_n := 0
+static var _old_bytes := 0
+static var _rot_frame := -1
+static var _glyph_imgs := {}  # scale -> {char -> Image}
+
+
+static func _default_on() -> bool:
+    if OS.get_environment("PIXELFONT_NOCACHE") != "":
+        return false
+    return OS.get_environment("PIXELFONT_CACHE") != "" or DisplayServer.get_name() != "headless"
+
+
+static func cache_entries() -> int:
+    return _cur_n + _old_n
+
+
+static func cache_bytes() -> int:
+    return _cur_bytes + _old_bytes
+
+
+static func clear_cache() -> void:
+    _cur = {}
+    _old = {}
+    _cur_n = 0
+    _cur_bytes = 0
+    _old_n = 0
+    _old_bytes = 0
+
+
+static func _glyph_image(ch: String, scale: int) -> Image:
+    if not _glyph_imgs.has(scale):
+        _glyph_imgs[scale] = {}
+    var per: Dictionary = _glyph_imgs[scale]
+    if per.has(ch):
+        return per[ch]
+    var img := Image.create_empty(3 * scale, 5 * scale, false, Image.FORMAT_RGBA8)
+    var rows: Array = GLYPHS.get(ch, GLYPHS["?"])
+    for r in 5:
+        var row: String = rows[r]
+        for c in 3:
+            if row[c] == "X":
+                img.fill_rect(Rect2i(c * scale, r * scale, scale, scale), Color.WHITE)
+    per[ch] = img
+    return img
+
+
+static func _build(text: String, scale: int) -> ImageTexture:
+    var img := Image.create_empty(width(text, scale), 5 * scale, false, Image.FORMAT_RGBA8)
+    var x := 0
+    for ch in text.to_upper().replace('"', "'"):
+        img.blit_rect(_glyph_image(ch, scale), Rect2i(0, 0, 3 * scale, 5 * scale), Vector2i(x, 0))
+        x += 4 * scale
+    return ImageTexture.create_from_image(img)
+
+
+static func texture(text: String, scale := 1) -> Texture2D:
+    if text == "" or scale < 1:
+        return null
+    var d = _cur.get(scale)
+    if d != null:
+        var hit = d.get(text)
+        if hit != null:
+            stat_hit += 1
+            return hit
+    var od = _old.get(scale)
+    var tex: ImageTexture = od.get(text) if od != null else null
+    if tex == null:
+        stat_miss += 1
+        tex = _build(text, scale)
+    else:
+        stat_hit += 1
+        od.erase(text)
+        _old_n -= 1
+        _old_bytes -= tex.get_width() * tex.get_height() * 4
+    var bytes := tex.get_width() * tex.get_height() * 4
+    var frame := Engine.get_process_frames()
+    if (_cur_n >= CACHE_ENTRIES or _cur_bytes >= CACHE_BYTES) and frame != _rot_frame:
+        _old = _cur
+        _old_n = _cur_n
+        _old_bytes = _cur_bytes
+        _cur = {}
+        _cur_n = 0
+        _cur_bytes = 0
+        _rot_frame = frame
+    if not _cur.has(scale):
+        _cur[scale] = {}
+    _cur[scale][text] = tex
+    _cur_n += 1
+    _cur_bytes += bytes
+    return tex
+
+
+# true when the text was drawn as one texture. The per-canvas record is [frame, plain translation?, textures kept alive].
+static func _draw_cached(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale: int) -> bool:
+    var frame := Engine.get_process_frames()
+    var rec = canvas.get_meta("_pf") if canvas.has_meta("_pf") else null
+    if rec == null or rec[0] != frame:
+        var t := canvas.get_global_transform_with_canvas()
+        rec = [frame, t.x == Vector2.RIGHT and t.y == Vector2.DOWN, [], t.origin]
+        canvas.set_meta("_pf", rec)
+    if not rec[1]:
+        return false
+    var tex := texture(text, scale)
+    if tex == null:
+        return false
+    rec[2].append(tex)
+    # the old path's rects were snapped to the screen pixel one corner at a time (round half down, after the canvas offset);
+    # the same snap on the texture's corner keeps a fractional position (a centred text, a camera) on the same pixels
+    var o: Vector2 = rec[3]
+    canvas.draw_texture(tex, (pos + o - Vector2(0.5, 0.5)).ceil() - o, color)
+    stat_tex += 1
+    return true
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
+    color = TextSize.color(color)  # R42 item 4: HIGH CONTRAST pushes light text to white and dark text to ink (a no-op otherwise)
     text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
     if _pad_line(canvas, text, pos, color, scale):
         return
@@ -6078,6 +6295,8 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
             "rect": tf * Rect2(pos + Vector2(lead, 0), sz),
             "vp": canvas.get_viewport().get_visible_rect(),
         })
+    if cache_on and text != "" and scale >= 1 and _draw_cached(canvas, text, pos, color, scale):
+        return
     var x := pos.x
     for ch in text.to_upper().replace('"', "'"):
         var rows: Array = GLYPHS.get(ch, GLYPHS["?"])
@@ -6086,6 +6305,7 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
             for c in 3:
                 if row[c] == "X":
                     canvas.draw_rect(Rect2(x + c * scale, pos.y + r * scale, scale, scale), color)
+                    stat_rect += 1
         x += 4.0 * scale
 ''')
 
@@ -9060,7 +9280,7 @@ func _window(title: String, tint: Color) -> Rect2:
     var a := Rect2(_area.position, Vector2(_area.size.x, _area.size.y - TB))
     _fill(a, Color("e9ecf1"))
     _fill(Rect2(a.position, Vector2(a.size.x, 8)), tint)
-    _text(title, a.position + Vector2(3, 1), WHITE)
+    _text(_clip(title, int((a.size.x - 16.0) / 4.0)), a.position + Vector2(3, 1), WHITE)  # R42 LARGE: a long window title is cut, not run off the screen
     _button("close_app", Rect2(a.end.x - 10, a.position.y + 1, 9, 6), "X", true, Color("d86b5e"))
     return Rect2(a.position + Vector2(0, 8), Vector2(a.size.x, a.size.y - 8))
 
@@ -9357,7 +9577,7 @@ func _paint_site_window(accent: Color) -> void:
                 y += 8
         _:
             var body := _window("YOUR TOOLBOX", Color("5a5f6a"))
-            _text("YOU ARE ONSITE. THIS IS THEIR COMPUTER.", Vector2(body.position.x + 4, body.position.y + 4), Color("46506a"))
+            _text(_clip("YOU ARE ONSITE. THIS IS THEIR COMPUTER.", int((body.size.x - 6.0) / 4.0)), Vector2(body.position.x + 4, body.position.y + 4), Color("46506a"))
             _button("site:diag", Rect2(body.position.x + 4, body.position.y + 16, minf(body.size.x - 8, 90.0), 10), "DIAGNOSE AND FIX", true, Color("9bd6a8"))
             _button("site:audit", Rect2(body.position.x + 4, body.position.y + 28, minf(body.size.x - 8, 90.0), 10), "LOOK AROUND", true, Color("e9d99b"))
             _text("EVENT LOG: NOTHING UNUSUAL", Vector2(body.position.x + 4, body.position.y + 44), TXT)
@@ -9932,8 +10152,9 @@ func _paint_learn() -> void:
         return
     var chars := int((body.size.x - 8) / 4.0)
     _text(_clip("LEVEL %d OF 5. EACH LEVEL: FASTER, MORE RELIABLE FIXES." % Skills.ps_level, chars), body.position + Vector2(4, 3), Color("012456"))
+    var pitch := clampf(floorf((body.size.y - 12.0 - 20.0) / float(Skills.LESSONS.size())), 8.0, 11.0)  # R42 LARGE: a short window packs the lessons
     for i in Skills.LESSONS.size():
-        var rr := Rect2(body.position.x + 3, body.position.y + 12 + float(i) * 11.0, body.size.x - 6, 10)
+        var rr := Rect2(body.position.x + 3, body.position.y + 12 + float(i) * pitch, body.size.x - 6, pitch - 1.0)
         var state := "DONE" if i < Skills.ps_level else ("START" if i == Skills.ps_level else "LOCKED")
         _row(rr, false, i % 2 == 1)
         var title := "%d. %s" % [i + 1, Skills.LESSONS[i].title]
@@ -9943,7 +10164,7 @@ func _paint_learn() -> void:
         if state == "START":
             _region("lesson:%d" % i, rr)
     var lv := Skills.ps_level
-    var y := body.position.y + 12 + float(Skills.LESSONS.size()) * 11.0 + 4
+    var y := body.position.y + 12 + float(Skills.LESSONS.size()) * pitch + 4
     var perks := [
         "FIX TIME %.1fS   FAILS %d%%" % [float(Skills.FIX_SECS[lv]), int(float(Skills.FAIL[lv]) * 100.0)],
         "SCRIPTS: " + ("ALL CLIENTS" if lv >= 4 else ("ONE CLIENT" if lv >= 2 else "NONE YET (LEVEL 2)")),
@@ -10271,7 +10492,7 @@ func _irc_who(area: Rect2) -> void:
     _text("TALK TO WHO?", area.position + Vector2(4, 3), Color("c0561a"))
     var back_text := "LEFT = BACK"
     _text(back_text, Vector2(area.end.x - 4 - _tw(back_text), area.position.y + 3), BTN_SH)
-    var row_h := 8.0
+    var row_h := clampf(floorf((area.size.y - 14.0) / float(Nerds.NICKS.size())), 6.0, 8.0)  # R42 LARGE: a short window packs the nicks
     var y := area.position.y + 12
     var nicks: Array = Nerds.NICKS.keys()
     for i in nicks.size():
@@ -10623,7 +10844,8 @@ func _board_clients(a: Rect2) -> void:
         var letters := ("B" if not Msp.backups[c].ok else "") + ("P" if float(Owner.patch_debt.get(c, 0.0)) >= 4.0 else "") + ("M" if Sales.mood(c) < 50 else "")
         if letters != "":
             shown += " GAPS " + letters
-        _text(_clip(shown, int((a.end.x - x - (174 if wide else 134)) / 4.0)), Vector2(x + (172 if wide else 132), y), AMBER if shown != "" else Color("46506a"))
+        if a.end.x - x - (174 if wide else 134) >= 12.0:  # R42 LARGE: a column with no room is left off, not clipped to "P.."
+            _text(_clip(shown, int((a.end.x - x - (174 if wide else 134)) / 4.0)), Vector2(x + (172 if wide else 132), y), AMBER if shown != "" else Color("46506a"))
         y += 7
     if not Owner.gone.is_empty() and y < a.end.y - 6:
         var names := []
@@ -14981,6 +15203,7 @@ const BAD := Color("ff8a80")
 const WARN := Color("ffd27a")
 var _row_h := 7.0  # row height in virtual pixels (one font pixel at scale 1); 6 when the short wide screen needs it
 var _pad := 1.0  # text offset inside a row (0 in the tight 6 pixel rows)
+var _tight := false  # R42 LARGE: a report with an ending is still too tall at 6 pixel rows: the gaps between its blocks close
 const GRADE_COLORS := {
     "S": Color("f5d442"), "A": Color("5fd068"), "B": Color("5aa0e8"), "C": Color("e0a030"), "D": Color("e0463c"),
 }
@@ -15379,23 +15602,23 @@ func _stack(sc: int, size: Vector2, draw: bool) -> float:
         if size.y / float(sc) - y >= 62.0:  # (narrow screens: only when there is room left for the rest)
             y += 3.0 + _spark(4.0, y + 3.0, inner, draw)
     for note in report.get("notes", []):  # cozy Easy: a probation or bailout line, in a calm colour
-        y += 3.0
+        y += 1.0 if _tight else 3.0
         for line in _wrap(str(note), int(inner / 4.0)):
             if draw:
                 _t(line, 4.0, y, HEAD)
             y += _row_h
     var ending := str(report.get("ending", ""))
     if ending != "":
-        y += 4.0
+        y += 1.0 if _tight else 4.0
         var col := BAD if bool(report.get("fired", false)) else WARN
         for line in _wrap(ending, int(inner / 4.0)):
             if draw:
                 _t(line, 4.0, y, col)
             y += _row_h
-    y += 2.0
+    y += 1.0 if _tight else 2.0
     if draw:
         _r(4.0, y, inner, 1.0, LINE)
-    y += 2.0
+    y += 1.0 if _tight else 2.0
     var label := _button_label()
     var bw := _tw(label) + 12.0
     var hint := Controls.hint("ENTER{ OR CLICK|}")
@@ -15438,6 +15661,7 @@ func _paint() -> void:
     var sc := 2 if size.x < 220.0 else 1
     _row_h = 7.0
     _pad = 1.0
+    _tight = false
     _spill = 0
     _from = 0
     _count = -1
@@ -15466,6 +15690,9 @@ func _paint() -> void:
             _from = int(_pages[_page])
             _count = (int(_pages[_page + 1]) if _page + 1 < _pages.size() else total) - _from
             h = _fit(sc, size)
+    if h > size.y - 2.0:  # the last resort: close the gaps between the blocks
+        _tight = true
+        h = _fit(sc, size)
     var u := float(sc)
     var pw := _panel_w(sc, size)
     _canvas.draw_rect(Rect2(Vector2.ZERO, size), Color(0.02, 0.03, 0.07, 0.86))
@@ -15724,7 +15951,7 @@ write("scripts/events.gd", '''extends Node
 # vignette format (speaker, text, options with fx) and the vignette resolver (Story._vignette_fx);
 # owner cards also use cash / burnout (Owner.apply). Quiet days only: no draw on a day that already has
 # a story vignette, the ransomware, the overtime night, an outing or the trip, the first two days, the
-# last day or in Free Play. The 17 extra vignettes live in Story.VIGNETTES (they carry `min_day`) and
+# last day or in Free Play. The 25 extra vignettes live in Story.VIGNETTES (they carry `min_day`) and
 # share the same draw. Keep every magnitude small: a card must never make the day unwinnable.
 
 const VERSION := 1
@@ -19472,6 +19699,222 @@ const VIGNETTES := {
             }
         ]
     },
+    "byod_phone":
+    {
+        "speaker": "A realtor at Brightside",
+        "text": "I bought a new phone with my own money and I would like my work email on it. By lunch. It is a phone, how hard can it be?",
+        "min_day": 6,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "setup",
+                "label": "SET IT UP AND ADD A SCREEN LOCK",
+                "text": "Four minutes, a passcode and a very large thumb. She says the passcode is her birthday. You suggest a different birthday.",
+                "fx": {"xp": ["security", 3], "mood": [1, 3]}
+            },
+            {
+                "id": "how",
+                "label": "SHOW HER HOW, AND LET HER DO IT",
+                "text": "She does it herself on the second try and tells the whole office she did it herself.",
+                "fx": {"xp": ["people", 2], "mood": [1, 2], "hours": 0.2}
+            },
+            {
+                "id": "later",
+                "label": "TELL HER THE POLICY IS NOT WRITTEN YET",
+                "text": "She says she will ask Karen. Karen says ask the IT people. It goes around the office twice.",
+                "fx": {"mood": [1, -1]}
+            },
+        ],
+    },
+    "usb_found":
+    {
+        "speaker": "The front desk at Acme Dental",
+        "text": "Somebody found a USB stick in the parking lot. It says PAYROLL on it in marker. We plugged it in to see whose it is. It is asking to run something.",
+        "min_day": 7,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "pull",
+                "label": "PULL IT OUT, SCAN THE MACHINE, TAKE THE STICK",
+                "text": "The scan comes back clean. The stick goes in a drawer with a label. Dr. Patel says he did not know you could find an attack in a parking lot.",
+                "fx": {"xp": ["security", 4], "mood": [0, 2], "hours": 0.4}
+            },
+            {
+                "id": "rule",
+                "label": "WRITE A ONE LINE RULE FOR THE FRONT DESK",
+                "text": "FOUND DRIVES GO TO IT, NOT INTO THE COMPUTER. It goes on a sticky note on the monitor, in your handwriting.",
+                "fx": {"xp": ["people", 2], "mood": [0, 1]}
+            },
+            {
+                "id": "shrug",
+                "label": "SAY IT IS PROBABLY A JOKE",
+                "text": "It is probably a joke. The note will say so in the incident report next month.",
+                "fx": {"mood": [0, -1]}
+            },
+        ],
+    },
+    "remote_scam":
+    {
+        "speaker": "Atty. Spence (Hoot and Holler Law)",
+        "text": "A man on the phone says he is from Windows Support and that my computer sends them errors. He wants to connect and look. He had a very kind voice.",
+        "min_day": 8,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "hang",
+                "label": "TELL HIM TO HANG UP, THEN CHECK THE PC",
+                "text": "He hung up on the caller twice, the second time with feeling. The PC is clean. He tells the partners about the kind voice.",
+                "fx": {"xp": ["security", 4], "mood": [3, 3], "hours": 0.3}
+            },
+            {
+                "id": "card",
+                "label": "PRINT A CARD: WE NEVER CALL YOU FIRST",
+                "text": "A card for every desk. It sounds obvious on paper. Nobody has ever printed it.",
+                "fx": {"xp": ["people", 2], "mood": [3, 2]}
+            },
+            {
+                "id": "later",
+                "label": "SAY YOU WILL LOOK AT IT NEXT WEEK",
+                "text": "He hangs up anyway, but not before the caller asked for his mother's maiden name.",
+                "fx": {"mood": [3, -1]}
+            },
+        ],
+    },
+    "vga_hdmi":
+    {
+        "speaker": "Bob Gnarly (Gnarly Gnomes)",
+        "text": "I have a pitch at ten. The projector has a blue plug with screws and my new laptop has a thin plug with ideas. The man at the shop said it would just work.",
+        "min_day": 9,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "adapter",
+                "label": "FIND AN ADAPTER AND STAND THERE WHILE IT WORKS",
+                "text": "The adapter is in the closet, in a bag marked MYSTERY. It works on the first try. He thinks you are a wizard.",
+                "fx": {"xp": ["networking", 2], "mood": [2, 3], "hours": 0.3}
+            },
+            {
+                "id": "loan",
+                "label": "LEND HIM YOUR OLD LAPTOP FOR THE MORNING",
+                "text": "Your old laptop gets applause from a room of landscapers. It comes back with a small clump of mulch.",
+                "fx": {"xp": ["people", 2], "mood": [2, 2]}
+            },
+            {
+                "id": "manual",
+                "label": "POINT AT THE PAGE IN THE MANUAL",
+                "text": "It is page forty-one. He reads it and says he can do it himself. He cannot.",
+                "fx": {"mood": [2, -1]}
+            },
+        ],
+    },
+    "dst_clock":
+    {
+        "speaker": "Alan (Co-owner)",
+        "text": "The office server thinks it is an hour earlier than everyone else. The clocks changed at the weekend. Nobody changed the clock on the server because it is the server.",
+        "min_day": 10,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "sync",
+                "label": "FIX THE TIME ZONE AND SYNC IT TO A TIME SERVER",
+                "text": "The logs finally agree with each other. Alan says that is the nicest thing anybody has done for him this week.",
+                "fx": {"xp": ["servers", 4], "social": {"Alan": 2}, "hours": 0.4}
+            },
+            {
+                "id": "check",
+                "label": "CHECK EVERY OTHER MACHINE FOR THE SAME THING",
+                "text": "Two printers and the front desk phone were an hour off as well. You fix all three before lunch.",
+                "fx": {"xp": ["servers", 3], "social": {"Alan": 1}, "hours": 0.6}
+            },
+            {
+                "id": "later",
+                "label": "MAKE A NOTE FOR NEXT MARCH",
+                "text": "You write a reminder for next March. It is a good reminder. Alan frames it.",
+                "fx": {"social": {"Alan": 1}}
+            },
+        ],
+    },
+    "streaming_lunch":
+    {
+        "speaker": "Lucy Malt (Soggy Bottom Brewing)",
+        "text": "The internet crawls from noon to two. I looked at the router. It has lots of lights. I think somebody in the back is watching the whole season of something.",
+        "min_day": 12,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "limit",
+                "label": "SET A LIMIT FOR VIDEO AND TELL THE STAFF",
+                "text": "The back room finds out lunch is a minute shorter without video. Lucy's cash register stops freezing.",
+                "fx": {"xp": ["networking", 4], "mood": [4, 3], "hours": 0.5}
+            },
+            {
+                "id": "guest",
+                "label": "PUT THE BREAK ROOM ON ITS OWN GUEST WIFI",
+                "text": "A second network for phones and for people who watch things. The cash register gets the good one.",
+                "fx": {"xp": ["networking", 3], "mood": [4, 2], "hours": 0.7}
+            },
+            {
+                "id": "ask",
+                "label": "ASK THEM NICELY TO WAIT UNTIL FIVE",
+                "text": "They agree. They stream with the picture quality turned down. It is exactly as bad.",
+                "fx": {"mood": [4, 1]}
+            },
+        ],
+    },
+    "pst_archive":
+    {
+        "speaker": "Dr. Patel (Acme Dental)",
+        "text": "My email is slow, and the box says I am over the limit. I keep my archive on the desktop. It is called archive. It is four gigabytes. I have never opened it.",
+        "min_day": 13,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "trim",
+                "label": "SPLIT IT BY YEAR AND MOVE IT TO THE SERVER",
+                "text": "Three files, one for each year, in a folder that is backed up. His mail opens in a second. He wants to know where his year of 2011 went. It is there.",
+                "fx": {"xp": ["servers", 4], "mood": [0, 3], "hours": 0.6}
+            },
+            {
+                "id": "clean",
+                "label": "SHOW HIM HOW TO DELETE THE FORWARDS",
+                "text": "Half of it is chain letters about a petition. He deletes them with great care and a small sigh.",
+                "fx": {"xp": ["people", 3], "mood": [0, 2], "hours": 0.3}
+            },
+            {
+                "id": "later",
+                "label": "TELL HIM TO ASK FOR A BIGGER MAILBOX",
+                "text": "A bigger mailbox is a bigger problem in six months. You do not say that.",
+                "fx": {"mood": [0, -1]}
+            },
+        ],
+    },
+    "wifi_twin":
+    {
+        "speaker": "Karen Whitfield (Brightside Realty)",
+        "text": "Two of my agents joined a wifi called BrightsideGuest. We do not have one. The coffee shop downstairs does. They have been on it all week. Is that bad?",
+        "min_day": 14,
+        "max_day": 20,
+        "options": [
+            {
+                "id": "rename",
+                "label": "RENAME THE OFFICE WIFI AND CHECK WHO IS ON THE OTHER",
+                "text": "Everybody is on the right network by lunch. The coffee shop's was called BrightsideGuest because the barista liked the sign. You buy a cookie.",
+                "fx": {"xp": ["networking", 3], "mood": [1, 3], "hours": 0.4}
+            },
+            {
+                "id": "talk",
+                "label": "EXPLAIN WHY A COFFEE SHOP NETWORK IS NOT PRIVATE",
+                "text": "She says she thought wifi was just wifi. You tell her it is, but the coffee shop is not you.",
+                "fx": {"xp": ["security", 3], "mood": [1, 2]}
+            },
+            {
+                "id": "shrug",
+                "label": "SAY IT IS PROBABLY FINE",
+                "text": "It is probably fine. You write it down so you can say you wrote it down.",
+                "fx": {"mood": [1, -1]}
+            },
+        ],
+    },
 }
 const DAYS := {
     1: [
@@ -21013,8 +21456,13 @@ func _paint() -> void:
     if not held.is_empty():
         rows.append([held[0], held[1]])
     var extra := 0.0
+    var olines := []  # R42 LARGE: an offer's label wraps onto a second line in a narrow panel
+    for o in offers:
+        olines.append(_wrap(str(o.label), int((pw - 14.0 * u) / (4.0 * u))))
     if page == _opt_page():
-        extra = float(offers.size()) * 11.0 * u + 3.0 * u + 24.0 * u
+        extra = 3.0 * u + 24.0 * u
+        for ol in olines:
+            extra += (4.0 + 7.0 * float(ol.size())) * u
     var ph := (12.0 + float(rows.size()) * 7.0 + 18.0) * u + extra
     ph = minf(ph, size.y - 4.0)
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf((size.y - ph) * 0.5), pw, ph)
@@ -21032,12 +21480,14 @@ func _paint() -> void:
     if page == _opt_page():
         y += 3.0 * u
         for i in offers.size():
-            var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, 10.0 * u)
+            var ol: Array = olines[i]
+            var r := Rect2(panel.position.x + 4.0 * u, y, pw - 8.0 * u, (3.0 + 7.0 * float(ol.size())) * u)
             var chosen := i == sel
             _canvas.draw_rect(r, Color("f5d442") if chosen else Color("c9d2e0"))
-            PixelFont.draw(_canvas, str(offers[i].label), r.position + Vector2(3.0 * u, 2.0 * u), INK, sc)
+            for k in ol.size():
+                PixelFont.draw(_canvas, str(ol[k]), r.position + Vector2(3.0 * u, (2.0 + 7.0 * float(k)) * u), INK, sc)
             _hits.append({"r": r, "id": str(i)})
-            y += 11.0 * u
+            y += (4.0 + 7.0 * float(ol.size())) * u
         y += 2.0 * u
         for wrapped in _wrap(str(offers[sel].desc), chars):
             PixelFont.draw(_canvas, wrapped, Vector2(panel.position.x + 5.0 * u, y), Color("46506a"), sc)
@@ -21342,11 +21792,21 @@ func _paint() -> void:
         body_h = float(lines.size()) * 7.0
         ph = 12.0 + body_h + 4.0 + opts_h + 4.0
     # short screens (16:9, wide) keep the people visible by putting the card at the top
-    var panel_y := 6.0 if size.y < 200.0 else size.y - ph - 6.0
+    var opt_pad := 3.0
+    var top_y := 6.0
+    if size.y < 200.0 and ph > size.y - 12.0:  # R42 LARGE: a very short screen: the card hugs the top and its answers sit closer
+        opt_pad = 1.0
+        top_y = 2.0
+        ph -= 2.0 * float(options.size()) + 2.0
+    var panel_y := top_y if size.y < 200.0 else size.y - ph - 6.0
     var panel := Rect2(floorf((size.x - pw) * 0.5), floorf(panel_y), pw, ph)
     _canvas.draw_rect(panel, Color("e9ecf1"))
     _canvas.draw_rect(Rect2(panel.position, Vector2(pw, 9)), Color("8e3a2b"))
-    PixelFont.draw(_canvas, speaker.to_upper(), panel.position + Vector2(3, 2), WHITE)
+    var title_chars := int((pw - 6.0) / 4.0)
+    var title_text := speaker.to_upper()
+    if title_text.length() > title_chars:  # R42 LARGE: a long speaker line is cut at the card's edge
+        title_text = title_text.substr(0, maxi(1, title_chars - 2)) + ".."
+    PixelFont.draw(_canvas, title_text, panel.position + Vector2(3, 2), WHITE)
     icon_drawn = Rect2()
     var icon := icon_tex()
     if icon != null and PixelFont.width(speaker) + 3.0 < pw - 18.0:
@@ -21366,7 +21826,7 @@ func _paint() -> void:
         var opt: Dictionary = options[i]
         var on: bool = bool(opt.get("enabled", true))
         var rows: Array = opt_lines[i]
-        var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(3.0 + 7.0 * float(rows.size()), tap_h))
+        var r := Rect2(panel.position.x + 4, y, pw - 8, maxf(opt_pad + 7.0 * float(rows.size()), tap_h))
         var ty := floorf((r.size.y - 7.0 * float(rows.size()) + 2.0) * 0.5)
         var col := Color("f5d442") if i == sel and on else (Color("c9d2e0") if on else Color("dcdfe6"))
         _canvas.draw_rect(r, col)
@@ -25574,7 +26034,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR", "PatchPanel_Gus": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -25866,6 +26326,7 @@ const THREADS := [
                 "text":
                 "Seconded. Twenty seven of our forty printers were running one cheap driver. Replaced it and no more morning deaths."
             },
+            {"by": "PaperJam_Pat", "text": "Check the toner before the driver. A printer that reports low toner in the middle of a job is asking for attention. New cartridge, new pickup roller, then blame the spooler."},
         ],
         "answer":
         "Clear the spool folder, stop and start the service, then remove the old 32 bit driver. Mine was a copier from 2009.",
@@ -26019,6 +26480,7 @@ const THREADS := [
                 "text":
                 "Check the switch supports it on the same port. Some cheap ones only do one tagged VLAN per access port."
             },
+            {"by": "PatchPanel_Gus", "text": "Label the switch port and the wall plate with the same number. Phones on orange cable, desks on blue. In two years you will thank me, or somebody will."},
         ],
         "answer":
         "Make each port a trunk with data untagged and voice tagged, so the phone tags itself and passes the PC through.",
@@ -26630,6 +27092,7 @@ const THREADS := [
                 "by": "GrizzleAdmin",
                 "text": "It is a computer in somebody else's building. Treat it like one."
             },
+            {"by": "SpinUp_Vic", "text": "Do not buy hardware for it. Spin up a VM on the host you already have, snapshot before every upgrade, and keep the backups off the host."},
         ],
         "answer":
         "Fine, as long as only the agent port is open to the internet, admin goes through a VPN, and the backups are tested.",
@@ -32352,6 +32815,7 @@ write("scripts/ui_style.gd", '''extends RefCounted
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a footer hint are small sprites
+const TextSize := preload("res://scripts/text_size.gd")  # R42 item 4: the HIGH CONTRAST plates and borders
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("e9ecf1")
@@ -32366,6 +32830,9 @@ const HEAD_H := 9.0
 const STRIP_H := 11.0  # one-line HUD strip
 const HINT_H := 9.0  # the control hint line at the bottom of the screen in a room
 const MARGIN := 4.0
+
+static var hint_extra := 0.0  # R42 LARGE: how much taller than HINT_H the last hint_bar came out (a long hint wraps upward)
+static var hint_frame := -1  # the frame that value is from (a screen without a hint bar must not inherit it)
 
 
 static func text(c: CanvasItem, s: String, x: float, y: float, color := INK) -> void:
@@ -32421,6 +32888,7 @@ static func panel_rect(size: Vector2, w: float, h: float) -> Rect2:
 static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1.0) -> Rect2:
     c.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2, 2)), Color(INK, minf(1.0, alpha + 0.1)))
     c.draw_rect(r, Color(PANEL, alpha))
+    TextSize.edge(c, r)
     c.draw_rect(Rect2(r.position, Vector2(r.size.x, HEAD_H)), HEAD)
     text(c, title, r.position.x + 3.0, r.position.y + 2.0, WHITE)
     if note != "":
@@ -32432,38 +32900,62 @@ static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1
 
 # the footer hint line of a page
 static func footer(c: CanvasItem, r: Rect2, hint: String) -> void:
-    PadGlyphs.draw(c, hint, Vector2(r.position.x + 3.0, r.end.y - 7.0), MUTED)
+    var lines := fit_lines(hint, r.size.x - 6.0)  # R42 LARGE: a hint wider than the panel breaks, upward from the footer line
+    for i in lines.size():
+        PadGlyphs.draw(c, str(lines[i]), Vector2(r.position.x + 3.0, r.end.y - 7.0 - 8.0 * float(lines.size() - 1 - i)), MUTED)
 
 
 # a one-line HUD strip: the same dark bar with a blue accent along its top; returns the text origin
 static func strip(c: CanvasItem, r: Rect2) -> Vector2:
-    c.draw_rect(r, DARK)
+    c.draw_rect(r, Color(DARK, TextSize.plate(DARK.a)))
     c.draw_rect(Rect2(r.position, Vector2(r.size.x, 1.0)), HEAD)
     return Vector2(r.position.x + 4.0, r.position.y + 3.0)
 
 
 # a HUD box (the karaoke lanes, the keypad entry): same dark fill and accent as a strip
 static func box(c: CanvasItem, r: Rect2) -> void:
-    c.draw_rect(r, DARK)
+    c.draw_rect(r, Color(DARK, TextSize.plate(DARK.a)))
     c.draw_rect(Rect2(r.position, Vector2(r.size.x, 1.0)), HEAD)
 
 
 # the control hint line at the very bottom of the screen in a room (same words as a page footer)
 static func hint_bar(c: CanvasItem, size: Vector2, hint: String) -> void:
-    var r := Rect2(0.0, size.y - HINT_H, size.x, HINT_H)
-    c.draw_rect(r, Color(0.02, 0.02, 0.05, 0.92))
-    PadGlyphs.draw(c, hint, Vector2(4.0, r.position.y + 2.0), SOFT)
+    var lines := fit_lines(hint, size.x - 8.0)
+    var h := HINT_H + 8.0 * float(lines.size() - 1)
+    hint_extra = h - HINT_H
+    hint_frame = Engine.get_process_frames()
+    var r := Rect2(0.0, size.y - h, size.x, h)
+    c.draw_rect(r, Color(0.02, 0.02, 0.05, TextSize.plate(0.92)))
+    for i in lines.size():
+        PadGlyphs.draw(c, str(lines[i]), Vector2(4.0, r.position.y + 2.0 + 8.0 * float(i)), SOFT)
+
+
+# R42 LARGE: a hint wider than the screen breaks at its spaces (what PadGlyphs measures, so a pad's glyphs count right)
+static func fit_lines(s: String, max_w: float) -> Array:
+    if float(PadGlyphs.width(s)) <= max_w:
+        return [s]
+    var out := []
+    var line := ""
+    for word in s.split(" "):
+        var next: String = word if line == "" else line + " " + word
+        if line != "" and float(PadGlyphs.width(next)) > max_w:
+            out.append(line)
+            line = word
+        else:
+            line = next
+    out.append(line)
+    return out
 
 
 # the caption bar sits above the hint line; returns its top edge (the HUD strip goes above it)
 static func caption_bar(c: CanvasItem, size: Vector2, cap: String) -> float:
-    var top := size.y - HINT_H
+    var top := size.y - HINT_H - (hint_extra if hint_frame == Engine.get_process_frames() else 0.0)
     if cap == "":
         return top
     var lines := wrap_text(cap, int((size.x - 2.0 * MARGIN - 8.0) / 4.0))
     var h := float(lines.size()) * 7.0 + 4.0
     top -= h
-    c.draw_rect(Rect2(0.0, top, size.x, h), DARK)
+    c.draw_rect(Rect2(0.0, top, size.x, h), Color(DARK, TextSize.plate(DARK.a)))
     c.draw_rect(Rect2(0.0, top, 2.0, h), GOLD)
     for i in lines.size():
         PadGlyphs.draw(c, str(lines[i]), Vector2(6.0, top + 2.0 + float(i) * 7.0), WHITE, 1, true)  # R42: the talk and outing captions
@@ -35347,7 +35839,7 @@ func _sync() -> void:
         node.rotation = sin(_t * 44.0) * 0.09 * minf(1.0, shake) if shake > 0.0 else 0.0
     for pr in props:
         _mark(pr)
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
         _player.global_position = Vector2(x0 + ChairRace.world_x(race.pos) + (0.0 if _fight() else view.x * 0.1), 118.0)
@@ -40608,8 +41100,11 @@ func _paint_lines() -> Array:
 # without the room (the overlay page) there is only the numbers
 func _paint_paint(b: Rect2) -> void:
     var rules: RefCounted = g.rules
-    _t("YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()], b.position.x, b.position.y)
-    _t(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, INK)
+    var head := "YOUR TEAM %d  THEIR TEAM %d  %s %d" % [rules.score[0], rules.score[1], "OVERTIME" if rules.overtime else "TIME", rules.time_left()]
+    if float(PixelFont.width(head)) > b.size.x:  # R42 LARGE: a narrow panel
+        head = "YOU %d  THEM %d  %s %d" % [rules.score[0], rules.score[1], "OT" if rules.overtime else "TIME", rules.time_left()]
+    _t(head, b.position.x, b.position.y)
+    _tl(rules.line if rules.line_t > 0.0 else "RUN, DUCK AND TAG. CARRY THEIR FLAG HOME.", b.position.x, b.position.y + 9.0, b.size.x, INK)
 
 
 # the strip at the bottom of the room: the score, the clock, whether you hold the flag or are out
@@ -41203,7 +41698,7 @@ func _paint_darts(b: Rect2) -> void:
     for i in dg.players.size():
         var who: String = dg.players[i]
         _t("%s %d" % [who.to_upper(), int(dg.totals[who])], b.position.x, y + 9.0 + 8.0 * float(i), BLUE if who == str(dg.thrower()) else INK)
-    _t(str(dg.msg), b.position.x, b.end.y - 8.0, RED if dg.phase == "pull" else INK)
+    _tb(str(dg.msg), b.position.x, b.end.y - 8.0, b.size.x, RED if dg.phase == "pull" else INK)
     _draw_dart_zoom(Vector2(b.end.x - 32.0, b.position.y + 34.0), 30.0, dg)
 
 
@@ -41466,7 +41961,7 @@ func _paint_grill(b: Rect2) -> void:
         var t: Dictionary = rows[i]
         _t("%s: %s" % [str(t.who).to_upper(), ", ".join(gg.lines(t))], b.position.x, y + 43.0 + 8.0 * float(i), AMBER)
     if float(gg.msg_t) > 0.0:
-        _t(str(gg.msg), b.position.x, b.end.y - 8.0, RED)
+        _tb(str(gg.msg), b.position.x, b.end.y - 8.0, b.size.x, RED)
 
 
 # ---- the warehouse extras for both games: the camera sits so the floor is above the HUD, boards and grill are the way in
@@ -41477,7 +41972,7 @@ func _room_extras(_delta: float) -> void:
     var cam := get_viewport().get_camera_2d()
     if cam == null:
         return
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     var view := get_viewport().get_visible_rect().size / float(f.zoom)
     var centre: float = float(f.cam_y) if f.follow else 64.0
     var lift := CORN_LIFT if game == "cornhole" else (DARTS_LIFT if game == "darts" else GRILL_LIFT)
@@ -41518,6 +42013,21 @@ func _offer_here(id: String) -> void:
 
 func _t(s: String, x: float, y: float, color := INK) -> void:
     PixelFont.draw(_canvas, s, Vector2(x, y), color, 1)
+
+
+# R42 LARGE: a line of a narrow panel wrapped to `w` px, drawn downward from y; returns the y after the last line
+func _tl(s: String, x: float, y: float, w: float, color := INK) -> float:
+    for part in _wrap(s, maxi(4, int(w / 4.0))):
+        _t(str(part), x, y, color)
+        y += 7.0
+    return y
+
+
+# the same, drawn upward so its last line sits at y (the message line at the bottom of a panel)
+func _tb(s: String, x: float, y: float, w: float, color := INK) -> void:
+    var parts := _wrap(s, maxi(4, int(w / 4.0)))
+    for i in parts.size():
+        _t(str(parts[i]), x, y - 7.0 * float(parts.size() - 1 - i), color)
 
 
 func _tc(s: String, cx: float, y: float, color := INK) -> void:
@@ -41727,7 +42237,7 @@ func _paint_result(b: Rect2) -> void:
                 else:
                     detail = "TIME %s  PLACE %d OF %d  HITS %d" % ["DNF" if race.dnf else "%.1fS" % race.total(), int(g.place), race.rivals.size() + 1, race.crashes + race.cones]
     if detail != "":
-        _t(detail, b.position.x, y + 3.0, BLUE)
+        _tl(detail, b.position.x, y + 3.0, b.size.x, BLUE)
 
 
 func _paint_bowling(b: Rect2) -> void:
@@ -41828,15 +42338,10 @@ func _paint_escape(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
     var n: int = g.code.size()
-    _t(
-        (
-            "TIME %d   HINTS LEFT %d   TRIES %d OF 8"
-            % [int(float(g.time)), int(g.hints), g.guesses.size()]
-        ),
-        x,
-        y,
-        RED if float(g.time) < 20.0 else INK
-    )
+    var escape_head := "TIME %d   HINTS LEFT %d   TRIES %d OF 8" % [int(float(g.time)), int(g.hints), g.guesses.size()]
+    if float(PixelFont.width(escape_head)) > b.size.x:  # R42 LARGE: a narrow panel
+        escape_head = "TIME %d  HINTS %d  TRIES %d/8" % [int(float(g.time)), int(g.hints), g.guesses.size()]
+    _t(escape_head, x, y, RED if float(g.time) < 20.0 else INK)
     var row := 0
     for entry in g.guesses:
         if row >= 8:
@@ -41876,21 +42381,26 @@ func _paint_escape(b: Rect2) -> void:
 func _paint_dinner(b: Rect2) -> void:
     var x := b.position.x
     var y := b.position.y
-    _t(str(DINNER_TEXT.order_head) if dinner_ordering() else "ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)], x, y)
+    var head := str(DINNER_TEXT.order_head) if dinner_ordering() else "ROUND %d OF 5   TABLE SCORE %d" % [int(g.round), int(g.score)]
+    if float(PixelFont.width(head)) > b.size.x and head.find(": ") > 0:
+        head = head.substr(head.find(": ") + 2)  # R42 LARGE: "WHAT DO YOU ORDER?" on a narrow panel
+    _t(head, x, y)
     var said := _wrap(str(g.get("line", "")), 21)  # the plate, the guest, a table event: what just happened
     for i in mini(said.size(), 5):
         _t(str(said[i]), x, y + 50.0 + 7.0 * float(i), BLUE)
+    var stacked := b.size.x < 170.0  # R42 LARGE: no room for the table beside the answers: it goes under them
+    var table_top := y + 9.0 if not stacked else y + 54.0 + 7.0 * float(mini(said.size(), 5))
     for i in 4:
         var on: bool = int(g.sel) == i and g.react.is_empty()
         if on:
             _canvas.draw_rect(Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 82.0, 8.0), Color("ffe08a"))
         _t(str(dinner_rows()[i]), x + 2.0, y + 11.0 + 9.0 * float(i))
         _dinner_mark(i, Rect2(x - 1.0, y + 9.0 + 9.0 * float(i), 2.0, 8.0))
-    var rx := x + 92.0
+    var rx := x if stacked else x + 92.0
     var table := diners()
     for i in table.size():
         var who: String = table[i]
-        var ry := y + 9.0 + 14.0 * float(i)
+        var ry := table_top + 14.0 * float(i)
         _t(who.to_upper(), rx, ry, BLUE)
         var md: String = str(g.get("moods", {}).get(who, "easygoing"))
         var shift := int(DINNER_MOODS[md].shift)
@@ -41913,7 +42423,7 @@ func _paint_dinner(b: Rect2) -> void:
             note += "LIKES " + ", ".join(_with_marks(entry, entry.likes))
         if not entry.hates.is_empty():
             note += ("  " if note != "" else "") + "NOT " + ", ".join(_with_marks(entry, entry.hates))
-        _t(note.substr(0, int((b.size.x - 92.0) / 4.0)), rx, ry + 7.0, Color("46506a"))
+        _t(note.substr(0, int((b.size.x - (0.0 if stacked else 92.0)) / 4.0)), rx, ry + 7.0, Color("46506a"))
 ''')
 
 write("scripts/hints.gd", '''extends Node
@@ -43793,7 +44303,7 @@ func _sync() -> void:
         p.shoot_t = maxf(0.0, float(p.shoot_t) - get_process_delta_time())
         _animate(i, u, p)
     _move_balls(get_process_delta_time())
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     var view := get_viewport_rect().size / float(f.zoom)
     if _player != null:
         var focus: float = float(game.units[0].x)
@@ -46197,6 +46707,96 @@ const DEFAULT_ONE_ON_ONES := {
                 {"label": "SAY IT IS ONLY GRANOLA", "reply": "It is a granola bar, Maya.", "fx": {"morale": -2}},
             ],
         },
+        {
+            "text": "Can I ride along on a site visit one day? So far I have seen the inside of a headset and the inside of a printer.",
+            "options":
+            [
+                {"label": "PROMISE THE NEXT SITE VISIT", "reply": "Next onsite, you come. I put your name on the van sheet. In ink.", "fx": {"morale": 5, "retain": 1, "flag": "maya_visit"}},
+                {"label": "SHOW HER THE CLOSET HERE", "reply": "Come and look at our rack. It is a small closet, but it has opinions.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "SAY THE VAN IS FULL", "reply": "The van is full.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "Would you read my ticket notes on Friday? I think they are good. I also think they are too long. Both.",
+            "options":
+            [
+                {"label": "READ THEM EVERY FRIDAY", "reply": "Fridays at four. I read, you watch me read. Bring the long ones too.", "fx": {"morale": 5, "retain": 1, "skill": 0.02, "flag": "maya_notes"}},
+                {"label": "READ ONE RIGHT NOW", "reply": "Give me one. I will mark the first line that matters.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "SAY NOTES ARE FOR THE NEXT TECH", "reply": "Notes are not for me. Write them for whoever opens the ticket next.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "Morgan asked if I want to sit in on the next interview. I said I would think about it. Then I hid in the supply closet for ten minutes.",
+            "options":
+            [
+                {"label": "SAY YES AND HELP HER PREPARE", "reply": "Yes. You pick three questions and I read them first. The closet is optional.", "fx": {"morale": 5, "retain": 1, "flag": "maya_panel"}},
+                {"label": "TELL HER SHE CAN WATCH", "reply": "Watch the first one. Ask the second one if you feel like it.", "fx": {"morale": 3}},
+                {"label": "SAY THAT IS FOR THE SENIORS", "reply": "That one is for the senior techs.", "fx": {"morale": -4}},
+            ],
+        },
+        {
+            "text": "The desk by the printer is warm and loud. I know what every printer noise means now. I cannot think, but I could write a dictionary.",
+            "options":
+            [
+                {"label": "PROMISE THE WINDOW DESK", "reply": "Window desk, end of the week. I will move the cable bundle myself.", "fx": {"morale": 4, "retain": 1, "stress": -3, "flag": "maya_desk"}},
+                {"label": "HAND HER A PAIR OF EARPLUGS", "reply": "Here. They are orange. Take two.", "fx": {"morale": 2, "stress": -2}},
+                {"label": "SAY EVERYONE GETS A LOUD DESK", "reply": "Everyone gets a loud desk.", "fx": {"morale": -4, "stress": 3}},
+            ],
+        },
+        {
+            "text": "A client said enjoy your lunch. It was nine in the morning. I said you too.",
+            "options":
+            [
+                {"label": "TELL HER EVERYONE DOES THAT", "reply": "Everyone does. I once told a client happy birthday. It was not his birthday.", "fx": {"morale": 5, "retain": 1}},
+                {"label": "SAY IT MEANS SHE IS POLITE", "reply": "It means you are polite. Eat something at ten.", "fx": {"morale": 3}},
+                {"label": "ASK HER TO FOCUS ON THE TICKET", "reply": "Focus on the ticket.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "I fixed a PC by unplugging it. I do not know why that worked. Should I be proud or worried?",
+            "options":
+            [
+                {"label": "WRITE DOWN WHY IT WORKED", "reply": "Both. Tomorrow we find out why, and then it goes in the binder with your name.", "fx": {"morale": 5, "retain": 1, "skill": 0.03}},
+                {"label": "SAY BOTH IS CORRECT", "reply": "Both is the right answer. It is the right answer for most of this job.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "SAY DO NOT FIX WHAT YOU CANNOT EXPLAIN", "reply": "Do not fix what you cannot explain.", "fx": {"morale": -4}},
+            ],
+        },
+        {
+            "text": "Alan said hello in the hallway and I said ticket. Just ticket. He nodded as if that was normal.",
+            "options":
+            [
+                {"label": "PRACTISE A HELLO WITH HER", "reply": "Hello, Alan. Say it with me. You may add ticket afterwards if you must.", "fx": {"morale": 5, "retain": 1}},
+                {"label": "TELL HER ALAN HAS HEARD WORSE", "reply": "A client called him Alvin for a year. He answered to it.", "fx": {"morale": 3}},
+                {"label": "SAY SHE WILL GET USED TO IT", "reply": "You will get used to the owners.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "My mother calls me to fix her laptop. I fixed it by phone. Now she calls the shop number. Is she a client?",
+            "options":
+            [
+                {"label": "LOG A SHOP TICKET FOR HER MOTHER", "reply": "Log it as internal, priority three. Your mother gets a ticket number. I think she will like that.", "fx": {"morale": 5, "retain": 1}},
+                {"label": "SAY ONE FREE FIX, THEN A TICKET", "reply": "One free one. After that she gets a ticket and the same patience as everyone.", "fx": {"morale": 3}},
+                {"label": "SAY NO PERSONAL WORK ON THE SHOP LINE", "reply": "Not on the shop line.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "I counted the printer tickets this month. Thirty-one. I think the printers know my name.",
+            "options":
+            [
+                {"label": "TURN IT INTO A ONE PAGE FIX LIST", "reply": "Thirty-one is a pattern. Write the five fixes that cover most of them. One page, your name on top.", "fx": {"morale": 5, "retain": 1, "skill": 0.02}},
+                {"label": "PUT THE COUNT IN FRONT OF ALAN", "reply": "Show Alan the count. Numbers make him cheerful. Slightly.", "fx": {"morale": 3, "skill": 0.01}},
+                {"label": "SAY PRINTERS ARE LIKE THAT", "reply": "Printers are like that.", "fx": {"morale": -3}},
+            ],
+        },
+        {
+            "text": "Someone asked for my opinion in the huddle. I gave it. Then I apologised for it until lunch.",
+            "options":
+            [
+                {"label": "TELL HER THE OPINION WAS GOOD", "reply": "It was good. It was the right one. You can stop now, you apologised to the stapler too.", "fx": {"morale": 6, "retain": 1}},
+                {"label": "ASK FOR HER OPINION AGAIN ON FRIDAY", "reply": "Same question on Friday. Practice is mostly turning up.", "fx": {"morale": 3}},
+                {"label": "SAY KEEP THE SORRY FOR CLIENTS", "reply": "Save the sorry for the clients.", "fx": {"morale": -3}},
+            ],
+        },
     ],
     "Tech":
     [
@@ -46545,9 +47145,200 @@ const DEFAULT_ONE_ON_ONES := {
                 {"label": "SAY IT DEPENDS", "reply": "It depends.", "fx": {"social": {"John": -2}}},
             ],
         },
+        {
+            "text": "Ask me how the quarter looks. Go on. It looks like a quarter. A good one. Roughly.",
+            "options":
+            [
+                {"label": "ASK FOR ONE NUMBER, WITH A SOURCE", "reply": "One number by Friday, with the file it came from. A napkin counts if it has a date.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}, "flag": "john_numbers"}},
+                {"label": "LET HIM KEEP THE ROUGH PICTURE", "reply": "Roughly good. I can live with roughly good until Friday.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "SAY ROUGHLY IS NOT A NUMBER", "reply": "Roughly is not a number.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -1}}},
+            ],
+        },
+        {
+            "text": "Dr. Okafor at Piedmont likes baseball. I have two tickets. It is basically a meeting with peanuts.",
+            "options":
+            [
+                {"label": "SAY YES, WITH A LIMIT AND A RECEIPT", "reply": "One game, one receipt, no second round of anything. The peanuts go on the form.", "fx": {"social": {"John": 2}, "trust": {"Alan": 1, "Garrison": 1}, "flag": "john_game"}},
+                {"label": "SAY YES, AND TAKE A PHOTO", "reply": "Take a photo of the scoreboard. Garrison likes a photo.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 2}}},
+                {"label": "SAY NO, USE THE CONFERENCE ROOM", "reply": "Peanuts are not a meeting. Use the conference room.", "fx": {"social": {"John": -3}, "trust": {"Alan": 2, "Garrison": -2}}},
+            ],
+        },
+        {
+            "text": "A prospect wants to see our real ticket board. I said sure. Do we keep a fake one for this?",
+            "options":
+            [
+                {"label": "SET UP A CLEAN DEMO BOARD", "reply": "There is no fake board, but there is a quiet afternoon. I will set up a demo client with tickets that read well.", "fx": {"social": {"John": 2}, "trust": {"Alan": 1, "Garrison": 1}, "flag": "john_demo"}},
+                {"label": "SHOW HIM THE REAL ONE, ONE COLUMN", "reply": "One column, no names. Do not read the notes out loud.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "SAY NO BOARD TOURS", "reply": "No board tours.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -1}}},
+            ],
+        },
+        {
+            "text": "I told Soggy Bottom we would label every cable in their office. Every one. This week. They have a lot of cables, I am told.",
+            "options":
+            [
+                {"label": "COUNT THE CABLES FIRST, THEN PROMISE", "reply": "Count first, then promise. Two hours for the closet, a quote for the rest. You carry the count.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}, "flag": "john_labels"}},
+                {"label": "SEND A TECH FOR AN AFTERNOON", "reply": "One afternoon, one tech, one label maker. Whatever is not labelled by five goes on a list.", "fx": {"social": {"John": 3}, "morale": -2, "trust": {"Alan": 0, "Garrison": 1}}},
+                {"label": "TELL HIM TO TAKE IT BACK", "reply": "Call them. Say we will label what matters, not what is there.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": 0}, "mood": -1}},
+            ],
+        },
+        {
+            "text": "Mrs. Delacroix at Soggy Bottom sent me a fruitcake. In July. Can I expense the gratitude?",
+            "options":
+            [
+                {"label": "LOG IT AS A GIFT AND SHARE IT", "reply": "It goes on the gift sheet and into the break room. Three slices each, no more.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+                {"label": "TELL HIM TO EAT IT AND WRITE A NOTE", "reply": "It is cake. Eat it. Write her a note.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "SAY GIFTS GO BACK", "reply": "Gifts go back, with a thank-you card.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -1}}},
+            ],
+        },
+        {
+            "text": "I called a prospect Dave for forty minutes. His name is Dale. He asked for ten percent off to forgive me.",
+            "options":
+            [
+                {"label": "OFFER A FREE SETUP HOUR INSTEAD", "reply": "No discount. A free setup hour and a card with his name spelled right. I checked it twice.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+                {"label": "LET FIVE PERCENT STAND FOR A MONTH", "reply": "Five percent, one month. He is Dale from now on.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "SAY WRITE NAMES ON YOUR HAND", "reply": "Write names on your hand. In pen.", "fx": {"social": {"John": -2}}},
+            ],
+        },
+        {
+            "text": "A prospect asked for three references. I have three. One is my brother-in-law. He does own a dental practice, though.",
+            "options":
+            [
+                {"label": "USE TWO REAL ONES AND SAY SO", "reply": "Two real ones, with permission. Say you have two and a third coming.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+                {"label": "USE HIM AND SAY HE IS FAMILY", "reply": "Say he is family. People trust a man who admits it.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "SAY NO FAMILY REFERENCES", "reply": "No family. Ring somebody who was angry with us and stayed.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -1}}},
+            ],
+        },
+        {
+            "text": "Garrison told me to close it by Friday. I said Friday. Which Friday? I did not ask.",
+            "options":
+            [
+                {"label": "ASK GARRISON WHICH FRIDAY, TOGETHER", "reply": "We ask him now. It is the one on the calendar, but we ask anyway.", "fx": {"social": {"John": 2}, "trust": {"Alan": 1, "Garrison": 1}}},
+                {"label": "PICK THE LATER FRIDAY", "reply": "Pick the later one. If he meant the earlier, we apologise with the signed paper.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "SAY ASK HIM YOURSELF", "reply": "That is a question for Garrison.", "fx": {"social": {"John": -3}}},
+            ],
+        },
+        {
+            "text": "Iron Mule Demolition wants help on a Sunday. They say it is an emergency. They said that last Sunday too.",
+            "options":
+            [
+                {"label": "OFFER A PAID WEEKEND LINE", "reply": "A weekend line, priced, with a number they sign. If it is an emergency, it will be worth it.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 1}}},
+                {"label": "TAKE THE CALL YOURSELF THIS ONCE", "reply": "I take Sunday. They get the speech about the line on Monday.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}, "mood": 1}},
+                {"label": "SAY SUNDAYS ARE CLOSED", "reply": "Sundays are closed.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -2}}},
+            ],
+        },
+        {
+            "text": "I have all my receipts. They are in the car. Mostly.",
+            "options":
+            [
+                {"label": "SET A DATE FOR THE RECEIPTS", "reply": "Friday, on my desk, in an envelope with your name. The envelope goes to the bookkeeper, not the car.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+                {"label": "GIVE HIM A WEEK AND A SHOEBOX", "reply": "A week. And a shoebox. Label it.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+                {"label": "SAY NO RECEIPT, NO REFUND", "reply": "No receipt, no refund.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -1}}},
+            ],
+        },
     ],
 }
 var ONE_ON_ONES: Dictionary = DEFAULT_ONE_ON_ONES.duplicate(true)
+# C7b: a promise made in a 1:1 (the option's fx has a flag) comes back as a card `after` days later: {flag: {who, after, text, options}}.
+# Same shape as a deck card. Not part of a deck: it does not count as a deal and is dealt once a run, if the person is still here.
+const DEFAULT_ONE_BACK := {
+    "maya_visit":
+    {
+        "who": "Maya",
+        "after": 3,
+        "text": "You said I could come on the next site visit. There is one Thursday. I packed a sandwich, a pen and a second pen.",
+        "options":
+        [
+            {"label": "TAKE HER AND HAND OVER THE LABEL MAKER", "reply": "You carry the label maker and label whatever I point at. Bring the second pen.", "fx": {"morale": 6, "retain": 1, "skill": 0.03}},
+            {"label": "TAKE HER FOR THE FIRST HOUR", "reply": "The first hour, then you ride back with the sandwich. It is a start.", "fx": {"morale": 3, "skill": 0.01}},
+            {"label": "SAY NOT THIS WEEK", "reply": "Not this week. Sorry.", "fx": {"morale": -6, "retain": -1}},
+        ],
+    },
+    "maya_notes":
+    {
+        "who": "Maya",
+        "after": 4,
+        "text": "It is Friday. I printed my notes. Three pages. One of them is about a stapler. It is a good stapler.",
+        "options":
+        [
+            {"label": "READ ALL THREE PAGES, RED PEN IN HAND", "reply": "Page one is good. Page two is good and long. Page three is a stapler. I enjoyed it.", "fx": {"morale": 5, "retain": 1, "skill": 0.03}},
+            {"label": "READ THE TOP HALF OF EACH", "reply": "Top halves. The part you buried is always the answer.", "fx": {"morale": 3, "skill": 0.02}},
+            {"label": "SAY NEXT WEEK, IT IS BUSY", "reply": "Next week. I have a call.", "fx": {"morale": -5, "retain": -1}},
+        ],
+    },
+    "maya_panel":
+    {
+        "who": "Maya",
+        "after": 5,
+        "text": "The candidate is in the conference room. I have eight questions. Six are about pets. Is that wrong?",
+        "options":
+        [
+            {"label": "CUT IT TO THREE REAL QUESTIONS", "reply": "Keep one pet question. People answer that one honestly. Take the other two from the sheet.", "fx": {"morale": 5, "retain": 1, "skill": 0.02}},
+            {"label": "LET HER ASK THE PET ONES", "reply": "Ask them. Watch who has a dog. We may learn more than the sheet would tell us.", "fx": {"morale": 3, "mood": 1}},
+            {"label": "SAY STICK TO THE SHEET", "reply": "Stick to the sheet.", "fx": {"morale": -4}},
+        ],
+    },
+    "maya_desk":
+    {
+        "who": "Maya",
+        "after": 3,
+        "text": "Is the window desk still happening? I measured. My chair fits. My plant does not. I would like to talk about the plant.",
+        "options":
+        [
+            {"label": "MOVE HER TODAY, PLANT INCLUDED", "reply": "Today. The plant gets the sill. I will find a bigger saucer.", "fx": {"morale": 6, "retain": 2, "stress": -5}},
+            {"label": "MOVE HER FRIDAY, PLANT STAYS", "reply": "Friday. The plant can visit.", "fx": {"morale": 3, "stress": -2}},
+            {"label": "SAY THE DESK STAYS WHERE IT IS", "reply": "The desk stays where it is.", "fx": {"morale": -5, "retain": -1}},
+        ],
+    },
+    "john_numbers":
+    {
+        "who": "John",
+        "after": 3,
+        "text": "Here is your number. I want to say it is eleven. It is nine if the maybes stay maybes. One of them plays golf, so call it ten.",
+        "options":
+        [
+            {"label": "READ IT LINE BY LINE TOGETHER", "reply": "Nine signed. Two maybes in pencil. We write both columns. You can still say ten out loud, but not on paper.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+            {"label": "TAKE TEN AND LOG THE MAYBES", "reply": "Ten, with the maybes in pencil. Thank you for the golfer.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+            {"label": "SEND IT BACK UNTIL IT IS ONE NUMBER", "reply": "One number. I will wait.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": 0}}},
+        ],
+    },
+    "john_game":
+    {
+        "who": "John",
+        "after": 4,
+        "text": "The game is Saturday. I have the receipt folder. Dr. Okafor is bringing his brother. Does a brother count as a plus one?",
+        "options":
+        [
+            {"label": "YES, ONE BROTHER, ON THE FORM", "reply": "One brother, by name, on the form. If he asks about the network, he is a lead.", "fx": {"social": {"John": 2}, "trust": {"Alan": 1, "Garrison": 1}}},
+            {"label": "YES, AND GO ALONG YOURSELF", "reply": "Come for the fourth inning. Save me a peanut.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+            {"label": "SAY NO BROTHERS", "reply": "No brothers. It is in the policy now.", "fx": {"social": {"John": -3}, "trust": {"Alan": 0, "Garrison": -1}}},
+        ],
+    },
+    "john_demo":
+    {
+        "who": "John",
+        "after": 3,
+        "text": "The demo is at ten. Is there anything on the board I should not read out loud? Asking for a friend. The friend is me.",
+        "options":
+        [
+            {"label": "SCRUB THE BOARD TOGETHER", "reply": "We take out the names and the word idiot. Six minutes. You show the lanes and say how fast we answer.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}, "mood": 1}},
+            {"label": "LET HIM IMPROVISE", "reply": "I will improvise. Do not read me the printer one.", "fx": {"social": {"John": 3}, "trust": {"Alan": -1, "Garrison": 1}}},
+            {"label": "CANCEL THE DEMO", "reply": "Cancel it. We show a clean board next week.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -2}}},
+        ],
+    },
+    "john_labels":
+    {
+        "who": "John",
+        "after": 3,
+        "text": "Soggy Bottom called. They counted. Four hundred cables. He says it is about that. Do we have enough tape?",
+        "options":
+        [
+            {"label": "QUOTE THE REST AS A SMALL PROJECT", "reply": "Closet today, the rest a priced project. Four hundred is a number. We can sell it and we know what is in it.", "fx": {"social": {"John": 2}, "trust": {"Alan": 2, "Garrison": 0}}},
+            {"label": "SEND TWO TECHS WITH ALL THE TAPE", "reply": "Two techs, all the tape, until five. Tell them it is a favour.", "fx": {"social": {"John": 3}, "morale": -2, "trust": {"Alan": -1, "Garrison": 1}}},
+            {"label": "SAY THE LABELS WERE A FIGURE OF SPEECH", "reply": "Tell them we meant the important cables.", "fx": {"social": {"John": -3}, "trust": {"Alan": 1, "Garrison": -1}}},
+        ],
+    },
+}
+var ONE_BACK: Dictionary = DEFAULT_ONE_BACK.duplicate(true)
 const DEFAULT_ONE_TEXT := {
     "already": "We talked this morning, Dan. I am fine. Thanks.",
     "walkup": "%s stops by your desk.",
@@ -47117,6 +47908,7 @@ func begin_day(day: int) -> void:
     huddle()
     retention_event()
     ServiceArc.begin_day(day)
+    _oto_backs(day)
 
 
 func _client_work() -> float:
@@ -47792,7 +48584,28 @@ func _answer_oto(who: String, label: String, card: Dictionary, pick: int, after:
         Crew.add_all(int(fx.morale))
         fx.erase("morale")
     apply_fx(fx, _people_scale())
+    if fx.has("flag"):
+        flags["flag_day_" + str(fx.flag)] = Campaign.day  # C7b: the day a promise was made (ONE_BACK says when it comes back)
     Cards.ask(label, str(o.reply), [{"label": "OK", "id": "ok"}], func(_x: String) -> void: _call(after))
+
+
+# C7b: a promise from a 1:1 comes back as a card, once, the day it is due (a person who has left does not ask)
+func _oto_backs(day: int) -> void:
+    for id in ONE_BACK:
+        var row: Dictionary = ONE_BACK[id]
+        if not bool(flags.get(str(id), false)) or flags.has("back_done_" + str(id)):
+            continue
+        if day < int(flags.get("flag_day_" + str(id), day)) + int(row.after):
+            continue
+        flags["back_done_" + str(id)] = true
+        var who := str(row.who)
+        if not has_one_on_one(who):
+            continue
+        var label := Roles.label(who) if who == "Maya" or who == "John" else who
+        var options := []
+        for i in row.options.size():
+            options.append({"label": str(row.options[i].label), "id": str(i)})
+        Cards.ask(label, str(row.text), options, func(pick: String) -> void: _answer_oto(who, label, row, int(pick), Callable()))
 
 
 func _call(cb: Callable) -> void:
@@ -52476,7 +53289,7 @@ const ROOTS := {
     "Playbook": ["BOOKS", "PROBLEMS"],
     "Owner": ["CARDS"],
     "OwnerOps": ["LEADS"],
-    "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
+    "Service": ["HUDDLE", "MEMOS", "BEATS", "INCIDENTS", "INCIDENT_OPTIONS", "ONE_ON_ONES", "ONE_BACK", "ONE_TEXT", "CREW_TEXT", "DAYS", "REVIEW", "RUNBOOKS", "DESIGNS", "KB_TEXT", "CHANGES", "HIRE_TEXT", "RETENTION", "ROWS"],
     "ServiceArc": ["SCHEDULE", "ARC", "JOB_BOOKS", "JOB_PROBLEMS", "PROBS", "HOOKS", "EVENT_HOOKS", "QUESTIONS", "VOICES", "TEXT"],
     "Msp": ["PROBLEMS", "RANSOM", "ADOBE", "INSTALL", "FAVOURS", "FAVOUR_TEXT"],
     "Talk": ["GREETINGS", "SMALL", "GOSSIP", "TIPS_GENERIC", "OWNER_HOLD", "VIC_GREETINGS", "VIC_SMALL", "VIC_GOSSIP", "VIC_TIPS", "VIC_STATE", "VIC_ASK"],
@@ -52494,7 +53307,7 @@ const ROOTS := {
     "Onsite": ["TEXT", "JOBS", "MORE_JOBS", "EVENTS", "STAFF", "SITE_APPS", "PETS", "FINDINGS", "MEETINGS"],
     "Outings": ["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT", "DINNER_TEXT", "TABLE_EVENTS", "POST_TALKS", "ESCAPE_THEMES"],
     "Build": ["QUIRKS", "PRESETS", "INFO"],
-    "SalesCampaign": ["BEAT_TEXT"],
+    "SalesCampaign": ["BEAT_TEXT", "LIFE"],
     "Rival": ["HABITS", "RIVALS"],
     "Habits": ["HABITS", "TEXT", "CARDS"],
     "RivalCards": ["CARDS"],
@@ -53835,6 +54648,36 @@ const FORUM := [
         ],
     },
     {
+        "id": "pat", "speaker": "PaperJam_Pat (forum regular)",
+        "text": "Pat. Printers. I do not fix them, I listen to them. Yours is not broken, it is sulking, and I can tell you which toner it hates. Stop buying the cheap cartridges. I will know.",
+        "options": [
+            {"id": "toner", "label": "ASK ABOUT THE TONER", "skill": "servers", "xp": 4, "text": "'The right cartridge, the roller changed every fifty thousand pages, and never the spooler first.' She draws the paper path on a napkin, with the jam spots marked. (+4 servers XP)"},
+            {"id": "jam", "label": "ASK HOW TO CLEAR A JAM", "skill": "people", "xp": 3, "text": "'Open it slowly, pull the paper the way it travels, and tell the user it was the paper.' It is never kind to say it was them. Say it kindly anyway. (+3 customer XP)"},
+            {"id": "thread", "label": "UPVOTE HER SPOOLER ANSWER", "skill": "", "xp": 0, "karma": 3, "text": "You upvote her answer in the spooler thread. She replies with the model number of every printer she has ever loved. (+3 forum karma)", "text_free": "You upvote her answer in the spooler thread. She replies with a list of model numbers."},
+            {"id": "testpage", "label": "PRINT HER A TEST PAGE", "skill": "", "xp": 0, "social": 1, "text": "She holds it up to the light, nods, and tapes it to your badge like a good report card. Your coworkers ask what you did to earn it. (coworkers like you a little more)", "text_free": "She holds it up to the light and nods."},
+        ],
+    },
+    {
+        "id": "vic", "speaker": "SpinUp_Vic (forum regular)",
+        "text": "Vic. Whatever is on that old box, it should be a virtual machine. One host, six servers, one power bill. Just spin up a VM. I say it at the registration desk and I say it at lunch.",
+        "options": [
+            {"id": "host", "label": "ASK ABOUT CONSOLIDATING", "skill": "servers", "xp": 4, "text": "'One strong host, plenty of memory, one virtual machine per job.' He draws six little boxes inside a big one and adds the power bill under it. (+4 servers XP)"},
+            {"id": "snap", "label": "ASK ABOUT SNAPSHOTS", "skill": "security", "xp": 3, "text": "'A snapshot is an undo button, not a backup. Keep the real backups off the host.' He says it twice, the second time more quietly. (+3 security XP)"},
+            {"id": "thread", "label": "UPVOTE 'JUST SPIN UP A VM'", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his reply in the cloud thread. He answers with a link to the same reply, in case you missed it. (+3 forum karma)", "text_free": "You upvote his reply in the cloud thread. He answers with a link to the same reply."},
+            {"id": "box", "label": "TELL HIM IT IS A REAL BOX", "skill": "", "xp": 0, "social": 1, "text": "He takes it personally for a full second, then buys you a coffee and offers to come look at it. Your coworkers hear you made a friend. (coworkers like you a little more)", "text_free": "He takes it personally for a full second, then buys you a coffee."},
+        ],
+    },
+    {
+        "id": "gus", "speaker": "PatchPanel_Gus (forum regular)",
+        "text": "Gus. Cable. Cat5e, Cat6, patch panels and the little coloured tags. I wear fourteen badges because every site gave me one, and I have lost the argument with the lanyard. Show me your closet and I will tell you who you are.",
+        "options": [
+            {"id": "panel", "label": "ASK ABOUT THE PATCH PANEL", "skill": "networking", "xp": 4, "text": "'Punch down in order, label both ends, test every run. Orange for the phones, blue for the desks.' He hands you a punch-down tool and watches your first one. (+4 networking XP)"},
+            {"id": "badges", "label": "ASK ABOUT THE BADGES", "skill": "people", "xp": 3, "text": "'This one opens the dock, this one the server room, and this one I cannot identify.' Nobody asked for any of them back. You learn to ask for a visitor badge first. (+3 customer XP)"},
+            {"id": "thread", "label": "UPVOTE HIS CABLING TIP", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his tip in the VLAN thread. He replies with a photo of a closet that was labelled correctly, and it is beautiful. (+3 forum karma)", "text_free": "You upvote his tip in the VLAN thread. He replies with a photo of a labelled closet."},
+            {"id": "count", "label": "COUNT HIS BADGES", "skill": "", "xp": 0, "social": 1, "text": "Fourteen. He lets you hold the one for the roof. Your coworkers ask how you got access to the roof. (coworkers like you a little more)", "text_free": "Fourteen. He lets you hold the one for the roof."},
+        ],
+    },
+    {
         "id": "dot", "speaker": "DNS_Dot (forum regular)",
         "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
         "options": [
@@ -53874,12 +54717,14 @@ const CROWD := {
         {"who": "expo_grizzle", "role": "forum:grizzle", "x": 182, "facing": "left", "routine": ["wait:6", "say:2", "wait:4"]},
         {"who": "expo_ray", "role": "forum:ray", "x": 140, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
         {"who": "expo_walt", "role": "forum:walt", "x": 160, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
+        {"who": "expo_gus", "role": "forum:gus", "x": 66, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
     ],
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},
         {"who": "expo_attd", "role": "att:2", "x": 280, "facing": "left", "routine": ["wait:4", "say:2"]},
         {"who": "expo_rita", "role": "forum:rita", "x": 90, "facing": "right", "routine": ["talk:4", "wait:3", "say:2"]}, {"who": "expo_tony", "role": "forum:tony", "x": 178, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
         {"who": "expo_priest", "role": "forum:priest", "x": 224, "facing": "left", "routine": ["wait:5", "talk:4", "wait:3", "say:2"]},
+        {"who": "expo_pat", "role": "forum:pat", "x": 250, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
     ],
     "ballroom": [
         {"who": "expo_atta", "role": "att:0", "x": 77, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},
@@ -53921,6 +54766,7 @@ const CROWD := {
         {"who": "expo_attb", "role": "att:4", "x": 150, "facing": "right", "routine": ["walk:100", "wait:3", "walk:270", "wait:3"]},
         {"who": "expo_attc", "role": "att:5", "x": 238, "facing": "left", "routine": ["wait:5", "talk:3"]},
         {"who": "expo_pip", "role": "forum:pip", "x": 205, "facing": "right", "routine": ["wait:4", "talk:3", "wait:2", "say:2"]}, {"who": "expo_dot", "role": "forum:dot", "x": 115, "facing": "right", "routine": ["wait:4", "say:2", "wait:3"]},
+        {"who": "expo_vic", "role": "forum:vic", "x": 183, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
     ],
 }
 
@@ -57405,6 +58251,7 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
     if practice:
         _reseed()
     is_open = true
+    Game.large_hold("printer")  # R42: its fixed 176 px layout does not fit LARGE `v` (Game.FALLBACK)
     Game.ui_open = true
     _canvas.visible = true
     phase = "intro"
@@ -57430,6 +58277,7 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
 
 func _finish() -> void:
     is_open = false
+    Game.large_release("printer")
     Game.ui_open = false
     _canvas.visible = false
     if _callback.is_valid():
@@ -59006,7 +59854,7 @@ func _click(at: Vector2) -> void:
 
 # ---- drawing ---------------------------------------------------------------------------------------
 func _size() -> Vector2:
-    return Vector2(Game.FORMATS[Game.format].size)
+    return Game.logical_size()
 
 
 func _paint() -> void:
@@ -59026,9 +59874,14 @@ func _paint_tools(size: Vector2) -> void:
     var body := UiStyle.panel(_canvas, r, "FREE PLAY TOOLBOX", Controls.keys("{SHIFT F10|}") if not in_title else "")
     var label_w := 52.0
     icon_drawn = Rect2()
+    # R42 LARGE: on a short picture the list scrolls (the selected row stays in view) instead of leaving the panel
+    var vis := clampi(int((r.size.y - 24.0) / 9.0), 1, list.size())
+    var first := clampi(sel - vis + 1, 0, list.size() - vis)
     for i in list.size():
+        if i < first or i >= first + vis:
+            continue
         var row: Dictionary = list[i]
-        var y := body.position.y + 9.0 * float(i)
+        var y := body.position.y + 9.0 * float(i - first)
         var rect := Rect2(body.position.x - 2.0, y - 1.0, body.size.x + 4.0, 9.0)
         _rects.append([rect, "row", i])
         var hot := i == sel
@@ -59120,7 +59973,9 @@ signal look_changed  # the create step changed the look (the outfit overlay wear
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PLAYER := preload("res://scripts/player.gd")
 const BuildPanel := preload("res://scripts/build_panel.gd")
+const UiStyle := preload("res://scripts/ui_style.gd")
 const GOLD := Color("f5d442")
+const SHORT_H := 150.0  # a screen this short (wide 128, LARGE h 144) takes the compact rows; deck 200 and LARGE deck 160 do not
 const INK := Color("17121f")
 const PANEL := Color(0.05, 0.07, 0.12, 0.85)
 const DIM := Color("9aa8c0")
@@ -60393,7 +61248,7 @@ func _click(at: Vector2) -> void:
 
 # ---- drawing --------------------------------------------------------------------
 func _size() -> Vector2:
-    return Vector2(Game.FORMATS[Game.format].size)
+    return Game.logical_size()
 
 
 func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
@@ -60402,7 +61257,19 @@ func _txt(s: String, p: Vector2, c := Color.WHITE) -> void:
 
 # a line of key hints, centred: the words follow a remapped menu key, and a pad shows its buttons (R34)
 func _keys_line(s: String, y: float) -> void:
-    _ctxt(Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"}), y, DIM)
+    var text := Controls.hint(s, {"Q": "page_prev", "E": "page_next", "TAB": "hold_pose", "P": "preset"})
+    var lines: Array = UiStyle.fit_lines(text, _size().x - 6.0)  # R42 LARGE: a line wider than the screen breaks, upward from y
+    for i in lines.size():
+        _ctxt(str(lines[i]), y - 8.0 * float(lines.size() - 1 - i), DIM)
+
+
+# a side note after a value (READY-MADE, 3 LOCKED): on a screen too narrow for it, only its first word (a count) or nothing
+func _txt_fit(s: String, p: Vector2, c := Color.WHITE) -> void:
+    if p.x + float(PixelFont.width(s)) > _size().x - 2.0:
+        s = s.split(" ")[0] if s.find(" ") > 0 else ""
+        if p.x + float(PixelFont.width(s)) > _size().x - 2.0:
+            return
+    _txt(s, p, c)
 
 
 func _ctxt(s: String, y: float, c := Color.WHITE) -> void:
@@ -60481,7 +61348,7 @@ func _draw() -> void:
         if create_modal != "":
             _keys_line("ARROWS MOVE  ENTER PICK  ESC BACK", size.y - (12.0 if narrow else 9.0))
         elif narrow:
-            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 20.0)
+            _keys_line("UP DOWN ROW  LEFT RIGHT CHANGE", size.y - 28.0 if size.x < 160.0 else size.y - 20.0)
             _keys_line("Q E PAGE  TAB HOLD  ENTER GO  ESC BACK", size.y - 12.0)
         else:
             var keys := "Q E PAGE  UP DOWN ROW  LEFT RIGHT CHANGE  TAB HOLD POSE  ENTER GO  ESC BACK"
@@ -60511,7 +61378,7 @@ func _draw() -> void:
 
 # the summary line at the bottom; wraps onto two lines when the build step makes it wider than the screen
 func _draw_summary(size: Vector2, narrow: bool) -> void:
-    var base := size.y - (34.0 if narrow else (18.0 if size.y <= 130.0 else 19.0))
+    var base := size.y - (34.0 if narrow else (18.0 if size.y <= SHORT_H else 19.0))
     var text := summary(false)
     if float(PixelFont.width(text)) <= size.x - 8.0:
         _ctxt(text, base, Color.WHITE)
@@ -60639,7 +61506,7 @@ func _place_sprites(size: Vector2, narrow: bool) -> void:
         return
     var n := ids.size()
     var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
-    var feet := 83.0 if size.y <= 130.0 else 104.0
+    var feet := 83.0 if size.y <= SHORT_H else 104.0
     if narrow:
         feet = 176.0
     for i in n:
@@ -60658,7 +61525,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
     _place_sprites(size, narrow)
     var n := ids.size()
     var pitch := minf(50.0, (size.x - 16.0) / maxf(1.0, float(n)))
-    var feet := 83.0 if size.y <= 130.0 else 104.0
+    var feet := 83.0 if size.y <= SHORT_H else 104.0
     if narrow:
         feet = 176.0
         var panel := Rect2(26.0, feet - 136.0, size.x - 52.0, 146.0)
@@ -60687,7 +61554,7 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
     _ctxt(str(data.name), name_y, GOLD)
     var by := name_y + (20.0 if narrow else 9.0)
     var blurb := str(data.blurb)
-    if size.y <= 130.0 and not narrow:
+    if size.y <= SHORT_H and not narrow:
         blurb = _one_line(blurb, int((size.x - 20.0) / 4.0))
     var end_y := _para(blurb, by, Color.WHITE, 4 if narrow else 2)
     if is_campaign() and end_y + 8.0 < size.y - (46.0 if narrow else 28.0):
@@ -60699,8 +61566,8 @@ func _draw_chars(size: Vector2, narrow: bool) -> void:
 func _create_layout(size: Vector2, narrow: bool) -> Dictionary:
     if narrow:
         return {"cx": size.x * 0.5, "feet": 116.0, "x0": 8.0, "y0": 134.0, "pitch": 14.0}
-    if size.y <= 130.0:
-        return {"cx": 52.0, "feet": 98.0, "x0": 104.0, "y0": 17.0, "pitch": 11.0}
+    if size.y <= SHORT_H:
+        return {"cx": 52.0, "feet": minf(98.0, size.y - 17.0), "x0": 104.0, "y0": 17.0, "pitch": 11.0}  # (the pose line sits 10 px under the feet)
     return {"cx": 60.0, "feet": 130.0, "x0": 116.0, "y0": 28.0, "pitch": 17.0}
 
 
@@ -60736,11 +61603,19 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
     var tx := x0 - 3.0
     var pages := _pages()
     if create_modal == "":
+        var pad := 10.0
+        var gap := 3.0
+        var total := 0.0
+        for p in pages.size():
+            total += float(PixelFont.width(str(pages[p].label))) + pad + gap
+        if tx + total > size.x - 2.0:  # R42 LARGE: a narrow screen packs the tab chips closer
+            pad = 6.0
+            gap = 1.0
         for p in pages.size():
             var label := str(pages[p].label)
-            var tw := float(PixelFont.width(label)) + 10.0
+            var tw := float(PixelFont.width(label)) + pad
             _chip(Rect2(tx, float(lay.y0), tw, pitch - 2.0), label, p == create_page, "tab", p)
-            tx += tw + 3.0
+            tx += tw + gap
     if create_modal == "presets":
         _draw_presets(lay, size)
         return
@@ -60774,11 +61649,11 @@ func _draw_create(size: Vector2, narrow: bool) -> void:
                 _txt(st, Vector2(floorf(box.position.x + (box.size.x - float(PixelFont.width(st))) * 0.5), ty), Color.WHITE)
                 if kind == "start":  # what the start is: the original sprite as is (until an edit), or a saved look
                     var tag := "READY-MADE" if stock_pick() else ("SAVED" if sel_id().begins_with("slot") else "")
-                    _txt(tag, Vector2(box.end.x + 14.0, ty), DIM)
+                    _txt_fit(tag, Vector2(box.end.x + 14.0, ty), DIM)
                 elif kind == "acc" and not Look.acc_locked(str(row.id)).is_empty():
-                    _txt("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+                    _txt_fit("%d LOCKED" % Look.acc_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
                 elif kind == "choice" and Look.CLOTHES_KINDS.has(str(row.id)) and not Look.clothes_locked(str(row.id)).is_empty():
-                    _txt("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
+                    _txt_fit("%d LOCKED" % Look.clothes_locked(str(row.id)).size(), Vector2(box.end.x + 14.0, ty), DIM)
             _rects.append([Rect2(sx - 2.0, y, 10.0, pitch), "ch_prev", i])
             _rects.append([Rect2(box.end.x + 1.0, y, 9.0, pitch), "ch_next", i])
         else:
@@ -60858,8 +61733,9 @@ func _draw_presets(lay: Dictionary, size: Vector2) -> void:
             for k in Look.ROLES.size():
                 var role: String = Look.ROLES[k]
                 draw_rect(Rect2(x0 + 62.0 + float(k) * 6.0, ty - 1.0, 5.0, 7.0), Color.html(str(p[role])))
-        _chip(Rect2(x0 + 98.0, y + 1.0, 22.0, pitch - 3.0), "SAVE", hot and _pre_col == 0, "pre_save", s)
-        _chip(Rect2(x0 + 122.0, y + 1.0, 22.0, pitch - 3.0), "LOAD", hot and _pre_col == 1, "pre_load", s)
+        var cw := minf(22.0, floorf((size.x - x0 - 98.0 - 6.0) / 2.0) - 1.0)  # R42 LARGE: the two chips shrink on a narrow screen
+        _chip(Rect2(x0 + 98.0, y + 1.0, cw, pitch - 3.0), "SAVE", hot and _pre_col == 0, "pre_save", s)
+        _chip(Rect2(x0 + 98.0 + cw + 2.0, y + 1.0, cw, pitch - 3.0), "LOAD", hot and _pre_col == 1, "pre_load", s)
     var cy := _row_y(lay, Look.PRESET_SLOTS)
     _chip(Rect2(x0, cy + 1.0, 44.0, pitch - 3.0), "CANCEL", _pre_row == Look.PRESET_SLOTS, "pre_cancel", 0)
 
@@ -60883,9 +61759,9 @@ func _draw_name_grid(lay: Dictionary, size: Vector2) -> void:
 
 
 func _draw_phones(size: Vector2, narrow: bool) -> void:
-    var ph := 54.0 if size.y <= 130.0 else (80.0 if not narrow else 92.0)
+    var ph := 54.0 if size.y <= SHORT_H else (80.0 if not narrow else 92.0)
     var pw := floorf(ph * 0.52)
-    var top := 22.0 if size.y <= 130.0 else (26.0 if not narrow else 56.0)
+    var top := 22.0 if size.y <= SHORT_H else (26.0 if not narrow else 56.0)
     for i in 2:
         var ios := i == 0
         var x := floorf(size.x * 0.5) + (-pw - 16.0 if ios else 16.0)
@@ -61033,12 +61909,12 @@ func _on_format() -> void:
 
 
 func _size() -> Vector2:
-    return Vector2(Game.FORMATS[Game.format].size)
+    return Game.logical_size()
 
 
 func _layout() -> void:
     var size := _size()
-    var wide := size.x > 340.0 and size.y <= 130.0
+    var wide := size.x > 300.0 and size.y <= 130.0  # R42: the LARGE wide picture (320 x 112) takes the short layout too
     var narrow := size.x < 250.0
     var cam_y := 64.0 if size.y <= 130.0 else (50.0 if size.y <= 200.0 else 60.0)
     var cam_x := 184.0
@@ -61659,7 +62535,7 @@ func _start(id: String, summary := "") -> void:
         Micro.clear()
     Toolbox.after_start()
     if summary != "":
-        var wide_enough: bool = Game.FORMATS[Game.format].size.x >= 300
+        var wide_enough: bool = Game.info(Game.format).size.x >= 300
         Hints.toast(summary + ("  COZY" if Difficulty.cozy_on() else "") + ("  RUN " + Difficulty.seed_text() if wide_enough else ""), 4.0)
 
 
@@ -62413,7 +63289,7 @@ func _lot_tint() -> void:
 
 
 func _apply_format() -> void:
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     _cam.zoom = Vector2.ONE * float(f.zoom)
     if _split_on:
         _split_set(false, f)  # the views are re-framed for the new format
@@ -62443,7 +63319,7 @@ func _process(_delta: float) -> void:
         return
     if _room == "warehouse_lot":
         _lot_tint()
-    var f: Dictionary = Game.FORMATS[Game.format]
+    var f: Dictionary = Game.info(Game.format)
     if f.follow or _long or Game.ui_shift > 0.0:
         var base_y: float = float(f.cam_y) if f.follow else 64.0
         _cam.global_position = Vector2(_player.global_position.x, _ui_cam_y(base_y, f))
@@ -62555,7 +63431,7 @@ func _split_set(on: bool, f: Dictionary) -> void:
 func _ui_cam_y(base_y: float, f: Dictionary) -> float:
     if Game.ui_shift <= 0.0:
         var bg: Sprite2D = get_node("Background")
-        if _cam.limit_bottom == 100000 and Game.FORMATS[Game.format].follow:
+        if _cam.limit_bottom == 100000 and Game.info(Game.format).follow:
             _cam.limit_bottom = int(bg.position.y + bg.texture.get_size().y)
             _cam.position_smoothing_enabled = true
         return base_y
@@ -65875,6 +66751,10 @@ func draw(c: CanvasItem, size: Vector2, narrow: bool, rects: Array) -> void:
         rstep = 12.0
         effect_y = ry + rstep * 3.0 + 4.0
         effect_lines = 6
+    if not narrow and size.x < 300.0:  # R42 LARGE (256 wide): the right column moves in, the stat rows get 122 px
+        col_w = 122.0
+        rx = 134.0
+        rw = size.x - rx - 6.0
     # points left
     var left := points_left()
     var budget_text := "POINTS LEFT %d OF %d" % [left, Build.budget(Difficulty.tier) + Build.quirk_points(b)]
@@ -65949,6 +66829,9 @@ func _draw_chip(c: CanvasItem, rects: Array, ri: int, r: Rect2) -> void:
     PixelFont.draw(c, "<", r.position + Vector2(3, 2), GOLD)
     PixelFont.draw(c, ">", r.position + Vector2(r.size.x - 7.0, 2), GOLD)
     var tw := float(PixelFont.width(text))
+    if tw > r.size.x - 14.0 and text.find("  ") > 0:  # a narrow chip drops its label: the arrows and the value stay
+        text = text.substr(text.find("  ") + 2)
+        tw = float(PixelFont.width(text))
     PixelFont.draw(c, text, r.position + Vector2(floorf((r.size.x - tw) * 0.5), 2), Color.WHITE)
     rects.append([Rect2(r.position, Vector2(r.size.x * 0.5, r.size.y)), "b_prev", ri])
     rects.append([Rect2(r.position + Vector2(r.size.x * 0.5, 0.0), Vector2(r.size.x * 0.5, r.size.y)), "b_next", ri])
@@ -66899,6 +67782,7 @@ const Retention := preload("res://scripts/retention.gd")
 const Handover := preload("res://scripts/handover.gd")
 const QuoteBuilder := preload("res://scripts/quote_builder.gd")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const Temptation := preload("res://scripts/temptation.gd")  # C7b: the conscience the office life cards move
 const SalesRival := preload("res://scripts/sales_rival.gd")  # R38 P5: incumbent, ASSESS, the quote form, lies
 const CASH_CAP := 30000  # the owners draw what the company holds above this: the sales campaign is not about a bank balance
 const QBR_TYPE := {2: "realty", 4: "law"}  # book clients with no site of their own meet you in a b skin office of this kind
@@ -67397,6 +68281,74 @@ const BEAT_TEXT := {
     },
 }
 
+# C7b: six short 'office life' cards between the big beats. One a week on the weeks in LIFE_WEEKS, dealt in an order of the run's own
+# (seeded stream sales.life) so none comes twice. fx: pipe (the best open lead's quality), consc (conscience, what the director job reads),
+# morale (the crew's feeling about you). Patchable as SalesCampaign.LIFE; the count dealt is flags.life_seen (saved with the flags).
+const LIFE_WEEKS := [2, 5, 8, 11, 14, 17]
+const DEFAULT_LIFE := [
+    {
+        "speaker": "Office life",
+        "text": "The proposal for your best lead is not in the folder. It is not on the printer. You find it in the Sent items of an old draft, wearing the wrong logo.",
+        "options":
+        [
+            {"label": "REBUILD IT TONIGHT", "reply": "It is better the second time. It always is. You do not say so out loud.", "fx": {"pipe": 4, "morale": -1}},
+            {"label": "SEND THE OLD ONE, WITH AN APOLOGY", "reply": "He says he did not notice the logo. He noticed.", "fx": {"pipe": -3}},
+            {"label": "CALL THE LOGO A NEW BRAND", "reply": "Nobody asks which brand. You file it under things you will remember.", "fx": {"pipe": 2, "consc": -1}},
+        ],
+    },
+    {
+        "speaker": "Office life",
+        "text": "Mr. Hammerfield only ever calls at 4:55. Three weeks running. He wants a quote, a favour, or to say he is thinking about it. Your coat is on.",
+        "options":
+        [
+            {"label": "BOOK HIM A STANDING 8 AM SLOT", "reply": "He arrives at 7:58. The 4:55 calls stop. The 7:55 ones start.", "fx": {"pipe": 2, "morale": 1}},
+            {"label": "TAKE THE CALL, COAT ON", "reply": "Twenty minutes. He is thinking about it. You get a name and a date.", "fx": {"pipe": 3, "morale": -1}},
+            {"label": "LET IT RING", "reply": "He leaves a voicemail that says never mind and then a second one that says call me.", "fx": {"pipe": -3}},
+        ],
+    },
+    {
+        "speaker": "Office life",
+        "text": "A trade show lanyard hangs on your hook with somebody else's name on it. In your pocket: forty business cards from people you do not remember.",
+        "options":
+        [
+            {"label": "SORT THEM, FORTY SHORT NOTES", "reply": "You remember eleven. Four write back. One is a real lead.", "fx": {"pipe": 4, "morale": -1}},
+            {"label": "WEAR THE LANYARD AGAIN, NAME AND ALL", "reply": "Somebody else's name gets you three conversations. You answer to it.", "fx": {"pipe": 2, "consc": -1}},
+            {"label": "BIN THE CARDS", "reply": "A tidy desk. A very tidy pipeline.", "fx": {"pipe": -2, "morale": 1}},
+        ],
+    },
+    {
+        "speaker": "Office life",
+        "text": "A flyer is under your wiper for the second week. EVERYTHING INCLUDED. The paper is nice, and the nice paper is the worrying part.",
+        "options":
+        [
+            {"label": "PHONE YOUR THREE BEST CLIENTS", "reply": "Two thank you. One says the flyer is on his fridge. Not as a compliment.", "fx": {"pipe": 3}},
+            {"label": "PIN IT UP AND READ THE FINE PRINT ALOUD", "reply": "There is no fine print. The crew reads it in funny voices anyway.", "fx": {"morale": 2, "pipe": 1}},
+            {"label": "PRINT A BIGGER FLYER, SAME DAY", "reply": "Yours says WE NEVER MISS. It is true for the weeks you counted.", "fx": {"pipe": 2, "consc": -1}},
+        ],
+    },
+    {
+        "speaker": "Office life",
+        "text": "SalesHound lists three companies called Acme and one called Akme. One is a real lead. The person who typed them in has moved on, or up.",
+        "options":
+        [
+            {"label": "MERGE THEM AND CALL THE REAL ONE", "reply": "It was the Akme. It always is. You fix the spelling and tell no one.", "fx": {"pipe": 3, "morale": -1}},
+            {"label": "CALL ALL FOUR", "reply": "Three say wrong number. The fourth says it is about time.", "fx": {"pipe": 1}},
+            {"label": "LEAVE IT FOR NEXT WEEK", "reply": "Next week the list has two more.", "fx": {"pipe": -2}},
+        ],
+    },
+    {
+        "speaker": "Office life",
+        "text": "A receptionist says Mr. Wheelwright might be in. She has said that for three weeks. You have learned that she likes the donuts.",
+        "options":
+        [
+            {"label": "BRING THE DONUTS, ASK HER NAME", "reply": "She is called Phyllis. She tells you he is on a boat. The right boat.", "fx": {"pipe": 3}},
+            {"label": "ASK HER TO BE HONEST ABOUT HIS DIARY", "reply": "He is away for two months. You cross him off and sleep well.", "fx": {"pipe": -1, "consc": 1}},
+            {"label": "KEEP SAYING YOU WILL JUST DROP BY", "reply": "You drop by. The donuts are gone. So is he.", "fx": {"pipe": -2}},
+        ],
+    },
+]
+var LIFE: Array = DEFAULT_LIFE.duplicate(true)
+
 var leads: Array = []  # {id, name, type, who, users, pain, quality, fee, site, week, stage, called, visited, moon, why}
 var book: Array = []  # won deals: {id, name, type, mrr, margin, week, promise, gap, mood, complain, resolved}
 var next_id := 1
@@ -67734,6 +68686,7 @@ func begin_week(day: int) -> void:
     Deals.resolve_pending(day)
     _age_leads(day)
     _beat_cards(day)
+    _life_card(day)
     var fresh := draw_week(Difficulty.rng("leads"))
     if not fresh.is_empty():
         var hot: Array = fresh.filter(func(x: Dictionary) -> bool: return int(x.quality) >= 50)
@@ -67798,6 +68751,48 @@ func _review_card(day: int) -> void:
         % [open_leads().size(), pipeline_value(), str(QUARTERS[qi].label), quota_pct(qi), left, int(client_mood())]
     )
     Cards.ask("{sales_owner}", text, [{"label": "GOT IT", "id": "ok"}], func(_id: String) -> void: pass)
+
+
+# C7b: the week's office life card (a fresh order per run, no repeats)
+func life_order() -> Array:
+    var order := []
+    for i in LIFE.size():
+        order.append(i)
+    Difficulty.shuffle_with(order, Difficulty.rng_for("sales.life", 0))
+    return order
+
+
+func _life_card(day: int) -> void:
+    var n := int(flags.get("life_seen", 0))
+    if not LIFE_WEEKS.has(day) or n >= LIFE.size():
+        return
+    flags["life_seen"] = n + 1
+    var card: Dictionary = LIFE[int(life_order()[n])]
+    var options := []
+    for i in card.options.size():
+        options.append({"label": str(card.options[i].label), "id": str(i)})
+    Cards.ask(str(card.speaker), str(card.text), options, func(pick: String) -> void: _life_answer(card, int(pick)))
+
+
+func _life_answer(card: Dictionary, pick: int) -> void:
+    var o: Dictionary = card.options[pick]
+    life_fx(o.fx)
+    Cards.ask(str(card.speaker), str(o.reply), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+
+
+func life_fx(fx: Dictionary) -> void:
+    if fx.has("pipe"):
+        var best: Dictionary = {}
+        for l in open_leads():
+            if best.is_empty() or int(l.quality) > int(best.quality):
+                best = l
+        if not best.is_empty():
+            best["quality"] = clampi(int(best.quality) + int(fx.pipe), 5, 95)
+    if fx.has("consc"):
+        Temptation.change_consc(int(fx.consc))
+    if fx.has("morale"):
+        Social.change_all(int(fx.morale))
+    changed.emit()
 
 
 func _quota_card() -> void:
@@ -68576,6 +69571,8 @@ func year_share() -> float:
 # X13 (Difficulty `sales.keep`, hard only): the hard quota is a fifth higher than the plan needs, so two missed quarters only end
 # the job there when the year as a whole came in under this share of it. 0 = off: two misses are the end (easy, normal).
 func year_saves() -> bool:
+    if Difficulty.cozy_on():
+        return true  # cozy Easy: nobody is fired, two missed quarters do not end the job (the coach text on the report says so)
     var keep := Difficulty.cf("sales.keep")
     return keep > 0.0 and year_share() >= keep - 0.0001
 
@@ -72498,7 +73495,72 @@ static func _quad(c: CanvasItem, p1: Vector2, p2: Vector2, thick: float, col: Co
 
 
 # one 14-segment cell at (x, y) w by h px: lit segments in `col`, the others as a faint ghost
+static var fast_digits := true  # tests/text_cache.gd turns it off to compare with the slow path
+static var _seg_cache := {}  # (char, w, h) -> the segments of one cell at the origin, in drawing order: [kind, shape, lit]
+
+
+# perf: the geometry of a cell does not depend on where it stands, so it is built once (the same arithmetic as the slow path
+# below, at the origin) and a repaint only adds the cell's offset. Only used for whole-pixel x and y, where that is exact.
+static func _seg_build(ch: String, w: float, h: float) -> Array:
+    var x := 0.0
+    var y := 0.0
+    var lit: String = GLYPHS.get(ch.to_upper(), "")
+    var t := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
+    var mid := y + floorf(h * 0.5)
+    var cx := x + floorf(w * 0.5)
+    var my := mid - floorf(t * 0.5)
+    var hv := maxf(1.0, mid - y - 2.0)
+    var rects := {
+        "a": Rect2(x + 1, y, w - 2, t), "d": Rect2(x + 1, y + h - t, w - 2, t),
+        "f": Rect2(x, y + 1, t, hv), "b": Rect2(x + w - t, y + 1, t, hv),
+        "e": Rect2(x, mid + 1, t, hv), "c": Rect2(x + w - t, mid + 1, t, hv),
+        "g": Rect2(x + 1, my, maxf(1.0, cx - x - 1), t), "h": Rect2(cx + 1, my, maxf(1.0, x + w - 1 - cx - 1), t),
+        "i": Rect2(cx - floorf(t * 0.5), y + t + 1, t, maxf(1.0, mid - y - t - 2)),
+        "l": Rect2(cx - floorf(t * 0.5), mid + 2, t, maxf(1.0, y + h - t - 1 - mid - 2)),
+    }
+    var diag := {
+        "j": [Vector2(x + t + 1, y + t + 1), Vector2(cx - 1, mid - 1)], "k": [Vector2(x + w - t - 1, y + t + 1), Vector2(cx + 2, mid - 1)],
+        "m": [Vector2(x + t + 1, y + h - t - 1), Vector2(cx - 1, mid + 2)], "n": [Vector2(x + w - t - 1, y + h - t - 1), Vector2(cx + 2, mid + 2)],
+    }
+    var out := []
+    for s in SEGS:
+        var on := lit.contains(s)
+        if rects.has(s):
+            out.append([0, rects[s], on])
+        elif h >= 9.0:
+            var p1: Vector2 = diag[s][0]
+            var p2: Vector2 = diag[s][1]
+            var d := p2 - p1
+            if d.length() < 0.5:
+                continue
+            var n := Vector2(-d.y, d.x).normalized() * maxf(1.0, t * 0.9) * 0.5
+            out.append([1, PackedVector2Array([p1 + n, p2 + n, p2 - n, p1 - n]), on])
+        elif on:
+            out.append([2, Rect2(diag[s][0].lerp(diag[s][1], 0.5).floor(), Vector2(1, 1)), true])
+    return out
+
+
 static func digit(c: CanvasItem, ch: String, x: float, y: float, w: float, h: float, col: Color, dp := false) -> void:
+    if fast_digits and x == floorf(x) and y == floorf(y) and ch.length() == 1:
+        var key := Vector3(w, h, float(ch.unicode_at(0)))
+        var segs: Array = _seg_cache.get(key, [])
+        if segs.is_empty() and not _seg_cache.has(key):
+            segs = _seg_build(ch, w, h)
+            _seg_cache[key] = segs
+        var off := Vector2(x, y)
+        var ghost := Color(col.r, col.g, col.b, 0.12)
+        for sg in segs:
+            var colr := col if sg[2] else ghost
+            if sg[0] == 1:
+                var pts: PackedVector2Array = sg[1]
+                c.draw_primitive(PackedVector2Array([pts[0] + off, pts[1] + off, pts[2] + off, pts[3] + off]), PackedColorArray([colr, colr, colr, colr]), PackedVector2Array())
+            else:
+                var r: Rect2 = sg[1]
+                c.draw_rect(Rect2(r.position + off, r.size), colr)
+        if dp:
+            var tt := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
+            c.draw_rect(Rect2(x + w, y + h - maxf(tt, 2.0), 2, maxf(tt, 2.0)), col)
+        return
     var lit: String = GLYPHS.get(ch.to_upper(), "")
     var ghost := Color(col.r, col.g, col.b, 0.12)
     var t := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
@@ -76277,6 +77339,7 @@ const UiStyle := preload("res://scripts/ui_style.gd")
 const PadGlyphs := preload("res://scripts/pad_glyphs.gd")
 
 const ROW_H := 12.0
+const ROW_MIN := 8.0  # R42: rows never get thinner than this (5 px of text and a pixel either side): a short screen scrolls the list
 const REMAP_PAGE := 100  # the key list's R page: put the walking actions on other keys
 
 var is_open := false
@@ -76372,10 +77435,10 @@ func _labels() -> Array:
         var sound := "SOUND: %s" % ("OFF" if Sfx.muted else "ON")
         var unfocused := "UNFOCUSED: %s" % ("PAUSE" if Game.focus_pause else "RUN")  # R42
         var display := "DISPLAY: %s" % ("FULL SCREEN" if Game.fullscreen else "WINDOW")
-        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
+        return ["BACK", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), _text_label(), _contrast_label(), display, sound, "DAY LENGTH: %s" % Difficulty.day_label(), unfocused, "CAREER"]
     if _confirm:
         return ["NO, KEEP PLAYING", "YES, QUIT"]
-    var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper()]
+    var rows := ["RESUME", "CONTROLS", "SHAPE: %s" % Game.format.to_upper(), _text_label(), _contrast_label()]
     if Campaign.active:
         rows.append("DAY LENGTH: %s" % Difficulty.day_label())  # R16: 5 / 10 / 15 minutes, starts at the next morning
         if Campaign.mode == "tech":
@@ -76388,11 +77451,20 @@ func _labels() -> Array:
     return rows
 
 
+# R42 item 4: the TEXT size and CONTRAST rows (SETTINGS and the pause menu both have them)
+func _text_label() -> String:
+    return "TEXT: %s" % ("LARGE" if Game.text_large else "NORMAL")
+
+
+func _contrast_label() -> String:
+    return "CONTRAST: %s" % ("HIGH" if Game.high_contrast else "NORMAL")
+
+
 # the id of a menu row (the rows move with the mode): "resume", "controls", "shape", "day", "outfit", "quit"
 func _row_id(i: int) -> String:
     if settings_mode:
-        return ["resume", "controls", "shape", "display", "sound", "day", "focus", "career"][clampi(i, 0, 7)]
-    var ids := ["resume", "controls", "shape"]
+        return ["resume", "controls", "shape", "text", "contrast", "display", "sound", "day", "focus", "career"][clampi(i, 0, 9)]
+    var ids := ["resume", "controls", "shape", "text", "contrast"]
     if Campaign.active:
         ids.append("day")
         if Campaign.mode == "tech":
@@ -76414,6 +77486,10 @@ func _activate() -> void:
                 _page = 0
             "shape":
                 Game.cycle_format()
+            "text":
+                Game.set_text_large(not Game.text_large)
+            "contrast":
+                Game.set_high_contrast(not Game.high_contrast)
             "display":
                 Game.set_fullscreen(not Game.fullscreen)
             "sound":
@@ -76468,16 +77544,20 @@ func _activate() -> void:
             _page = 0
         2:
             Game.cycle_format()
+        3:
+            Game.set_text_large(not Game.text_large)
+        4:
+            Game.set_high_contrast(not Game.high_contrast)
     _canvas.queue_redraw()
 
 
 func _panel() -> Rect2:
     var size := get_viewport().get_visible_rect().size
-    var h := 76.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))
+    var h := 100.0 + (12.0 if Campaign.active else (36.0 if Campaign.mode == Campaign.FREE else 0.0))  # (76 before the TEXT and CONTRAST rows)
     if Campaign.active and Campaign.mode == "tech":
         h += 12.0  # the TICKET PACE row
     if settings_mode:
-        h = 124.0  # eight rows with DISPLAY
+        h = 148.0  # ten rows with TEXT, CONTRAST and DISPLAY
     if _page >= 0:
         h = 108.0
     elif _confirm:
@@ -76485,13 +77565,28 @@ func _panel() -> Rect2:
     return UiStyle.panel_rect(size, 172.0, h)
 
 
+# how many rows the panel shows at once (all of them unless the screen is so short that they would be thinner than ROW_MIN),
+# and the first one: the list scrolls so the selected row is always on screen (R42: ten SETTINGS rows on a 112 px picture)
+func _vis() -> int:
+    var top := 16.0 + (14.0 if _confirm else 0.0)
+    return clampi(int((_panel().size.y - top - 9.0) / ROW_MIN), 1, maxi(1, _labels().size()))
+
+
+func _first_row() -> int:
+    return clampi(_sel - _vis() + 1, 0, maxi(0, _labels().size() - _vis()))
+
+
 func _row_rect(i: int) -> Rect2:
     var top := 16.0 + (14.0 if _confirm else 0.0)
     var body := _panel().position + Vector2(4.0, top)
-    # the 128 px high format gives the panel 114 px: the eight SETTINGS rows get 11 px each there, or the last one
-    # (CAREER) sat under the footer line
-    var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(maxi(1, _labels().size()))))
-    return Rect2(body.x, body.y + row_h * float(i), _panel().size.x - 8.0, row_h - 1.0)
+    # the 128 px high format gives the panel 114 px: the ten SETTINGS rows get 8 px each there, or the last one
+    # (CAREER) sat under the footer line; a shorter picture scrolls
+    var vis := _vis()
+    var first := _first_row()
+    if i < first or i >= first + vis:
+        return Rect2()
+    var row_h := minf(ROW_H, floorf((_panel().size.y - top - 9.0) / float(vis)))
+    return Rect2(body.x, body.y + row_h * float(i - first), _panel().size.x - 8.0, row_h - 1.0)
 
 
 func _turn_page(step: int) -> void:
@@ -76649,6 +77744,10 @@ func _key(event: InputEvent) -> void:
     elif left or right:
         if not _confirm and _sel == 2:
             Game.cycle_format()
+        elif not _confirm and _row_id(_sel) == "text":
+            Game.set_text_large(not Game.text_large)
+        elif not _confirm and _row_id(_sel) == "contrast":
+            Game.set_high_contrast(not Game.high_contrast)
         elif settings_mode and _row_id(_sel) == "display":
             Game.set_fullscreen(not Game.fullscreen)
         elif settings_mode and _row_id(_sel) == "sound":
@@ -76689,10 +77788,20 @@ func _paint() -> void:
     var labels := _labels()
     for i in labels.size():
         var rr := _row_rect(i)
+        if rr.size == Vector2.ZERO:
+            continue  # scrolled out of the window
         if i == _sel:
             c.draw_rect(rr, UiStyle.HEAD)
-        UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + 3.0, UiStyle.WHITE if i == _sel else UiStyle.INK)
+        UiStyle.text(c, labels[i], rr.position.x + 3.0, rr.position.y + floorf((rr.size.y - 5.0) * 0.5), UiStyle.WHITE if i == _sel else UiStyle.INK)
+    if _vis() < labels.size():  # more rows above or below: a small marker at the right edge
+        var mx := r.end.x - 9.0
+        if _first_row() > 0:
+            c.draw_colored_polygon(PackedVector2Array([Vector2(mx, r.position.y + 15.0), Vector2(mx + 5.0, r.position.y + 15.0), Vector2(mx + 2.5, r.position.y + 12.0)]), UiStyle.MUTED)
+        if _first_row() + _vis() < labels.size():
+            c.draw_colored_polygon(PackedVector2Array([Vector2(mx, r.end.y - 11.0), Vector2(mx + 5.0, r.end.y - 11.0), Vector2(mx + 2.5, r.end.y - 8.0)]), UiStyle.MUTED)
     var foot := "ENTER = OK  ESC = BACK" if (_confirm or settings_mode) else "ENTER = OK  ESC = RESUME"
+    if not _confirm and (_row_id(_sel) == "text" or _row_id(_sel) == "contrast"):
+        foot = "LEFT RIGHT = CHANGE  ESC = BACK"
     if not _confirm and _row_id(_sel) == "day":
         foot = "NEXT MORNING  LEFT RIGHT = CHANGE"
     elif not _confirm and _row_id(_sel) == "pace":
@@ -81390,7 +82499,7 @@ static func lopsided_pick(owner: Node, who: String, id: String) -> void:
 write("scripts/owner_cast.gd", '''extends RefCounted
 # gdlint:disable=max-line-length,class-variable-name,class-definitions-order
 # X11: the second cast in the owner campaign. Jen (the front desk: phones, intake, the wall between clients and your cell phone) and
-# Michael (the senior tech who takes tickets off people) each bring three decision cards. Data only, in the shape of Owner.CARDS:
+# Michael (the senior tech who takes tickets off people) each bring three decision cards (C7b: Christy and Morgan bring two each). Data only, in the shape of Owner.CARDS:
 # Owner._ready() merges CARDS into Owner.CARDS by reference and Owner.events_on() merges DAYS into Owner.DAYS (the same way as
 # RivalCards). Patchable from story/strings.txt as OwnerCast.CARDS. The effects are ordinary fx keys: mood, speed (the crew's capacity),
 # weekly and payroll (cash every week), burnout, trust (the other owner's opinion) and owner hours.
@@ -81543,6 +82652,102 @@ const DEFAULT_CARDS := {
             },
         ],
     },
+    "christy_net45":
+    {
+        "speaker": "Christy (Controller)",
+        "text":
+        "Three clients pay on day forty-five. My reminders go out on day thirty-one and they are polite. Nobody reads polite. I have two ideas. One is a discount, which I dislike on principle.",
+        "options":
+        [
+            {
+                "label": "TWO PERCENT OFF FOR PAYING IN TEN DAYS ($40/WK)",
+                "fx": {"weekly": 40, "cash": 600, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "Two of the three pay in ten days. The discount costs forty a week and the cash lands five weeks sooner. Christy smiles at a discount for the first time."
+            },
+            {
+                "label": "LET HER PHONE THEM, LEDGER OPEN",
+                "fx": {"cash": 400, "mood_all": -2, "trust": {"Alan": 1, "Garrison": -1}},
+                "text": "She calls with the ledger open and a very even voice. They pay. Two of them stop answering Dan's friendly emails for a week."
+            },
+            {
+                "label": "KEEP THE POLITE REMINDERS ($300 LATE)",
+                "need": 300, "fx": {"cash": -300, "mood_all": 1},
+                "text": "The cheques arrive when they arrive. Christy keeps a chart of how late. The chart is very detailed."
+            },
+        ],
+    },
+    "christy_card":
+    {
+        "speaker": "Christy (Controller)",
+        "text":
+        "The company card shows lunch, a phone case and one item marked MISC. Not a crime. A trend. Do you want a policy, or a conversation?",
+        "options":
+        [
+            {
+                "label": "ONE PAGE POLICY, $100 LIMIT",
+                "fx": {"weekly": -30, "mood_all": -1, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "A page, a limit, and a line for MISC that says explain. Spending drops. Dan asks if toner counts as lunch."
+            },
+            {
+                "label": "A WORD AT THE HUDDLE (1 HOUR OF MINE)",
+                "fx": {"owner_hours": 1, "weekly": -15, "social_all": 1, "trust": {"Alan": 0, "Garrison": 1}},
+                "text": "You say it kindly. Christy says it more kindly. Two people look at their shoes. It mostly works."
+            },
+            {
+                "label": "LEAVE IT, THE TRUST IS THE POINT ($200)",
+                "need": 200, "fx": {"cash": -200, "mood_all": 1, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "The next statement is two hundred higher. The phone case, Christy admits, is a nice phone case."
+            },
+        ],
+    },
+    "morgan_overtime":
+    {
+        "speaker": "Morgan (Manager)",
+        "text":
+        "The crew is doing evenings again. Nobody complains, which is how I know it is a problem. I can put a hard stop at six, or I can keep not noticing the emails stamped seven o'clock.",
+        "options":
+        [
+            {
+                "label": "HARD STOP AT SIX, MORGAN ENFORCES IT",
+                "fx": {"speed": -0.03, "burnout": -5, "mood_all": 1, "trust": {"Alan": 1, "Garrison": 0}},
+                "text": "Six o'clock is a wall. The queue is a little longer on Mondays. Maya takes a pottery class and tells everybody."
+            },
+            {
+                "label": "TIME BACK FOR EVENINGS (+$90/WK)",
+                "fx": {"payroll": 90, "burnout": -3, "mood_all": 2, "trust": {"Alan": 0, "Garrison": 1}},
+                "text": "An hour off for every hour past six. Morgan keeps the tally in a spiral notebook with a rubber band."
+            },
+            {
+                "label": "LET IT RIDE THIS MONTH",
+                "fx": {"speed": 0.04, "burnout": 5, "trust": {"Alan": -1, "Garrison": 1}},
+                "text": "The queue moves. Morgan stops sending the evening emails, which is worse."
+            },
+        ],
+    },
+    "morgan_reviews":
+    {
+        "speaker": "Morgan (Manager)",
+        "text":
+        "Reviews are due. I can write all three in an afternoon, or I can sit with each of them for twenty minutes first, and they will tell their friends. The afternoon is cheaper.",
+        "options":
+        [
+            {
+                "label": "TWENTY MINUTES EACH, IN PERSON (2 HOURS)",
+                "fx": {"owner_hours": 2, "mood_all": 2, "social_all": 1, "speed": 0.02, "trust": {"Alan": 1, "Garrison": 1}},
+                "text": "Three chairs, three coffees. Dan asks what a growth plan is. Maya has already written hers."
+            },
+            {
+                "label": "AN AFTERNOON, WRITTEN, WITH RAISES (+$80/WK)",
+                "fx": {"payroll": 80, "mood_all": 1, "trust": {"Alan": 0, "Garrison": 1}},
+                "text": "A page each and a number on it. Morgan reads them out loud once and files them in the drawer."
+            },
+            {
+                "label": "SKIP IT THIS QUARTER",
+                "fx": {"mood_all": -2, "social_all": -1, "trust": {"Alan": 1, "Garrison": -1}},
+                "text": "Nobody says anything. Morgan writes DEFERRED on a sticky note. It stays on her monitor."
+            },
+        ],
+    },
 }
 static var CARDS: Dictionary = DEFAULT_CARDS.duplicate(true)
 
@@ -81554,6 +82759,10 @@ const DEFAULT_DAYS := {
     12: [{"at": 14.8, "card": "michael_teach"}],
     14: [{"at": 13.5, "card": "jen_wall"}],
     17: [{"at": 13.0, "card": "michael_offer"}],
+    10: [{"at": 15.2, "card": "christy_net45"}],
+    11: [{"at": 12.4, "card": "christy_card"}],
+    13: [{"at": 10.8, "card": "morgan_overtime"}],
+    16: [{"at": 12.6, "card": "morgan_reviews"}],
 }
 static var DAYS: Dictionary = DEFAULT_DAYS.duplicate(true)
 
@@ -83988,6 +85197,47 @@ static func head(speaker: String) -> Texture2D:
             tex.region = Rect2(HEAD)
         _cache[id] = tex
     return _cache[id]
+''')
+
+write("scripts/text_size.gd", '''extends RefCounted
+# R42 item 4: the TEXT setting's helpers (docs/dev/notes-textsize.md). Game keeps the two switches (text_large,
+# high_contrast); this script holds the pure parts so pixelfont.gd and ui_style.gd need only a one-line hook each.
+#   TextSize.high              HIGH CONTRAST is on (set by Game through apply)
+#   TextSize.color(c)          the colour a text is drawn in: with HIGH CONTRAST light text goes to white, dark text to
+#                              ink, so a hint on a plate (SOFT, MUTED, a gold or grey label) stays readable
+#   TextSize.plate(a)          a dark plate's alpha: opaque enough that the world behind it never shows through letters
+#   TextSize.edge(c, r)        draws the heavier panel border of HIGH CONTRAST (a second ink line and a white line inside)
+
+const INK := Color("17121f")
+
+static var high := false
+
+
+static func apply(on: bool) -> void:
+    high = on
+
+
+static func color(c: Color) -> Color:
+    if not high or c.a < 0.05:
+        return c
+    var lum := c.get_luminance()
+    if lum >= 0.55:
+        return c.lerp(Color.WHITE, 0.65)
+    if lum <= 0.4:
+        return c.lerp(INK, 0.6)
+    return c
+
+
+static func plate(alpha: float) -> float:
+    return maxf(alpha, 0.97) if high else alpha
+
+
+# a plate with a stronger edge (called after a panel's own border)
+static func edge(canvas: CanvasItem, r: Rect2) -> void:
+    if not high:
+        return
+    canvas.draw_rect(Rect2(r.position - Vector2(2, 2), r.size + Vector2(4, 4)), INK, false, 1.0)
+    canvas.draw_rect(Rect2(r.position + Vector2(1, 1), r.size - Vector2(2, 2)), Color.WHITE, false, 1.0)
 ''')
 
 GODOT_EXE = r"C:\Program Files\Godot\Godot.exe"

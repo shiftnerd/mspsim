@@ -76,7 +76,10 @@ func _init() -> void:
 				ids.append(str(of.id))
 			_check(ids.has("let_go"), "and the review of the poor year offers the door: %s" % str(ids))
 		else:
-			_check(close_year and poor_year and d.cf("sales.keep") == 0.0, "%s: two misses end the job, as before" % tier)
+			if tier == "easy":
+				_check(not close_year and not poor_year and d.cf("sales.keep") == 0.0, "easy is cozy: two misses never end the job")
+			else:
+				_check(close_year and poor_year and d.cf("sales.keep") == 0.0, "%s: two misses end the job, as before" % tier)
 	d.set_tier("normal")
 	root.get_node("Campaign").quit_to_title()
 	print("failures=", failures)

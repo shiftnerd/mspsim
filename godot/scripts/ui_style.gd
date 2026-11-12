@@ -7,6 +7,7 @@ extends RefCounted
 
 const PixelFont := preload("res://scripts/pixelfont.gd")
 const PadGlyphs := preload("res://scripts/pad_glyphs.gd")  # R14: pad buttons in a footer hint are small sprites
+const TextSize := preload("res://scripts/text_size.gd")  # R42 item 4: the HIGH CONTRAST plates and borders
 const INK := Color("17121f")
 const WHITE := Color("ffffff")
 const PANEL := Color("e9ecf1")
@@ -21,6 +22,9 @@ const HEAD_H := 9.0
 const STRIP_H := 11.0  # one-line HUD strip
 const HINT_H := 9.0  # the control hint line at the bottom of the screen in a room
 const MARGIN := 4.0
+
+static var hint_extra := 0.0  # R42 LARGE: how much taller than HINT_H the last hint_bar came out (a long hint wraps upward)
+static var hint_frame := -1  # the frame that value is from (a screen without a hint bar must not inherit it)
 
 
 static func text(c: CanvasItem, s: String, x: float, y: float, color := INK) -> void:
@@ -76,6 +80,7 @@ static func panel_rect(size: Vector2, w: float, h: float) -> Rect2:
 static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1.0) -> Rect2:
 	c.draw_rect(Rect2(r.position - Vector2.ONE, r.size + Vector2(2, 2)), Color(INK, minf(1.0, alpha + 0.1)))
 	c.draw_rect(r, Color(PANEL, alpha))
+	TextSize.edge(c, r)
 	c.draw_rect(Rect2(r.position, Vector2(r.size.x, HEAD_H)), HEAD)
 	text(c, title, r.position.x + 3.0, r.position.y + 2.0, WHITE)
 	if note != "":
@@ -87,38 +92,62 @@ static func panel(c: CanvasItem, r: Rect2, title: String, note := "", alpha := 1
 
 # the footer hint line of a page
 static func footer(c: CanvasItem, r: Rect2, hint: String) -> void:
-	PadGlyphs.draw(c, hint, Vector2(r.position.x + 3.0, r.end.y - 7.0), MUTED)
+	var lines := fit_lines(hint, r.size.x - 6.0)  # R42 LARGE: a hint wider than the panel breaks, upward from the footer line
+	for i in lines.size():
+		PadGlyphs.draw(c, str(lines[i]), Vector2(r.position.x + 3.0, r.end.y - 7.0 - 8.0 * float(lines.size() - 1 - i)), MUTED)
 
 
 # a one-line HUD strip: the same dark bar with a blue accent along its top; returns the text origin
 static func strip(c: CanvasItem, r: Rect2) -> Vector2:
-	c.draw_rect(r, DARK)
+	c.draw_rect(r, Color(DARK, TextSize.plate(DARK.a)))
 	c.draw_rect(Rect2(r.position, Vector2(r.size.x, 1.0)), HEAD)
 	return Vector2(r.position.x + 4.0, r.position.y + 3.0)
 
 
 # a HUD box (the karaoke lanes, the keypad entry): same dark fill and accent as a strip
 static func box(c: CanvasItem, r: Rect2) -> void:
-	c.draw_rect(r, DARK)
+	c.draw_rect(r, Color(DARK, TextSize.plate(DARK.a)))
 	c.draw_rect(Rect2(r.position, Vector2(r.size.x, 1.0)), HEAD)
 
 
 # the control hint line at the very bottom of the screen in a room (same words as a page footer)
 static func hint_bar(c: CanvasItem, size: Vector2, hint: String) -> void:
-	var r := Rect2(0.0, size.y - HINT_H, size.x, HINT_H)
-	c.draw_rect(r, Color(0.02, 0.02, 0.05, 0.92))
-	PadGlyphs.draw(c, hint, Vector2(4.0, r.position.y + 2.0), SOFT)
+	var lines := fit_lines(hint, size.x - 8.0)
+	var h := HINT_H + 8.0 * float(lines.size() - 1)
+	hint_extra = h - HINT_H
+	hint_frame = Engine.get_process_frames()
+	var r := Rect2(0.0, size.y - h, size.x, h)
+	c.draw_rect(r, Color(0.02, 0.02, 0.05, TextSize.plate(0.92)))
+	for i in lines.size():
+		PadGlyphs.draw(c, str(lines[i]), Vector2(4.0, r.position.y + 2.0 + 8.0 * float(i)), SOFT)
+
+
+# R42 LARGE: a hint wider than the screen breaks at its spaces (what PadGlyphs measures, so a pad's glyphs count right)
+static func fit_lines(s: String, max_w: float) -> Array:
+	if float(PadGlyphs.width(s)) <= max_w:
+		return [s]
+	var out := []
+	var line := ""
+	for word in s.split(" "):
+		var next: String = word if line == "" else line + " " + word
+		if line != "" and float(PadGlyphs.width(next)) > max_w:
+			out.append(line)
+			line = word
+		else:
+			line = next
+	out.append(line)
+	return out
 
 
 # the caption bar sits above the hint line; returns its top edge (the HUD strip goes above it)
 static func caption_bar(c: CanvasItem, size: Vector2, cap: String) -> float:
-	var top := size.y - HINT_H
+	var top := size.y - HINT_H - (hint_extra if hint_frame == Engine.get_process_frames() else 0.0)
 	if cap == "":
 		return top
 	var lines := wrap_text(cap, int((size.x - 2.0 * MARGIN - 8.0) / 4.0))
 	var h := float(lines.size()) * 7.0 + 4.0
 	top -= h
-	c.draw_rect(Rect2(0.0, top, size.x, h), DARK)
+	c.draw_rect(Rect2(0.0, top, size.x, h), Color(DARK, TextSize.plate(DARK.a)))
 	c.draw_rect(Rect2(0.0, top, 2.0, h), GOLD)
 	for i in lines.size():
 		PadGlyphs.draw(c, str(lines[i]), Vector2(6.0, top + 2.0 + float(i) * 7.0), WHITE, 1, true)  # R42: the talk and outing captions

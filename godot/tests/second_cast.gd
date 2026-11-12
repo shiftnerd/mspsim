@@ -93,11 +93,15 @@ func _init() -> void:
 	_start("owner", "office_alan")
 	var jen := 0
 	var michael := 0
+	var christy := 0
+	var morgan := 0
 	var real_keys := ["cash", "speed", "weekly", "payroll", "mood_all", "burnout", "trust", "rep", "owner_hours", "social_all"]
 	for id in cast.CARDS:
 		var card: Dictionary = cast.CARDS[id]
 		jen += 1 if str(card.speaker).begins_with("Jen") else 0
 		michael += 1 if str(card.speaker).begins_with("Michael") else 0
+		christy += 1 if str(card.speaker).begins_with("Christy") else 0
+		morgan += 1 if str(card.speaker).begins_with("Morgan") else 0
 		_check(o.CARDS.has(id) and (card.options as Array).size() == 3, "%s is an owner card with three options" % id)
 		var all_real := true
 		var moves_trust := false
@@ -112,6 +116,7 @@ func _init() -> void:
 				moves_capacity_or_cash = moves_capacity_or_cash or fx.has("speed") or fx.has("weekly") or fx.has("payroll") or fx.has("cash")
 		_check(all_real and moves_trust and moves_capacity_or_cash, "%s: every option has an effect, and the card moves trust and capacity or cash" % id)
 	_check(jen == 3 and michael == 3, "three cards for Jen and three for Michael (%d / %d)" % [jen, michael])
+	_check(christy == 2 and morgan == 2, "C7b: two cards for Christy (the controller) and two for Morgan (the manager) (%d / %d)" % [christy, morgan])
 	var placed := 0
 	for day in cast.DAYS:
 		for ev in cast.DAYS[day]:
@@ -124,7 +129,7 @@ func _init() -> void:
 					clear = false
 			placed += 1 if found else 0
 			_check(found and clear, "%s comes in week %d at %.1f, clear of the other events" % [str(ev.card), int(day), float(ev.at)])
-	_check(placed == 6, "all six are placed")
+	_check(placed == 10, "all ten are placed (%d)" % placed)
 
 	# ---- real effects through the card flow
 	_check(partner.active(), "the other owner is there (trust moves)")
@@ -170,6 +175,32 @@ func _init() -> void:
 	cards.pick(0)
 	_clear(cards)
 	_check(o.cash == cash0 - 150, "the Friday hour costs $150")
+
+	# ---- C7b: Christy's and Morgan's cards through the card flow
+	var cash1: int = o.cash
+	var weekly2: int = o.weekly_extra
+	o.show_card("christy_net45")
+	_check(cards.is_open and str(cards.speaker).begins_with("Christy") and cards.options.size() == 3, "Christy's receivables card opens")
+	cards.pick(0)
+	_clear(cards)
+	_check(o.cash == cash1 + 600 and o.weekly_extra == weekly2 + 40, "two percent for ten days: $600 in now, $40 a week less income")
+	var pay1: int = o.payroll_extra
+	o.show_card("morgan_overtime")
+	_check(str(cards.speaker).begins_with("Morgan"), "Morgan's card opens")
+	cards.pick(1)
+	_clear(cards)
+	_check(o.payroll_extra == pay1 + 90, "time back for evenings: payroll +$90")
+	var speed3: float = o.speed
+	var hours0: float = root.get_node("Growth").owner_used
+	o.show_card("morgan_reviews")
+	cards.pick(0)
+	_clear(cards)
+	_check(absf(o.speed - (speed3 + 0.02)) < 0.001 and root.get_node("Growth").owner_used == hours0 + 2.0, "reviews in person: capacity +2 points, two of the owner's hours")
+	var cash2: int = o.cash
+	o.show_card("christy_card")
+	cards.pick(2)
+	_clear(cards)
+	_check(o.cash == cash2 - 200, "leaving the company card alone costs $200")
 
 	# ---- the migration itself
 	var olds := [mig.OLD_SALES, mig.OLD_BOOKS, mig.OLD_SALES + " Marlowe", "office_" + mig.OLD_SALES.to_lower(), "office_" + mig.OLD_BOOKS.to_lower()]

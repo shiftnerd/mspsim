@@ -20,6 +20,7 @@ const Retention := preload("res://scripts/retention.gd")
 const Handover := preload("res://scripts/handover.gd")
 const QuoteBuilder := preload("res://scripts/quote_builder.gd")
 const SalesBeats := preload("res://scripts/sales_beats.gd")
+const Temptation := preload("res://scripts/temptation.gd")  # C7b: the conscience the office life cards move
 const SalesRival := preload("res://scripts/sales_rival.gd")  # R38 P5: incumbent, ASSESS, the quote form, lies
 const CASH_CAP := 30000  # the owners draw what the company holds above this: the sales campaign is not about a bank balance
 const QBR_TYPE := {2: "realty", 4: "law"}  # book clients with no site of their own meet you in a b skin office of this kind
@@ -519,6 +520,74 @@ const DEFAULT_BEAT_TEXT := {
 }
 var BEAT_TEXT: Dictionary = DEFAULT_BEAT_TEXT.duplicate(true)
 
+# C7b: six short 'office life' cards between the big beats. One a week on the weeks in LIFE_WEEKS, dealt in an order of the run's own
+# (seeded stream sales.life) so none comes twice. fx: pipe (the best open lead's quality), consc (conscience, what the director job reads),
+# morale (the crew's feeling about you). Patchable as SalesCampaign.LIFE; the count dealt is flags.life_seen (saved with the flags).
+const LIFE_WEEKS := [2, 5, 8, 11, 14, 17]
+const DEFAULT_LIFE := [
+	{
+		"speaker": "Office life",
+		"text": "The proposal for your best lead is not in the folder. It is not on the printer. You find it in the Sent items of an old draft, wearing the wrong logo.",
+		"options":
+		[
+			{"label": "REBUILD IT TONIGHT", "reply": "It is better the second time. It always is. You do not say so out loud.", "fx": {"pipe": 4, "morale": -1}},
+			{"label": "SEND THE OLD ONE, WITH AN APOLOGY", "reply": "He says he did not notice the logo. He noticed.", "fx": {"pipe": -3}},
+			{"label": "CALL THE LOGO A NEW BRAND", "reply": "Nobody asks which brand. You file it under things you will remember.", "fx": {"pipe": 2, "consc": -1}},
+		],
+	},
+	{
+		"speaker": "Office life",
+		"text": "Mr. Hammerfield only ever calls at 4:55. Three weeks running. He wants a quote, a favour, or to say he is thinking about it. Your coat is on.",
+		"options":
+		[
+			{"label": "BOOK HIM A STANDING 8 AM SLOT", "reply": "He arrives at 7:58. The 4:55 calls stop. The 7:55 ones start.", "fx": {"pipe": 2, "morale": 1}},
+			{"label": "TAKE THE CALL, COAT ON", "reply": "Twenty minutes. He is thinking about it. You get a name and a date.", "fx": {"pipe": 3, "morale": -1}},
+			{"label": "LET IT RING", "reply": "He leaves a voicemail that says never mind and then a second one that says call me.", "fx": {"pipe": -3}},
+		],
+	},
+	{
+		"speaker": "Office life",
+		"text": "A trade show lanyard hangs on your hook with somebody else's name on it. In your pocket: forty business cards from people you do not remember.",
+		"options":
+		[
+			{"label": "SORT THEM, FORTY SHORT NOTES", "reply": "You remember eleven. Four write back. One is a real lead.", "fx": {"pipe": 4, "morale": -1}},
+			{"label": "WEAR THE LANYARD AGAIN, NAME AND ALL", "reply": "Somebody else's name gets you three conversations. You answer to it.", "fx": {"pipe": 2, "consc": -1}},
+			{"label": "BIN THE CARDS", "reply": "A tidy desk. A very tidy pipeline.", "fx": {"pipe": -2, "morale": 1}},
+		],
+	},
+	{
+		"speaker": "Office life",
+		"text": "A flyer is under your wiper for the second week. EVERYTHING INCLUDED. The paper is nice, and the nice paper is the worrying part.",
+		"options":
+		[
+			{"label": "PHONE YOUR THREE BEST CLIENTS", "reply": "Two thank you. One says the flyer is on his fridge. Not as a compliment.", "fx": {"pipe": 3}},
+			{"label": "PIN IT UP AND READ THE FINE PRINT ALOUD", "reply": "There is no fine print. The crew reads it in funny voices anyway.", "fx": {"morale": 2, "pipe": 1}},
+			{"label": "PRINT A BIGGER FLYER, SAME DAY", "reply": "Yours says WE NEVER MISS. It is true for the weeks you counted.", "fx": {"pipe": 2, "consc": -1}},
+		],
+	},
+	{
+		"speaker": "Office life",
+		"text": "SalesHound lists three companies called Acme and one called Akme. One is a real lead. The person who typed them in has moved on, or up.",
+		"options":
+		[
+			{"label": "MERGE THEM AND CALL THE REAL ONE", "reply": "It was the Akme. It always is. You fix the spelling and tell no one.", "fx": {"pipe": 3, "morale": -1}},
+			{"label": "CALL ALL FOUR", "reply": "Three say wrong number. The fourth says it is about time.", "fx": {"pipe": 1}},
+			{"label": "LEAVE IT FOR NEXT WEEK", "reply": "Next week the list has two more.", "fx": {"pipe": -2}},
+		],
+	},
+	{
+		"speaker": "Office life",
+		"text": "A receptionist says Mr. Wheelwright might be in. She has said that for three weeks. You have learned that she likes the donuts.",
+		"options":
+		[
+			{"label": "BRING THE DONUTS, ASK HER NAME", "reply": "She is called Phyllis. She tells you he is on a boat. The right boat.", "fx": {"pipe": 3}},
+			{"label": "ASK HER TO BE HONEST ABOUT HIS DIARY", "reply": "He is away for two months. You cross him off and sleep well.", "fx": {"pipe": -1, "consc": 1}},
+			{"label": "KEEP SAYING YOU WILL JUST DROP BY", "reply": "You drop by. The donuts are gone. So is he.", "fx": {"pipe": -2}},
+		],
+	},
+]
+var LIFE: Array = DEFAULT_LIFE.duplicate(true)
+
 var leads: Array = []  # {id, name, type, who, users, pain, quality, fee, site, week, stage, called, visited, moon, why}
 var book: Array = []  # won deals: {id, name, type, mrr, margin, week, promise, gap, mood, complain, resolved}
 var next_id := 1
@@ -856,6 +925,7 @@ func begin_week(day: int) -> void:
 	Deals.resolve_pending(day)
 	_age_leads(day)
 	_beat_cards(day)
+	_life_card(day)
 	var fresh := draw_week(Difficulty.rng("leads"))
 	if not fresh.is_empty():
 		var hot: Array = fresh.filter(func(x: Dictionary) -> bool: return int(x.quality) >= 50)
@@ -920,6 +990,48 @@ func _review_card(day: int) -> void:
 		% [open_leads().size(), pipeline_value(), str(QUARTERS[qi].label), quota_pct(qi), left, int(client_mood())]
 	)
 	Cards.ask("{sales_owner}", text, [{"label": "GOT IT", "id": "ok"}], func(_id: String) -> void: pass)
+
+
+# C7b: the week's office life card (a fresh order per run, no repeats)
+func life_order() -> Array:
+	var order := []
+	for i in LIFE.size():
+		order.append(i)
+	Difficulty.shuffle_with(order, Difficulty.rng_for("sales.life", 0))
+	return order
+
+
+func _life_card(day: int) -> void:
+	var n := int(flags.get("life_seen", 0))
+	if not LIFE_WEEKS.has(day) or n >= LIFE.size():
+		return
+	flags["life_seen"] = n + 1
+	var card: Dictionary = LIFE[int(life_order()[n])]
+	var options := []
+	for i in card.options.size():
+		options.append({"label": str(card.options[i].label), "id": str(i)})
+	Cards.ask(str(card.speaker), str(card.text), options, func(pick: String) -> void: _life_answer(card, int(pick)))
+
+
+func _life_answer(card: Dictionary, pick: int) -> void:
+	var o: Dictionary = card.options[pick]
+	life_fx(o.fx)
+	Cards.ask(str(card.speaker), str(o.reply), [{"label": "OK", "id": "ok"}], func(_id: String) -> void: pass)
+
+
+func life_fx(fx: Dictionary) -> void:
+	if fx.has("pipe"):
+		var best: Dictionary = {}
+		for l in open_leads():
+			if best.is_empty() or int(l.quality) > int(best.quality):
+				best = l
+		if not best.is_empty():
+			best["quality"] = clampi(int(best.quality) + int(fx.pipe), 5, 95)
+	if fx.has("consc"):
+		Temptation.change_consc(int(fx.consc))
+	if fx.has("morale"):
+		Social.change_all(int(fx.morale))
+	changed.emit()
 
 
 func _quota_card() -> void:
@@ -1698,6 +1810,8 @@ func year_share() -> float:
 # X13 (Difficulty `sales.keep`, hard only): the hard quota is a fifth higher than the plan needs, so two missed quarters only end
 # the job there when the year as a whole came in under this share of it. 0 = off: two misses are the end (easy, normal).
 func year_saves() -> bool:
+	if Difficulty.cozy_on():
+		return true  # cozy Easy: nobody is fired, two missed quarters do not end the job (the coach text on the report says so)
 	var keep := Difficulty.cf("sales.keep")
 	return keep > 0.0 and year_share() >= keep - 0.0001
 

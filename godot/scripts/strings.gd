@@ -26,6 +26,7 @@ const ROOTS := {
 		"INCIDENTS",
 		"INCIDENT_OPTIONS",
 		"ONE_ON_ONES",
+		"ONE_BACK",
 		"ONE_TEXT",
 		"CREW_TEXT",
 		"DAYS",
@@ -97,7 +98,7 @@ const ROOTS := {
 	"Outings":
 	["SONGS", "FRIEND_HINTS", "HERRINGS", "HERRING_TEXT", "RECIPE_TIPS", "GUESTS", "CREW_LINES", "KARAOKE_TEXT", "DINNER_TEXT", "TABLE_EVENTS", "POST_TALKS", "ESCAPE_THEMES"],
 	"Build": ["QUIRKS", "PRESETS", "INFO"],
-	"SalesCampaign": ["BEAT_TEXT"],
+	"SalesCampaign": ["BEAT_TEXT", "LIFE"],
 	"Rival": ["HABITS", "RIVALS"],
 	"Habits": ["HABITS", "TEXT", "CARDS"],
 	"RivalCards": ["CARDS"],

@@ -62,8 +62,13 @@ In Godot's user-data folder for the game (`MSPSim`):
 
 ### My screen is tiny.
 
-Press **`F9`** to cycle through the picture shapes (`wide`, `h`, `v`, `vclose`). The window opens at a multiple of the chosen
-shape's size, so you may also just need to maximise it. The pause menu's **SHAPE** row does the same thing.
+Press **`F9`** to cycle through the picture shapes (`wide`, `h`, `deck`, `v`, `vclose`). The window opens at a multiple of the chosen
+shape's size, so you may also just need to maximise it. The pause menu's **SHAPE** row does the same thing. The game starts full screen; `Alt`+`Enter` (or **DISPLAY** in the title's **SETTINGS**) switches to a window and back.
+
+### The letters are too small to read.
+
+Open **SETTINGS** on the title screen (or the pause menu in a room) and set **TEXT** to **LARGE**, and **CONTRAST** to **HIGH** if
+the grey hint lines are hard to see. See [Chapter 2](02-controls.md#text-size-and-contrast).
 
 ### My screen is the wrong shape (very tall, very thin).
 
@@ -76,7 +81,7 @@ The pause menu's **DAY LENGTH** also stretches the working day. See [Chapter 1](
 
 ### The game feels too easy.
 
-Choose **HARD**. If you have finished a Tech or Owner campaign, **START YEAR 2** is waiting on the title screen.
+Choose **HARD**. If you have finished any campaign, **START YEAR 2** is waiting on the title screen.
 
 ### The pause menu will not open.
 
@@ -105,6 +110,10 @@ not do yet.
 ### The first launch is slow, or something looks missing.
 
 Run the import once: `Godot --headless --path godot --import`. See [Chapter 1](01-getting-started.md).
+
+### The game stops when I click another window.
+
+That is on purpose: it pauses when it loses focus (and when a Steam Deck sleeps). **UNFOCUSED: RUN** in the title's **SETTINGS** keeps it running.
 
 ### The sound is too loud, or I want to film in peace.
 
@@ -136,7 +145,7 @@ room is up), or press **`Shift`+`F10`** at any time in Free Play.
 
 | ROW | WHAT IT DOES |
 |---|---|
-| **GAME** | `NONE`, `BOWLING`, `KARAOKE`, `ESCAPE ROOM`, `DINNER`, `PRINTER`, `NERF WAR`, `CHAIR RACE`, `PAINTBALL`, `CORNHOLE`, `COOKOUT`. |
+| **GAME** | `NONE`, `BOWLING`, `KARAOKE`, `ESCAPE ROOM`, `DINNER`, `PRINTER`, `NERF WAR`, `CHAIR RACE`, `PAINTBALL`, `CORNHOLE`, `COOKOUT`, `DARTS` (eleven games). |
 | *(settings for the chosen game)* | **KARAOKE:** which `SONG` (even one that is locked). **ESCAPE ROOM:** the number of `CODE DIGITS`, the `ROOM` (the old study, the server room, the detective's office or the computer lab) and which kind of clue each zone shows. **DINNER:** who is at the `TABLE`. **PRINTER:** which printer `MODEL`. **CHAIR RACE:** the `EVENT` (the straight, the gauntlet or the chair fight; `PICK ON CARD` leaves it to the card). **PAINTBALL:** the `MATCH` (`DAY`, `NIGHT`, or the card's draw). |
 | **SEED** | Type or paste a seed, roll one, or use today's ([Chapter 1](01-getting-started.md#the-seed-and-the-daily-seed)). |
 | **FIXED TAKE** | `ON` makes every launch start again from the seed, with no random events and no twists, so a retake is **identical**. Handy for filming the same scene twice. |

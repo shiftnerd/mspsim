@@ -32,7 +32,7 @@ TESTS = os.path.join(GODOT_DIR, "tests")
 DEFAULT_GODOT = r"C:\Program Files\Godot\Godot.exe"
 # not part of the default headless run (tests whose header mentions a renderer or that save PNGs are skipped too): are dev tools / long balance runs, or are libraries
 SKIP = ["*_shots.gd", "bot_*.gd", "*_balance.gd", "format.gd", "followcam.gd",
-        "story_export.gd", "fuzz_ui.gd", "fuzz_lib.gd", "fake_npc.gd", "site_shot.gd", "titleshots.gd", "venue_shots.gd", "karaoke_song_shots.gd", "dinner_sim.gd"]
+        "story_export.gd", "make_systems_reference.gd", "soak_sim.gd", "soak_lib.gd", "fuzz_ui.gd", "fuzz_lib.gd", "fake_npc.gd", "site_shot.gd", "titleshots.gd", "venue_shots.gd", "karaoke_song_shots.gd", "dinner_sim.gd"]
 FAIL_RE = re.compile(r"^\W*FAIL\b")
 FAILURES_RE = re.compile(r"^\s*failures\s*=\s*[1-9]")
 ERR_RE = re.compile(r"SCRIPT ERROR")

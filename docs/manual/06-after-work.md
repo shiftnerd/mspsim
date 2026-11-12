@@ -2,7 +2,7 @@
 
 # AFTER WORK
 
-*Seven ways to spend an evening with people you spend every other hour with, and one quick game any time.*
+*Eight ways to spend an evening with people you spend every other hour with, and one quick game (darts) any time.*
 
 ---
 

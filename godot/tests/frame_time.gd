@@ -52,6 +52,9 @@ func _measure(label: String) -> void:
 	var wall := []
 	var worst_proc := []
 	var worst_phys := []
+	var font: Script = load("res://scripts/pixelfont.gd")
+	font.stat_rect = 0
+	font.stat_tex = 0
 	var prev := Time.get_ticks_usec()
 	var stop := prev + int(SECS * 1000000.0)
 	while Time.get_ticks_usec() < stop:
@@ -62,6 +65,8 @@ func _measure(label: String) -> void:
 		worst_proc.append(Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0)
 		worst_phys.append(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0)
 	var f := _stats(wall)
+	var nframes := maxi(1, wall.size())
+	var text_cmds := "text commands a frame: %d draw_rect + %d draw_texture  " % [int(font.stat_rect / nframes), int(font.stat_tex / nframes)]
 	var pr := _stats(worst_proc)
 	var ph := _stats(worst_phys)
 	# with a renderer and no cap: a bad ordinary frame (the 95th percentile) plus one physics step. Headless sleeps between
@@ -71,7 +76,7 @@ func _measure(label: String) -> void:
 	if frame60 > BUDGET_MS:
 		over += 1
 	var wall_text := "" if headless else "frame %5.2f ms avg, %5.2f p95, %5.2f worst (%4.0f fps uncapped)  " % [f.avg, f.p95, f.max, 1000.0 / float(f.avg)]
-	print("%-30s %sslowest process step in a second %5.2f ms (worst %5.2f)  physics step %4.2f  => 60 Hz frame %5.2f ms, headroom x%.1f  [nodes %d, draw calls %d]" % [label, wall_text, pr.avg, pr.max, ph.avg, frame60, BUDGET_MS / frame60, int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))])
+	print("%-30s %s%sslowest process step in a second %5.2f ms (worst %5.2f)  physics step %4.2f  => 60 Hz frame %5.2f ms, headroom x%.1f  [nodes %d, draw calls %d]" % [label, wall_text, text_cmds, pr.avg, pr.max, ph.avg, frame60, BUDGET_MS / frame60, int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))])
 
 
 func _outing(out: Node, id: String) -> void:

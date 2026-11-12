@@ -707,6 +707,7 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
 	if practice:
 		_reseed()
 	is_open = true
+	Game.large_hold("printer")  # R42: its fixed 176 px layout does not fit LARGE `v` (Game.FALLBACK)
 	Game.ui_open = true
 	_canvas.visible = true
 	phase = "intro"
@@ -732,6 +733,7 @@ func start(callback: Callable, flavour: String = "laser", opts: Dictionary = {})
 
 func _finish() -> void:
 	is_open = false
+	Game.large_release("printer")
 	Game.ui_open = false
 	_canvas.visible = false
 	if _callback.is_valid():

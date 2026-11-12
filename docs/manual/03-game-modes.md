@@ -2,7 +2,7 @@
 
 # GAME MODES
 
-*Six doors on the title menu. All of them lead to the same office, which has never once been tidy.*
+*Four campaigns, a sandbox, a quick game and a trophy shelf. All of them lead to the same office, which has never once been tidy.*
 
 ---
 
@@ -16,6 +16,7 @@
 | **Sales** | The account manager | 20 weeks | 3 slots | `WEEK n/20` |
 | **Free Play / Film Mode** | Anyone you like | As long as you like | none | none |
 | **Career** | Yourself, across every run | Forever | automatic | none |
+| **Quick Play** | Whoever Free Play last had | A few minutes | none | none |
 
 > **NOTE:** This chapter tells you **what each mode is about**. It does not tell you what happens. The office likes to keep its
 > surprises for the people who turn up.
@@ -61,6 +62,11 @@ The office as a sandbox. No scoring, no saves, no consequences. Wander, sit anyw
 (`O`), start a nerf war, or open the **toolbox** (`Shift`+`F10`) to play any one of the small games with settings of your
 choice. Press `F10` to hide the clock and counters and film in peace. See [Chapter 8](08-tips-and-troubleshooting.md#the-free-play-toolbox).
 
+## QUICK PLAY
+
+On the title's home menu, for when there is no time for a campaign: **ONE OUTING** (one team game, a different one each time) or **ONE TICKET SHIFT**
+(five tickets at your desk, against your own best time). No character screen, nothing saved.
+
 ## CAREER
 
 Not a mode so much as a trophy shelf. Career keeps your **lifetime counters** (pages of them) and a **medal board**, each medal
@@ -78,7 +84,7 @@ phone, clothes and accessories in the character creator. Open it from the title 
 
 ## YEAR 2
 
-Finish a Tech or Owner campaign and its submenu on the title screen gains a **START YEAR 2** row.
+Finish any of the four campaigns (Tech, Owner, Service Manager or Sales) and that campaign's submenu on the title screen gains a **START YEAR 2** row.
 
 Year 2 is a harder second pass at the same company. Some of what you learned comes with you (a little of your skill, your
 standing, a few extra points to spend on your build), the clocks run tighter, the world throws more twists, and the calendar
@@ -89,7 +95,7 @@ has been shuffled. The character screen gains a **MUT** chip: press `M` (or `Shi
 
 ### YEAR 3
 
-Finish a Year 2 run and the same submenu gains **START YEAR 3**, the last chapter of that campaign. It carries over from your
+Finish a Year 2 run of a campaign and its submenu gains **START YEAR 3**, the last chapter of that campaign. It carries over from your
 Year 2 run the same way, the clocks tighten one more notch, and three cards during the year ask how your story at Pixel IT
 should end. What you answer decides which extra choices the final review offers, next to the usual ones. Each of those endings
 has its own medal on the Career screen, and finishing the year earns **THIRD YEAR**. There is no Year 4.
@@ -106,5 +112,6 @@ has its own medal on the Career screen, and finishing the year earns **THIRD YEA
 | Like talking people into things | **Sales** |
 | Just want to look around | **Free Play** |
 | Want to see what you have unlocked | **Career** |
+| Have ten minutes | **Quick Play** |
 
 <sub>&lt;&lt; Previous: [Chapter 2](02-controls.md) &nbsp;|&nbsp; [Contents](README.md) &nbsp;|&nbsp; Next: [Chapter 4: The Office](04-the-office.md) &gt;&gt;</sub>
