@@ -768,7 +768,8 @@ func _chaos_open() -> void:
 		1:
 			_n("Phone").notify("TEXT", "Morgan", "A TEXT AT A BAD TIME")
 		2:
-			_n("DayReport").show_report(_report_data("tech"))
+			if not _n("Outings").is_open and not _n("DayReport").is_open:  # the clock stands still in an outing, so the day cannot end there
+				_n("DayReport").show_report(_report_data("tech"))
 		3:
 			if tree.current_scene != null and tree.current_scene.scene_file_path.contains("main_floor"):
 				_n("Outings").start(["bowling", "karaoke", "dinner", "cornhole", "chair"][rng.randi_range(0, 4)], false, {"party": ["Alan", "Dan"]})
@@ -865,6 +866,9 @@ func describe() -> String:
 	var comp := _n("Computer")
 	if comp.is_open:
 		parts.append("computer app=%s menu=%s mail_view=%s psa_detail=%s close_ask=%s rmm_session=%s rmm_detail=%s tv=%s" % [str(comp.app), str(comp._menu), str(comp.mail_view), str(comp.psa_detail), str(comp.close_ask), str(comp.rmm_session), str(comp.rmm_detail), str(comp.tv_mode)])
+	if _n("DayReport").is_open:
+		var dr := _n("DayReport")
+		parts.append("report page=%d pages=%d age_ms=%d" % [dr._page, dr._pages.size(), Time.get_ticks_msec() - int(dr._opened)])
 	if _n("Review").is_open:
 		var rv := _n("Review")
 		parts.append("review page=%d opt_page=%d end_page=%d offers=%d ending=%s fade=%f" % [rv.page, rv._opt_page(), rv._end_page(), rv.offers.size(), str(rv.ending), rv._fade])
@@ -1000,6 +1004,9 @@ func recover() -> bool:
 func audit_text(tag: String) -> void:
 	if not fmt_audit or PixelFont.audit == null:
 		return
+	var phone := _n("Phone")
+	if not phone.banner.is_empty() and phone.banner_slide() < 1.0:
+		return  # a phone banner on its way in is above the screen's top edge for a quarter second (tests/layout_audit.gd waits it out too)
 	var seen: int = PixelFont.audit.size()
 	if seen == 0:
 		return

@@ -47,19 +47,46 @@ can move a result between runs, so each fix also has a reduced regression in `te
 | 2 | `title:sub:tech` seed 2, `title:settings` seed 2 (SCRIPT ERROR) | `title.gd:686 _on_select_done: Cannot call method 'queue_free' on a null value`: GO answered twice in a frame (a double click, Enter twice) after the select was freed. | FIXED: `_on_select_done` returns when no select is open (regress 2) |
 | 3 | `floor:boardroom:clients`, `floor:computer:shop`, `floor:knowledge` seed 2 (dead input) | A pause from losing focus sits over an open phone / computer; QUIT TO TITLE then left the phone open over the title, and it ate the title's Enter (`Game.ui_open` stayed true). | FIXED: `Game.go_title` closes the Computer and Phone and clears `ui_open` (regress 4) |
 | 4 | card with a greyed-out row (found by the recovery, seed 1) | A mouse hover selected a greyed-out option; Enter then did nothing and a card could look stuck. A stale hit rect could also carry an index past the options. | FIXED: hover skips disabled rows and bad indexes (regress 3) |
+| 5 | `floor:computer:nerds`, seed 100 (3 SCRIPT ERRORs) | `forum_view.gd:229 / 277 / 316`: a key in the NERDS forum before its first paint built the rows with the Computer's text helpers while `c` was still null; Enter on a row with no action indexed `parts[1]` of a one-element array; PgUp / PgDn indexed `_rows[sel]` with no rows. | FIXED: no rows without a Computer, `act` ignores short actions, bounds check (regress 5) |
+| 6 | `floor:knowledge`, `title:flow:sales`, `floor:computer:shop`, seed 601 | A card open or queued when the run was left for the title came up over the title screen (Enter did nothing: the card had the keys). | FIXED: new `Cards.clear_all()`, called by `Game.go_title` (regress 6) |
+| 7 | sequence `campaign:tech`, seed 1100 | Esc / pad B on the Free Play menu card did nothing: its way out is a CLOSE row and `Cards._pick_leave` only knew `leave` and `__none`. | FIXED: `close` is a leave id too (regress 7) |
+
+Seen once, not reproduced (timing dependent): `title:flow:service` seed 601 in a 2-round pass, charselect still open on step `char`
+after 17 back presses with the touch overlay on (the same seed alone passes).
 
 Harness bugs the first runs showed (not game bugs, fixed in the harness): the recovery pressed Enter on charselect pages (moved
 forward again), pressed Esc on a quiet floor (opens the pause menu), looked at Cards before the pause menu that sat above it,
 needed a real 0.47 s wait for a card that opened during the recovery, started `nerf` through `Outings.start` (not an Outings
-game), and gave the printer a callback with no argument.
+game), gave the printer a callback with no argument, treated a campaign resumed in another room as a failed CONTINUE, let chaos
+open cards on the title, called the day report while an outing was open (the clock stands still there), sent a Down and an
+Enter in one frame at the title's QUIT row (`get_tree().quit()` ended the process, so the title menu gets one event a frame now),
+and read the phone banner sliding in as off-screen text. The order the recovery looks at screens follows who gets the keys first
+(autoload order, last first): pause menu, toolbox and outfit overlay, printer game, then cards, report, review, Computer, Phone,
+outings. A talk (Expo session) is sat through with Enter once its line has been up 0.35 s of game time.
 
 Things that looked like soft-locks and are by design: Free Play chains outings (a result page answered with Enter starts the
-next), the year-end Review has no Esc (Enter pages through it), a Card's Esc only picks a `leave` option, Esc on a quiet floor
-opens the pause menu.
+next), the year-end Review has no Esc (Enter pages through it), Esc on a quiet floor opens the pause menu.
 
-## Not covered yet
+Design notes the fuzzer turned up, left alone: a card that opens over the outfit overlay or the toolbox cannot be answered with the
+keyboard until Esc closes those (they take every key first; a click works).
 
-- TEXT SIZE (agent `textsize`) and the text drawing change (agent `perf`) were not on `main` when this was written: merge, rerun
-  `tests/fuzz_ui_smoke.gd` and fuzz their screens.
-- A windowed run (text against the viewport, random formats) needs a renderer; the long headless passes did not audit text.
+## Runs (headless, `--fixed-fps 60`; seconds are game seconds, 60 frames each)
+
+| Run | Screens | Events sent | Bugs left |
+|---|---|---|---|
+| first passes while the harness was shaken out (seeds 1, 2, 100, 600, 700, 200-500, 800-1200) | about 1 300 bursts | about 650 000 | all triaged above |
+| clean batch 1 (seeds 1300-1800: title x28, floors x65, sequences, chaos floors x65, co-op floors x65, everything x186) | 410 | about 220 000 | 0 |
+| clean batch 2 after merging `main` (TEXT size and CONTRAST events in the stream; seeds 2100-2600) | 410 | about 218 000 | 1 harness case (chaos day report over an outing, fixed in the harness) |
+| windowed pass (renderer, a random format per screen, text audited; seed 3000) | 93 | 21 975 | 0 (two phone-banner slide-in lines, filtered) |
+
+Replay a line: `Godot --headless --fixed-fps 60 --path godot -s res://tests/fuzz_ui.gd -- --screens=NAME --seed=N --seconds=S [--chaos] [--coop]`
+(`--rounds=2` uses seed and seed + 1). `FUZZ_VERBOSE=1` in the environment prints one line per recovery round with the open state.
+
+## Not covered
+
+- The "quit to title -> continue" sequence ran for the four campaigns at 40 s of game time each (`--sequences`); a real 2 minute
+  run per mode (`--sequences --seconds=30`) was not done. Year 2 / Year 3 rows are fuzzed as `title:year2`; the Review pages and
+  endings as `floor:review:*` and `floor:report:ending`.
+- Orphan growth is checked per burst (60 nodes); a slow leak over hundreds of screens is not measured.
+- Player 2's pad is driven through direct handler calls (a second pad's events never reach an autoload's `_input` headless).
 
