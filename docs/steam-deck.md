@@ -183,6 +183,12 @@ What the numbers say:
   at 30 repaints a second now (`Computer.DASH_REDRAW`), and it still costs 6 ms a frame on average because the
   renderer also has about 210 draw calls of rectangles to submit for it.
 
+**After the text cache (R-perf, `docs/dev/notes-perf.md`):** `PixelFont.draw` now draws one cached texture per string and the
+metrics board's digits use cached geometry, with identical pixels (`tests/text_cache.gd`). Same PC, average frame, three
+interleaved runs: dashboard 6.4 -> 3.5 ms (60 Hz frame 8.5 -> 4.7 to 5.4 ms), service board 2.5 -> 1.9, RMM 2.9 -> 1.9, bowling
+1.65 -> 1.4, paintball 2.2 -> 1.8, chair race 2.0 -> 1.8; title and floors unchanged. Text commands a frame on the dashboard
+fell from 1824 `draw_rect` to 37 `draw_texture`. Not met: the dashboard under 3 ms (what remains is about 210 GL draw calls resubmitted every frame).
+
 **The Deck is slower. Not measured.** Its Zen 2 APU has roughly half the single-thread speed of this CPU and the game's
 cost is almost all single-thread GDScript and canvas submission (the GPU load of a 320 x 200 picture is nothing). With
 a factor of 2: rooms and mini-games land at 4 to 7 ms a frame (fine), the Computer's apps at 6 to 9 ms with a repaint

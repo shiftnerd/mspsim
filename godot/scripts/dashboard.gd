@@ -431,7 +431,72 @@ static func _quad(c: CanvasItem, p1: Vector2, p2: Vector2, thick: float, col: Co
 
 
 # one 14-segment cell at (x, y) w by h px: lit segments in `col`, the others as a faint ghost
+static var fast_digits := true  # tests/text_cache.gd turns it off to compare with the slow path
+static var _seg_cache := {}  # (char, w, h) -> the segments of one cell at the origin, in drawing order: [kind, shape, lit]
+
+
+# perf: the geometry of a cell does not depend on where it stands, so it is built once (the same arithmetic as the slow path
+# below, at the origin) and a repaint only adds the cell's offset. Only used for whole-pixel x and y, where that is exact.
+static func _seg_build(ch: String, w: float, h: float) -> Array:
+	var x := 0.0
+	var y := 0.0
+	var lit: String = GLYPHS.get(ch.to_upper(), "")
+	var t := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
+	var mid := y + floorf(h * 0.5)
+	var cx := x + floorf(w * 0.5)
+	var my := mid - floorf(t * 0.5)
+	var hv := maxf(1.0, mid - y - 2.0)
+	var rects := {
+		"a": Rect2(x + 1, y, w - 2, t), "d": Rect2(x + 1, y + h - t, w - 2, t),
+		"f": Rect2(x, y + 1, t, hv), "b": Rect2(x + w - t, y + 1, t, hv),
+		"e": Rect2(x, mid + 1, t, hv), "c": Rect2(x + w - t, mid + 1, t, hv),
+		"g": Rect2(x + 1, my, maxf(1.0, cx - x - 1), t), "h": Rect2(cx + 1, my, maxf(1.0, x + w - 1 - cx - 1), t),
+		"i": Rect2(cx - floorf(t * 0.5), y + t + 1, t, maxf(1.0, mid - y - t - 2)),
+		"l": Rect2(cx - floorf(t * 0.5), mid + 2, t, maxf(1.0, y + h - t - 1 - mid - 2)),
+	}
+	var diag := {
+		"j": [Vector2(x + t + 1, y + t + 1), Vector2(cx - 1, mid - 1)], "k": [Vector2(x + w - t - 1, y + t + 1), Vector2(cx + 2, mid - 1)],
+		"m": [Vector2(x + t + 1, y + h - t - 1), Vector2(cx - 1, mid + 2)], "n": [Vector2(x + w - t - 1, y + h - t - 1), Vector2(cx + 2, mid + 2)],
+	}
+	var out := []
+	for s in SEGS:
+		var on := lit.contains(s)
+		if rects.has(s):
+			out.append([0, rects[s], on])
+		elif h >= 9.0:
+			var p1: Vector2 = diag[s][0]
+			var p2: Vector2 = diag[s][1]
+			var d := p2 - p1
+			if d.length() < 0.5:
+				continue
+			var n := Vector2(-d.y, d.x).normalized() * maxf(1.0, t * 0.9) * 0.5
+			out.append([1, PackedVector2Array([p1 + n, p2 + n, p2 - n, p1 - n]), on])
+		elif on:
+			out.append([2, Rect2(diag[s][0].lerp(diag[s][1], 0.5).floor(), Vector2(1, 1)), true])
+	return out
+
+
 static func digit(c: CanvasItem, ch: String, x: float, y: float, w: float, h: float, col: Color, dp := false) -> void:
+	if fast_digits and x == floorf(x) and y == floorf(y) and ch.length() == 1:
+		var key := Vector3(w, h, float(ch.unicode_at(0)))
+		var segs: Array = _seg_cache.get(key, [])
+		if segs.is_empty() and not _seg_cache.has(key):
+			segs = _seg_build(ch, w, h)
+			_seg_cache[key] = segs
+		var off := Vector2(x, y)
+		var ghost := Color(col.r, col.g, col.b, 0.12)
+		for sg in segs:
+			var colr := col if sg[2] else ghost
+			if sg[0] == 1:
+				var pts: PackedVector2Array = sg[1]
+				c.draw_primitive(PackedVector2Array([pts[0] + off, pts[1] + off, pts[2] + off, pts[3] + off]), PackedColorArray([colr, colr, colr, colr]), PackedVector2Array())
+			else:
+				var r: Rect2 = sg[1]
+				c.draw_rect(Rect2(r.position + off, r.size), colr)
+		if dp:
+			var tt := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
+			c.draw_rect(Rect2(x + w, y + h - maxf(tt, 2.0), 2, maxf(tt, 2.0)), col)
+		return
 	var lit: String = GLYPHS.get(ch.to_upper(), "")
 	var ghost := Color(col.r, col.g, col.b, 0.12)
 	var t := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
