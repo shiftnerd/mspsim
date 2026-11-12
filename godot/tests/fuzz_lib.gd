@@ -204,6 +204,10 @@ func _reset_world() -> void:
 	game.ui_open = false
 	game.focus_lost = false
 	game._held_pause = false
+	if game.text_large:
+		game.set_text_large(false)
+	if game.high_contrast:
+		game.set_high_contrast(false)
 	for c in ["Computer", "Phone", "Toolbox", "Outings", "PrinterGame"]:
 		var node := _n(c)
 		if node.get("is_open") == true and node.has_method("close"):
@@ -721,9 +725,17 @@ func _send_one() -> void:
 		game.hover_at(_mouse_point() + Vector2(40, 40))
 	elif roll < 98:
 		var on := rng.randf() < 0.5
-		_log_ev("touch %s" % on)
-		ctl.touch_override = 1 if on else -1
-		ctl.touch_refresh()
+		var which := rng.randi_range(0, 2)
+		if which == 1:  # SETTINGS: TEXT NORMAL / LARGE
+			_log_ev("text large %s" % on)
+			game.set_text_large(on)
+		elif which == 2:  # SETTINGS: CONTRAST
+			_log_ev("high contrast %s" % on)
+			game.set_high_contrast(on)
+		else:
+			_log_ev("touch %s" % on)
+			ctl.touch_override = 1 if on else -1
+			ctl.touch_refresh()
 	elif roll < 99:
 		_log_ev("rapid open/close")
 		var code: int = [KEY_ESCAPE, KEY_P, KEY_PAUSE, KEY_J, KEY_Y, KEY_E, KEY_ENTER][rng.randi_range(0, 6)]
@@ -1038,6 +1050,8 @@ func fuzz_screen(name: String, seed_value: int, frames: int) -> int:
 	if orphans1 - orphans0 > 60:
 		_report("orphans", "orphan nodes grew by %d in one burst (%d -> %d)" % [orphans1 - orphans0, orphans0, orphans1])
 	game.set_format("wide")
+	game.set_text_large(false)
+	game.set_high_contrast(false)
 	return bugs.size() - before
 
 
