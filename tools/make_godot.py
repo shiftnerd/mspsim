@@ -860,6 +860,12 @@ func click_at(ui_point: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
 
 func go_title() -> void:
 	busy = false
+	# a pause that came from losing focus can sit on top of an open phone or computer: they must not follow you to the title
+	for screen in [Computer, Phone]:
+		if screen.is_open:
+			screen.close()
+	Cards.clear_all()  # a card that was open or waiting (it came up over a pause) must not follow the run to the title
+	ui_open = false
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 
@@ -21624,6 +21630,13 @@ func pick(index: int) -> void:
     _show_next()
 
 
+# the run is over (QUIT TO TITLE): drop the open card and every card waiting behind it, without answering them
+func clear_all() -> void:
+    _queue.clear()
+    is_open = false
+    _canvas.visible = false
+
+
 # the next queued card whose reason still holds (a John complaint for a ticket that closed meanwhile is dropped)
 func _show_next() -> void:
     while not _queue.is_empty() and not is_open and not DayReport.is_open:
@@ -21664,7 +21677,7 @@ func waiting() -> int:
 # Esc picks the option whose id is "leave" (conversations)
 func _pick_leave() -> void:
     for i in options.size():
-        if str(options[i].id) in ["leave", "__none"]:
+        if str(options[i].id) in ["leave", "__none", "close"]:  # "close": the Free Play menu's CLOSE row, so Esc / B leave it too
             pick(i)
             return
 
@@ -21684,7 +21697,7 @@ func _input(event: InputEvent) -> void:
     if event is InputEventMouseMotion:
         _mouse = event.position
         for h in _hits:
-            if h.r.has_point(_mouse):
+            if h.r.has_point(_mouse) and int(h.i) < options.size() and bool(options[int(h.i)].get("enabled", true)):  # a greyed-out row is not selectable (Enter would do nothing)
                 sel = int(h.i)
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -30086,7 +30099,7 @@ func selected_action() -> String:
 
 
 func _ensure_rows() -> void:
-    if _rows.is_empty():
+    if _rows.is_empty() and c != null:  # the rows are laid out with the Computer's text helpers: no Computer yet (a key before the first paint) means no rows
         _build()
         _first_selectable()
 
@@ -30187,7 +30200,7 @@ func key(name: String) -> bool:
                 scroll(page)
             else:
                 _move_sel(page)
-                if str(_rows[sel].act) == "":
+                if sel >= 0 and sel < _rows.size() and str(_rows[sel].act) == "":
                     _first_selectable_from(sel)
             return true
         "enter":
@@ -30205,6 +30218,8 @@ func key(name: String) -> bool:
 
 # the actions of mouse clicks and Enter: parts = ["nerds", "board", id] and so on
 func act(parts: PackedStringArray) -> void:
+    if parts.size() < 3 and (parts.size() < 2 or parts[1] != "back"):
+        return  # Enter on a row with no action (or before there are rows)
     match parts[1]:
         "board":
             open_board(parts[2])
@@ -61164,6 +61179,8 @@ func _click(at: Vector2) -> void:
             set_page(int(r[2]))
         "sw":
             create_row = floori(float(r[2]) / 100.0)
+            if create_row < 0 or create_row >= _page_rows().size():
+                return  # a click on the last frame's swatch after the page turned: that row is not on this page
             Look.set_swatch(str(_page_rows()[create_row].id), int(r[2]) % 100)
             _refresh_look()
         "row":
@@ -62466,6 +62483,8 @@ func _close_select() -> void:
 
 
 func _on_select_done(result: Dictionary, id: String) -> void:
+    if _select == null:
+        return  # a second GO in the same frame (a double click, Enter twice): the run is already starting
     _select.queue_free()
     _select = null
     _start(id, str(result.summary))

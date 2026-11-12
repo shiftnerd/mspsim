@@ -131,6 +131,13 @@ func pick(index: int) -> void:
 	_show_next()
 
 
+# the run is over (QUIT TO TITLE): drop the open card and every card waiting behind it, without answering them
+func clear_all() -> void:
+	_queue.clear()
+	is_open = false
+	_canvas.visible = false
+
+
 # the next queued card whose reason still holds (a John complaint for a ticket that closed meanwhile is dropped)
 func _show_next() -> void:
 	while not _queue.is_empty() and not is_open and not DayReport.is_open:
@@ -171,7 +178,7 @@ func waiting() -> int:
 # Esc picks the option whose id is "leave" (conversations)
 func _pick_leave() -> void:
 	for i in options.size():
-		if str(options[i].id) in ["leave", "__none"]:
+		if str(options[i].id) in ["leave", "__none", "close"]:  # "close": the Free Play menu's CLOSE row, so Esc / B leave it too
 			pick(i)
 			return
 
@@ -191,7 +198,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_mouse = event.position
 		for h in _hits:
-			if h.r.has_point(_mouse):
+			if h.r.has_point(_mouse) and int(h.i) < options.size() and bool(options[int(h.i)].get("enabled", true)):  # a greyed-out row is not selectable (Enter would do nothing)
 				sel = int(h.i)
 		_canvas.queue_redraw()
 	elif (

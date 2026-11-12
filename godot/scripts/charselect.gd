@@ -1227,6 +1227,8 @@ func _click(at: Vector2) -> void:
 			set_page(int(r[2]))
 		"sw":
 			create_row = floori(float(r[2]) / 100.0)
+			if create_row < 0 or create_row >= _page_rows().size():
+				return  # a click on the last frame's swatch after the page turned: that row is not on this page
 			Look.set_swatch(str(_page_rows()[create_row].id), int(r[2]) % 100)
 			_refresh_look()
 		"row":

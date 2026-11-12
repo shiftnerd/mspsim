@@ -107,7 +107,7 @@ func selected_action() -> String:
 
 
 func _ensure_rows() -> void:
-	if _rows.is_empty():
+	if _rows.is_empty() and c != null:  # the rows are laid out with the Computer's text helpers: no Computer yet (a key before the first paint) means no rows
 		_build()
 		_first_selectable()
 
@@ -208,7 +208,7 @@ func key(name: String) -> bool:
 				scroll(page)
 			else:
 				_move_sel(page)
-				if str(_rows[sel].act) == "":
+				if sel >= 0 and sel < _rows.size() and str(_rows[sel].act) == "":
 					_first_selectable_from(sel)
 			return true
 		"enter":
@@ -226,6 +226,8 @@ func key(name: String) -> bool:
 
 # the actions of mouse clicks and Enter: parts = ["nerds", "board", id] and so on
 func act(parts: PackedStringArray) -> void:
+	if parts.size() < 3 and (parts.size() < 2 or parts[1] != "back"):
+		return  # Enter on a row with no action (or before there are rows)
 	match parts[1]:
 		"board":
 			open_board(parts[2])
