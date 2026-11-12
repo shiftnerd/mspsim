@@ -34,6 +34,7 @@ var year2 := false  # the next play() starts a New Game Plus on the meta record 
 var keep_meta := false  # play() ends through Campaign.finish_campaign, so the meta record of the run exists
 var stop_day := 0  # tech: stop after this day's report (0 = play to the end); tests/bot_determinism.gd
 var frame_hook := Callable()  # dev: called once per bot frame (tests/bot_det.gd traces state with it)
+var abort := false  # soak (tests/soak_lib.gd): a hook sets it to end the run at the next frame (the run reports TIMEOUT)
 
 
 var year := 1  # R10: 2 or 3 starts every run as START YEAR 2 / 3, from the record of a decent finished year before (_seed_year)
@@ -580,7 +581,7 @@ func tech_run(seed_n: int) -> Dictionary:
 	var row := {}
 	var days: Array = []
 	var fired := false
-	while frames < 200000:
+	while frames < 200000 and not abort:
 		frames += 1
 		await tree.process_frame
 		if frame_hook.is_valid():
@@ -890,7 +891,7 @@ func sv_run(seed_n: int) -> Dictionary:
 	var ended := false
 	var fired := false
 	var row := {}
-	while frames < 400000 and not ended:
+	while frames < 400000 and not ended and not abort:
 		frames += 1
 		await tree.process_frame
 		if frame_hook.is_valid():
@@ -1118,11 +1119,13 @@ func sa_run(seed_value: int) -> Dictionary:
 	sa_answer(cards, 0.0)
 	var out := {"seed": seed_value, "weeks": 0, "fired": false}
 	for day in range(1, 21):
+		if abort:
+			break
 		world.clock = 8.6
 		var hour := 8.6
 		var acted := false
 		var guard := 0
-		while not report.is_open and hour < 23.9 and guard < 400:
+		while not report.is_open and hour < 23.9 and guard < 400 and not abort:
 			guard += 1
 			hour += 0.25
 			if not acted and hour > 9.2:
@@ -1133,6 +1136,8 @@ func sa_run(seed_value: int) -> Dictionary:
 				world.clock = maxf(world.clock, hour)
 			await tree.process_frame
 			await tree.process_frame
+			if frame_hook.is_valid():
+				frame_hook.call(guard)
 			sa_answer(cards, 0.0)
 			if onsite.active:
 				onsite._go_home(false)
@@ -1510,8 +1515,10 @@ func ow_run(seed_n: int) -> Dictionary:
 	var weeks := []
 	var seen_cards := 0
 	for day in range(1, 21):
+		if abort:
+			break
 		var frames := 0
-		while not report.is_open and frames < 40000:
+		while not report.is_open and frames < 40000 and not abort:
 			await tree.process_frame
 			frames += 1
 			if frame_hook.is_valid():
