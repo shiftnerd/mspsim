@@ -1218,6 +1218,262 @@ SAY 'NOTHING, REALLY'
 [Story.VIGNETTES.first_week_note.options.2.text]
 Morgan thinks you are being modest.
 
+# Story > VIGNETTES > byod_phone > speaker
+[Story.VIGNETTES.byod_phone.speaker]
+A realtor at Brightside
+
+# Story > VIGNETTES > byod_phone > text
+[Story.VIGNETTES.byod_phone.text]
+I bought a new phone with my own money and I would like my work email on it. By lunch. It is a phone, how hard can it be?
+
+# Story > VIGNETTES > byod_phone > options > 0 > label
+[Story.VIGNETTES.byod_phone.options.0.label]
+SET IT UP AND ADD A SCREEN LOCK
+
+# Story > VIGNETTES > byod_phone > options > 0 > text
+[Story.VIGNETTES.byod_phone.options.0.text]
+Four minutes, a passcode and a very large thumb. She says the passcode is her birthday. You suggest a different birthday.
+
+# Story > VIGNETTES > byod_phone > options > 1 > label
+[Story.VIGNETTES.byod_phone.options.1.label]
+SHOW HER HOW, AND LET HER DO IT
+
+# Story > VIGNETTES > byod_phone > options > 1 > text
+[Story.VIGNETTES.byod_phone.options.1.text]
+She does it herself on the second try and tells the whole office she did it herself.
+
+# Story > VIGNETTES > byod_phone > options > 2 > label
+[Story.VIGNETTES.byod_phone.options.2.label]
+TELL HER THE POLICY IS NOT WRITTEN YET
+
+# Story > VIGNETTES > byod_phone > options > 2 > text
+[Story.VIGNETTES.byod_phone.options.2.text]
+She says she will ask Karen. Karen says ask the IT people. It goes around the office twice.
+
+# Story > VIGNETTES > usb_found > speaker
+[Story.VIGNETTES.usb_found.speaker]
+The front desk at Acme Dental
+
+# Story > VIGNETTES > usb_found > text
+[Story.VIGNETTES.usb_found.text]
+Somebody found a USB stick in the parking lot. It says PAYROLL on it in marker. We plugged it in to see whose it is. It is asking to run something.
+
+# Story > VIGNETTES > usb_found > options > 0 > label
+[Story.VIGNETTES.usb_found.options.0.label]
+PULL IT OUT, SCAN THE MACHINE, TAKE THE STICK
+
+# Story > VIGNETTES > usb_found > options > 0 > text
+[Story.VIGNETTES.usb_found.options.0.text]
+The scan comes back clean. The stick goes in a drawer with a label. Dr. Patel says he did not know you could find an attack in a parking lot.
+
+# Story > VIGNETTES > usb_found > options > 1 > label
+[Story.VIGNETTES.usb_found.options.1.label]
+WRITE A ONE LINE RULE FOR THE FRONT DESK
+
+# Story > VIGNETTES > usb_found > options > 1 > text
+[Story.VIGNETTES.usb_found.options.1.text]
+FOUND DRIVES GO TO IT, NOT INTO THE COMPUTER. It goes on a sticky note on the monitor, in your handwriting.
+
+# Story > VIGNETTES > usb_found > options > 2 > label
+[Story.VIGNETTES.usb_found.options.2.label]
+SAY IT IS PROBABLY A JOKE
+
+# Story > VIGNETTES > usb_found > options > 2 > text
+[Story.VIGNETTES.usb_found.options.2.text]
+It is probably a joke. The note will say so in the incident report next month.
+
+# Story > VIGNETTES > remote_scam > speaker
+[Story.VIGNETTES.remote_scam.speaker]
+Atty. Spence (Hoot and Holler Law)
+
+# Story > VIGNETTES > remote_scam > text
+[Story.VIGNETTES.remote_scam.text]
+A man on the phone says he is from Windows Support and that my computer sends them errors. He wants to connect and look. He had a very kind voice.
+
+# Story > VIGNETTES > remote_scam > options > 0 > label
+[Story.VIGNETTES.remote_scam.options.0.label]
+TELL HIM TO HANG UP, THEN CHECK THE PC
+
+# Story > VIGNETTES > remote_scam > options > 0 > text
+[Story.VIGNETTES.remote_scam.options.0.text]
+He hung up on the caller twice, the second time with feeling. The PC is clean. He tells the partners about the kind voice.
+
+# Story > VIGNETTES > remote_scam > options > 1 > label
+[Story.VIGNETTES.remote_scam.options.1.label]
+PRINT A CARD: WE NEVER CALL YOU FIRST
+
+# Story > VIGNETTES > remote_scam > options > 1 > text
+[Story.VIGNETTES.remote_scam.options.1.text]
+A card for every desk. It sounds obvious on paper. Nobody has ever printed it.
+
+# Story > VIGNETTES > remote_scam > options > 2 > label
+[Story.VIGNETTES.remote_scam.options.2.label]
+SAY YOU WILL LOOK AT IT NEXT WEEK
+
+# Story > VIGNETTES > remote_scam > options > 2 > text
+[Story.VIGNETTES.remote_scam.options.2.text]
+He hangs up anyway, but not before the caller asked for his mother's maiden name.
+
+# Story > VIGNETTES > vga_hdmi > speaker
+[Story.VIGNETTES.vga_hdmi.speaker]
+Bob Gnarly (Gnarly Gnomes)
+
+# Story > VIGNETTES > vga_hdmi > text
+[Story.VIGNETTES.vga_hdmi.text]
+I have a pitch at ten. The projector has a blue plug with screws and my new laptop has a thin plug with ideas. The man at the shop said it would just work.
+
+# Story > VIGNETTES > vga_hdmi > options > 0 > label
+[Story.VIGNETTES.vga_hdmi.options.0.label]
+FIND AN ADAPTER AND STAND THERE WHILE IT WORKS
+
+# Story > VIGNETTES > vga_hdmi > options > 0 > text
+[Story.VIGNETTES.vga_hdmi.options.0.text]
+The adapter is in the closet, in a bag marked MYSTERY. It works on the first try. He thinks you are a wizard.
+
+# Story > VIGNETTES > vga_hdmi > options > 1 > label
+[Story.VIGNETTES.vga_hdmi.options.1.label]
+LEND HIM YOUR OLD LAPTOP FOR THE MORNING
+
+# Story > VIGNETTES > vga_hdmi > options > 1 > text
+[Story.VIGNETTES.vga_hdmi.options.1.text]
+Your old laptop gets applause from a room of landscapers. It comes back with a small clump of mulch.
+
+# Story > VIGNETTES > vga_hdmi > options > 2 > label
+[Story.VIGNETTES.vga_hdmi.options.2.label]
+POINT AT THE PAGE IN THE MANUAL
+
+# Story > VIGNETTES > vga_hdmi > options > 2 > text
+[Story.VIGNETTES.vga_hdmi.options.2.text]
+It is page forty-one. He reads it and says he can do it himself. He cannot.
+
+# Story > VIGNETTES > dst_clock > speaker
+[Story.VIGNETTES.dst_clock.speaker]
+Alan (Co-owner)
+
+# Story > VIGNETTES > dst_clock > text
+[Story.VIGNETTES.dst_clock.text]
+The office server thinks it is an hour earlier than everyone else. The clocks changed at the weekend. Nobody changed the clock on the server because it is the server.
+
+# Story > VIGNETTES > dst_clock > options > 0 > label
+[Story.VIGNETTES.dst_clock.options.0.label]
+FIX THE TIME ZONE AND SYNC IT TO A TIME SERVER
+
+# Story > VIGNETTES > dst_clock > options > 0 > text
+[Story.VIGNETTES.dst_clock.options.0.text]
+The logs finally agree with each other. Alan says that is the nicest thing anybody has done for him this week.
+
+# Story > VIGNETTES > dst_clock > options > 1 > label
+[Story.VIGNETTES.dst_clock.options.1.label]
+CHECK EVERY OTHER MACHINE FOR THE SAME THING
+
+# Story > VIGNETTES > dst_clock > options > 1 > text
+[Story.VIGNETTES.dst_clock.options.1.text]
+Two printers and the front desk phone were an hour off as well. You fix all three before lunch.
+
+# Story > VIGNETTES > dst_clock > options > 2 > label
+[Story.VIGNETTES.dst_clock.options.2.label]
+MAKE A NOTE FOR NEXT MARCH
+
+# Story > VIGNETTES > dst_clock > options > 2 > text
+[Story.VIGNETTES.dst_clock.options.2.text]
+You write a reminder for next March. It is a good reminder. Alan frames it.
+
+# Story > VIGNETTES > streaming_lunch > speaker
+[Story.VIGNETTES.streaming_lunch.speaker]
+Lucy Malt (Soggy Bottom Brewing)
+
+# Story > VIGNETTES > streaming_lunch > text
+[Story.VIGNETTES.streaming_lunch.text]
+The internet crawls from noon to two. I looked at the router. It has lots of lights. I think somebody in the back is watching the whole season of something.
+
+# Story > VIGNETTES > streaming_lunch > options > 0 > label
+[Story.VIGNETTES.streaming_lunch.options.0.label]
+SET A LIMIT FOR VIDEO AND TELL THE STAFF
+
+# Story > VIGNETTES > streaming_lunch > options > 0 > text
+[Story.VIGNETTES.streaming_lunch.options.0.text]
+The back room finds out lunch is a minute shorter without video. Lucy's cash register stops freezing.
+
+# Story > VIGNETTES > streaming_lunch > options > 1 > label
+[Story.VIGNETTES.streaming_lunch.options.1.label]
+PUT THE BREAK ROOM ON ITS OWN GUEST WIFI
+
+# Story > VIGNETTES > streaming_lunch > options > 1 > text
+[Story.VIGNETTES.streaming_lunch.options.1.text]
+A second network for phones and for people who watch things. The cash register gets the good one.
+
+# Story > VIGNETTES > streaming_lunch > options > 2 > label
+[Story.VIGNETTES.streaming_lunch.options.2.label]
+ASK THEM NICELY TO WAIT UNTIL FIVE
+
+# Story > VIGNETTES > streaming_lunch > options > 2 > text
+[Story.VIGNETTES.streaming_lunch.options.2.text]
+They agree. They stream with the picture quality turned down. It is exactly as bad.
+
+# Story > VIGNETTES > pst_archive > speaker
+[Story.VIGNETTES.pst_archive.speaker]
+Dr. Patel (Acme Dental)
+
+# Story > VIGNETTES > pst_archive > text
+[Story.VIGNETTES.pst_archive.text]
+My email is slow, and the box says I am over the limit. I keep my archive on the desktop. It is called archive. It is four gigabytes. I have never opened it.
+
+# Story > VIGNETTES > pst_archive > options > 0 > label
+[Story.VIGNETTES.pst_archive.options.0.label]
+SPLIT IT BY YEAR AND MOVE IT TO THE SERVER
+
+# Story > VIGNETTES > pst_archive > options > 0 > text
+[Story.VIGNETTES.pst_archive.options.0.text]
+Three files, one for each year, in a folder that is backed up. His mail opens in a second. He wants to know where his year of 2011 went. It is there.
+
+# Story > VIGNETTES > pst_archive > options > 1 > label
+[Story.VIGNETTES.pst_archive.options.1.label]
+SHOW HIM HOW TO DELETE THE FORWARDS
+
+# Story > VIGNETTES > pst_archive > options > 1 > text
+[Story.VIGNETTES.pst_archive.options.1.text]
+Half of it is chain letters about a petition. He deletes them with great care and a small sigh.
+
+# Story > VIGNETTES > pst_archive > options > 2 > label
+[Story.VIGNETTES.pst_archive.options.2.label]
+TELL HIM TO ASK FOR A BIGGER MAILBOX
+
+# Story > VIGNETTES > pst_archive > options > 2 > text
+[Story.VIGNETTES.pst_archive.options.2.text]
+A bigger mailbox is a bigger problem in six months. You do not say that.
+
+# Story > VIGNETTES > wifi_twin > speaker
+[Story.VIGNETTES.wifi_twin.speaker]
+Karen Whitfield (Brightside Realty)
+
+# Story > VIGNETTES > wifi_twin > text
+[Story.VIGNETTES.wifi_twin.text]
+Two of my agents joined a wifi called BrightsideGuest. We do not have one. The coffee shop downstairs does. They have been on it all week. Is that bad?
+
+# Story > VIGNETTES > wifi_twin > options > 0 > label
+[Story.VIGNETTES.wifi_twin.options.0.label]
+RENAME THE OFFICE WIFI AND CHECK WHO IS ON THE OTHER
+
+# Story > VIGNETTES > wifi_twin > options > 0 > text
+[Story.VIGNETTES.wifi_twin.options.0.text]
+Everybody is on the right network by lunch. The coffee shop's was called BrightsideGuest because the barista liked the sign. You buy a cookie.
+
+# Story > VIGNETTES > wifi_twin > options > 1 > label
+[Story.VIGNETTES.wifi_twin.options.1.label]
+EXPLAIN WHY A COFFEE SHOP NETWORK IS NOT PRIVATE
+
+# Story > VIGNETTES > wifi_twin > options > 1 > text
+[Story.VIGNETTES.wifi_twin.options.1.text]
+She says she thought wifi was just wifi. You tell her it is, but the coffee shop is not you.
+
+# Story > VIGNETTES > wifi_twin > options > 2 > label
+[Story.VIGNETTES.wifi_twin.options.2.label]
+SAY IT IS PROBABLY FINE
+
+# Story > VIGNETTES > wifi_twin > options > 2 > text
+[Story.VIGNETTES.wifi_twin.options.2.text]
+It is probably fine. You write it down so you can say you wrote it down.
+
 
 # ======================= Story > POSTMORTEMS =======================
 # Story > POSTMORTEMS > ransom > title
@@ -7636,6 +7892,286 @@ SAY IT IS ONLY GRANOLA
 [Service.ONE_ON_ONES.Maya.9.options.2.reply]
 It is a granola bar, Maya.
 
+# Service > ONE_ON_ONES > Maya > 10 > text
+[Service.ONE_ON_ONES.Maya.10.text]
+Can I ride along on a site visit one day? So far I have seen the inside of a headset and the inside of a printer.
+
+# Service > ONE_ON_ONES > Maya > 10 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.10.options.0.label]
+PROMISE THE NEXT SITE VISIT
+
+# Service > ONE_ON_ONES > Maya > 10 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.10.options.0.reply]
+Next onsite, you come. I put your name on the van sheet. In ink.
+
+# Service > ONE_ON_ONES > Maya > 10 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.10.options.1.label]
+SHOW HER THE CLOSET HERE
+
+# Service > ONE_ON_ONES > Maya > 10 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.10.options.1.reply]
+Come and look at our rack. It is a small closet, but it has opinions.
+
+# Service > ONE_ON_ONES > Maya > 10 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.10.options.2.label]
+SAY THE VAN IS FULL
+
+# Service > ONE_ON_ONES > Maya > 10 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.10.options.2.reply]
+The van is full.
+
+# Service > ONE_ON_ONES > Maya > 11 > text
+[Service.ONE_ON_ONES.Maya.11.text]
+Would you read my ticket notes on Friday? I think they are good. I also think they are too long. Both.
+
+# Service > ONE_ON_ONES > Maya > 11 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.11.options.0.label]
+READ THEM EVERY FRIDAY
+
+# Service > ONE_ON_ONES > Maya > 11 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.11.options.0.reply]
+Fridays at four. I read, you watch me read. Bring the long ones too.
+
+# Service > ONE_ON_ONES > Maya > 11 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.11.options.1.label]
+READ ONE RIGHT NOW
+
+# Service > ONE_ON_ONES > Maya > 11 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.11.options.1.reply]
+Give me one. I will mark the first line that matters.
+
+# Service > ONE_ON_ONES > Maya > 11 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.11.options.2.label]
+SAY NOTES ARE FOR THE NEXT TECH
+
+# Service > ONE_ON_ONES > Maya > 11 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.11.options.2.reply]
+Notes are not for me. Write them for whoever opens the ticket next.
+
+# Service > ONE_ON_ONES > Maya > 12 > text
+[Service.ONE_ON_ONES.Maya.12.text]
+Morgan asked if I want to sit in on the next interview. I said I would think about it. Then I hid in the supply closet for ten minutes.
+
+# Service > ONE_ON_ONES > Maya > 12 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.12.options.0.label]
+SAY YES AND HELP HER PREPARE
+
+# Service > ONE_ON_ONES > Maya > 12 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.12.options.0.reply]
+Yes. You pick three questions and I read them first. The closet is optional.
+
+# Service > ONE_ON_ONES > Maya > 12 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.12.options.1.label]
+TELL HER SHE CAN WATCH
+
+# Service > ONE_ON_ONES > Maya > 12 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.12.options.1.reply]
+Watch the first one. Ask the second one if you feel like it.
+
+# Service > ONE_ON_ONES > Maya > 12 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.12.options.2.label]
+SAY THAT IS FOR THE SENIORS
+
+# Service > ONE_ON_ONES > Maya > 12 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.12.options.2.reply]
+That one is for the senior techs.
+
+# Service > ONE_ON_ONES > Maya > 13 > text
+[Service.ONE_ON_ONES.Maya.13.text]
+The desk by the printer is warm and loud. I know what every printer noise means now. I cannot think, but I could write a dictionary.
+
+# Service > ONE_ON_ONES > Maya > 13 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.13.options.0.label]
+PROMISE THE WINDOW DESK
+
+# Service > ONE_ON_ONES > Maya > 13 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.13.options.0.reply]
+Window desk, end of the week. I will move the cable bundle myself.
+
+# Service > ONE_ON_ONES > Maya > 13 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.13.options.1.label]
+HAND HER A PAIR OF EARPLUGS
+
+# Service > ONE_ON_ONES > Maya > 13 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.13.options.1.reply]
+Here. They are orange. Take two.
+
+# Service > ONE_ON_ONES > Maya > 13 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.13.options.2.label]
+SAY EVERYONE GETS A LOUD DESK
+
+# Service > ONE_ON_ONES > Maya > 13 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.13.options.2.reply]
+Everyone gets a loud desk.
+
+# Service > ONE_ON_ONES > Maya > 14 > text
+[Service.ONE_ON_ONES.Maya.14.text]
+A client said enjoy your lunch. It was nine in the morning. I said you too.
+
+# Service > ONE_ON_ONES > Maya > 14 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.14.options.0.label]
+TELL HER EVERYONE DOES THAT
+
+# Service > ONE_ON_ONES > Maya > 14 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.14.options.0.reply]
+Everyone does. I once told a client happy birthday. It was not his birthday.
+
+# Service > ONE_ON_ONES > Maya > 14 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.14.options.1.label]
+SAY IT MEANS SHE IS POLITE
+
+# Service > ONE_ON_ONES > Maya > 14 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.14.options.1.reply]
+It means you are polite. Eat something at ten.
+
+# Service > ONE_ON_ONES > Maya > 14 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.14.options.2.label]
+ASK HER TO FOCUS ON THE TICKET
+
+# Service > ONE_ON_ONES > Maya > 14 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.14.options.2.reply]
+Focus on the ticket.
+
+# Service > ONE_ON_ONES > Maya > 15 > text
+[Service.ONE_ON_ONES.Maya.15.text]
+I fixed a PC by unplugging it. I do not know why that worked. Should I be proud or worried?
+
+# Service > ONE_ON_ONES > Maya > 15 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.15.options.0.label]
+WRITE DOWN WHY IT WORKED
+
+# Service > ONE_ON_ONES > Maya > 15 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.15.options.0.reply]
+Both. Tomorrow we find out why, and then it goes in the binder with your name.
+
+# Service > ONE_ON_ONES > Maya > 15 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.15.options.1.label]
+SAY BOTH IS CORRECT
+
+# Service > ONE_ON_ONES > Maya > 15 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.15.options.1.reply]
+Both is the right answer. It is the right answer for most of this job.
+
+# Service > ONE_ON_ONES > Maya > 15 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.15.options.2.label]
+SAY DO NOT FIX WHAT YOU CANNOT EXPLAIN
+
+# Service > ONE_ON_ONES > Maya > 15 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.15.options.2.reply]
+Do not fix what you cannot explain.
+
+# Service > ONE_ON_ONES > Maya > 16 > text
+[Service.ONE_ON_ONES.Maya.16.text]
+Alan said hello in the hallway and I said ticket. Just ticket. He nodded as if that was normal.
+
+# Service > ONE_ON_ONES > Maya > 16 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.16.options.0.label]
+PRACTISE A HELLO WITH HER
+
+# Service > ONE_ON_ONES > Maya > 16 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.16.options.0.reply]
+Hello, Alan. Say it with me. You may add ticket afterwards if you must.
+
+# Service > ONE_ON_ONES > Maya > 16 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.16.options.1.label]
+TELL HER ALAN HAS HEARD WORSE
+
+# Service > ONE_ON_ONES > Maya > 16 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.16.options.1.reply]
+A client called him Alvin for a year. He answered to it.
+
+# Service > ONE_ON_ONES > Maya > 16 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.16.options.2.label]
+SAY SHE WILL GET USED TO IT
+
+# Service > ONE_ON_ONES > Maya > 16 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.16.options.2.reply]
+You will get used to the owners.
+
+# Service > ONE_ON_ONES > Maya > 17 > text
+[Service.ONE_ON_ONES.Maya.17.text]
+My mother calls me to fix her laptop. I fixed it by phone. Now she calls the shop number. Is she a client?
+
+# Service > ONE_ON_ONES > Maya > 17 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.17.options.0.label]
+LOG A SHOP TICKET FOR HER MOTHER
+
+# Service > ONE_ON_ONES > Maya > 17 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.17.options.0.reply]
+Log it as internal, priority three. Your mother gets a ticket number. I think she will like that.
+
+# Service > ONE_ON_ONES > Maya > 17 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.17.options.1.label]
+SAY ONE FREE FIX, THEN A TICKET
+
+# Service > ONE_ON_ONES > Maya > 17 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.17.options.1.reply]
+One free one. After that she gets a ticket and the same patience as everyone.
+
+# Service > ONE_ON_ONES > Maya > 17 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.17.options.2.label]
+SAY NO PERSONAL WORK ON THE SHOP LINE
+
+# Service > ONE_ON_ONES > Maya > 17 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.17.options.2.reply]
+Not on the shop line.
+
+# Service > ONE_ON_ONES > Maya > 18 > text
+[Service.ONE_ON_ONES.Maya.18.text]
+I counted the printer tickets this month. Thirty-one. I think the printers know my name.
+
+# Service > ONE_ON_ONES > Maya > 18 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.18.options.0.label]
+TURN IT INTO A ONE PAGE FIX LIST
+
+# Service > ONE_ON_ONES > Maya > 18 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.18.options.0.reply]
+Thirty-one is a pattern. Write the five fixes that cover most of them. One page, your name on top.
+
+# Service > ONE_ON_ONES > Maya > 18 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.18.options.1.label]
+PUT THE COUNT IN FRONT OF ALAN
+
+# Service > ONE_ON_ONES > Maya > 18 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.18.options.1.reply]
+Show Alan the count. Numbers make him cheerful. Slightly.
+
+# Service > ONE_ON_ONES > Maya > 18 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.18.options.2.label]
+SAY PRINTERS ARE LIKE THAT
+
+# Service > ONE_ON_ONES > Maya > 18 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.18.options.2.reply]
+Printers are like that.
+
+# Service > ONE_ON_ONES > Maya > 19 > text
+[Service.ONE_ON_ONES.Maya.19.text]
+Someone asked for my opinion in the huddle. I gave it. Then I apologised for it until lunch.
+
+# Service > ONE_ON_ONES > Maya > 19 > options > 0 > label
+[Service.ONE_ON_ONES.Maya.19.options.0.label]
+TELL HER THE OPINION WAS GOOD
+
+# Service > ONE_ON_ONES > Maya > 19 > options > 0 > reply
+[Service.ONE_ON_ONES.Maya.19.options.0.reply]
+It was good. It was the right one. You can stop now, you apologised to the stapler too.
+
+# Service > ONE_ON_ONES > Maya > 19 > options > 1 > label
+[Service.ONE_ON_ONES.Maya.19.options.1.label]
+ASK FOR HER OPINION AGAIN ON FRIDAY
+
+# Service > ONE_ON_ONES > Maya > 19 > options > 1 > reply
+[Service.ONE_ON_ONES.Maya.19.options.1.reply]
+Same question on Friday. Practice is mostly turning up.
+
+# Service > ONE_ON_ONES > Maya > 19 > options > 2 > label
+[Service.ONE_ON_ONES.Maya.19.options.2.label]
+SAY KEEP THE SORRY FOR CLIENTS
+
+# Service > ONE_ON_ONES > Maya > 19 > options > 2 > reply
+[Service.ONE_ON_ONES.Maya.19.options.2.reply]
+Save the sorry for the clients.
+
 # Service > ONE_ON_ONES > Tech > 0 > text
 [Service.ONE_ON_ONES.Tech.0.text]
 {name} says: I got stuck on a printer yesterday and did not ask. I did not want to bother you.
@@ -8699,6 +9235,512 @@ SAY IT DEPENDS
 # Service > ONE_ON_ONES > John > 9 > options > 2 > reply
 [Service.ONE_ON_ONES.John.9.options.2.reply]
 It depends.
+
+# Service > ONE_ON_ONES > John > 10 > text
+[Service.ONE_ON_ONES.John.10.text]
+Ask me how the quarter looks. Go on. It looks like a quarter. A good one. Roughly.
+
+# Service > ONE_ON_ONES > John > 10 > options > 0 > label
+[Service.ONE_ON_ONES.John.10.options.0.label]
+ASK FOR ONE NUMBER, WITH A SOURCE
+
+# Service > ONE_ON_ONES > John > 10 > options > 0 > reply
+[Service.ONE_ON_ONES.John.10.options.0.reply]
+One number by Friday, with the file it came from. A napkin counts if it has a date.
+
+# Service > ONE_ON_ONES > John > 10 > options > 1 > label
+[Service.ONE_ON_ONES.John.10.options.1.label]
+LET HIM KEEP THE ROUGH PICTURE
+
+# Service > ONE_ON_ONES > John > 10 > options > 1 > reply
+[Service.ONE_ON_ONES.John.10.options.1.reply]
+Roughly good. I can live with roughly good until Friday.
+
+# Service > ONE_ON_ONES > John > 10 > options > 2 > label
+[Service.ONE_ON_ONES.John.10.options.2.label]
+SAY ROUGHLY IS NOT A NUMBER
+
+# Service > ONE_ON_ONES > John > 10 > options > 2 > reply
+[Service.ONE_ON_ONES.John.10.options.2.reply]
+Roughly is not a number.
+
+# Service > ONE_ON_ONES > John > 11 > text
+[Service.ONE_ON_ONES.John.11.text]
+Dr. Okafor at Piedmont likes baseball. I have two tickets. It is basically a meeting with peanuts.
+
+# Service > ONE_ON_ONES > John > 11 > options > 0 > label
+[Service.ONE_ON_ONES.John.11.options.0.label]
+SAY YES, WITH A LIMIT AND A RECEIPT
+
+# Service > ONE_ON_ONES > John > 11 > options > 0 > reply
+[Service.ONE_ON_ONES.John.11.options.0.reply]
+One game, one receipt, no second round of anything. The peanuts go on the form.
+
+# Service > ONE_ON_ONES > John > 11 > options > 1 > label
+[Service.ONE_ON_ONES.John.11.options.1.label]
+SAY YES, AND TAKE A PHOTO
+
+# Service > ONE_ON_ONES > John > 11 > options > 1 > reply
+[Service.ONE_ON_ONES.John.11.options.1.reply]
+Take a photo of the scoreboard. Garrison likes a photo.
+
+# Service > ONE_ON_ONES > John > 11 > options > 2 > label
+[Service.ONE_ON_ONES.John.11.options.2.label]
+SAY NO, USE THE CONFERENCE ROOM
+
+# Service > ONE_ON_ONES > John > 11 > options > 2 > reply
+[Service.ONE_ON_ONES.John.11.options.2.reply]
+Peanuts are not a meeting. Use the conference room.
+
+# Service > ONE_ON_ONES > John > 12 > text
+[Service.ONE_ON_ONES.John.12.text]
+A prospect wants to see our real ticket board. I said sure. Do we keep a fake one for this?
+
+# Service > ONE_ON_ONES > John > 12 > options > 0 > label
+[Service.ONE_ON_ONES.John.12.options.0.label]
+SET UP A CLEAN DEMO BOARD
+
+# Service > ONE_ON_ONES > John > 12 > options > 0 > reply
+[Service.ONE_ON_ONES.John.12.options.0.reply]
+There is no fake board, but there is a quiet afternoon. I will set up a demo client with tickets that read well.
+
+# Service > ONE_ON_ONES > John > 12 > options > 1 > label
+[Service.ONE_ON_ONES.John.12.options.1.label]
+SHOW HIM THE REAL ONE, ONE COLUMN
+
+# Service > ONE_ON_ONES > John > 12 > options > 1 > reply
+[Service.ONE_ON_ONES.John.12.options.1.reply]
+One column, no names. Do not read the notes out loud.
+
+# Service > ONE_ON_ONES > John > 12 > options > 2 > label
+[Service.ONE_ON_ONES.John.12.options.2.label]
+SAY NO BOARD TOURS
+
+# Service > ONE_ON_ONES > John > 12 > options > 2 > reply
+[Service.ONE_ON_ONES.John.12.options.2.reply]
+No board tours.
+
+# Service > ONE_ON_ONES > John > 13 > text
+[Service.ONE_ON_ONES.John.13.text]
+I told Soggy Bottom we would label every cable in their office. Every one. This week. They have a lot of cables, I am told.
+
+# Service > ONE_ON_ONES > John > 13 > options > 0 > label
+[Service.ONE_ON_ONES.John.13.options.0.label]
+COUNT THE CABLES FIRST, THEN PROMISE
+
+# Service > ONE_ON_ONES > John > 13 > options > 0 > reply
+[Service.ONE_ON_ONES.John.13.options.0.reply]
+Count first, then promise. Two hours for the closet, a quote for the rest. You carry the count.
+
+# Service > ONE_ON_ONES > John > 13 > options > 1 > label
+[Service.ONE_ON_ONES.John.13.options.1.label]
+SEND A TECH FOR AN AFTERNOON
+
+# Service > ONE_ON_ONES > John > 13 > options > 1 > reply
+[Service.ONE_ON_ONES.John.13.options.1.reply]
+One afternoon, one tech, one label maker. Whatever is not labelled by five goes on a list.
+
+# Service > ONE_ON_ONES > John > 13 > options > 2 > label
+[Service.ONE_ON_ONES.John.13.options.2.label]
+TELL HIM TO TAKE IT BACK
+
+# Service > ONE_ON_ONES > John > 13 > options > 2 > reply
+[Service.ONE_ON_ONES.John.13.options.2.reply]
+Call them. Say we will label what matters, not what is there.
+
+# Service > ONE_ON_ONES > John > 14 > text
+[Service.ONE_ON_ONES.John.14.text]
+Mrs. Delacroix at Soggy Bottom sent me a fruitcake. In July. Can I expense the gratitude?
+
+# Service > ONE_ON_ONES > John > 14 > options > 0 > label
+[Service.ONE_ON_ONES.John.14.options.0.label]
+LOG IT AS A GIFT AND SHARE IT
+
+# Service > ONE_ON_ONES > John > 14 > options > 0 > reply
+[Service.ONE_ON_ONES.John.14.options.0.reply]
+It goes on the gift sheet and into the break room. Three slices each, no more.
+
+# Service > ONE_ON_ONES > John > 14 > options > 1 > label
+[Service.ONE_ON_ONES.John.14.options.1.label]
+TELL HIM TO EAT IT AND WRITE A NOTE
+
+# Service > ONE_ON_ONES > John > 14 > options > 1 > reply
+[Service.ONE_ON_ONES.John.14.options.1.reply]
+It is cake. Eat it. Write her a note.
+
+# Service > ONE_ON_ONES > John > 14 > options > 2 > label
+[Service.ONE_ON_ONES.John.14.options.2.label]
+SAY GIFTS GO BACK
+
+# Service > ONE_ON_ONES > John > 14 > options > 2 > reply
+[Service.ONE_ON_ONES.John.14.options.2.reply]
+Gifts go back, with a thank-you card.
+
+# Service > ONE_ON_ONES > John > 15 > text
+[Service.ONE_ON_ONES.John.15.text]
+I called a prospect Dave for forty minutes. His name is Dale. He asked for ten percent off to forgive me.
+
+# Service > ONE_ON_ONES > John > 15 > options > 0 > label
+[Service.ONE_ON_ONES.John.15.options.0.label]
+OFFER A FREE SETUP HOUR INSTEAD
+
+# Service > ONE_ON_ONES > John > 15 > options > 0 > reply
+[Service.ONE_ON_ONES.John.15.options.0.reply]
+No discount. A free setup hour and a card with his name spelled right. I checked it twice.
+
+# Service > ONE_ON_ONES > John > 15 > options > 1 > label
+[Service.ONE_ON_ONES.John.15.options.1.label]
+LET FIVE PERCENT STAND FOR A MONTH
+
+# Service > ONE_ON_ONES > John > 15 > options > 1 > reply
+[Service.ONE_ON_ONES.John.15.options.1.reply]
+Five percent, one month. He is Dale from now on.
+
+# Service > ONE_ON_ONES > John > 15 > options > 2 > label
+[Service.ONE_ON_ONES.John.15.options.2.label]
+SAY WRITE NAMES ON YOUR HAND
+
+# Service > ONE_ON_ONES > John > 15 > options > 2 > reply
+[Service.ONE_ON_ONES.John.15.options.2.reply]
+Write names on your hand. In pen.
+
+# Service > ONE_ON_ONES > John > 16 > text
+[Service.ONE_ON_ONES.John.16.text]
+A prospect asked for three references. I have three. One is my brother-in-law. He does own a dental practice, though.
+
+# Service > ONE_ON_ONES > John > 16 > options > 0 > label
+[Service.ONE_ON_ONES.John.16.options.0.label]
+USE TWO REAL ONES AND SAY SO
+
+# Service > ONE_ON_ONES > John > 16 > options > 0 > reply
+[Service.ONE_ON_ONES.John.16.options.0.reply]
+Two real ones, with permission. Say you have two and a third coming.
+
+# Service > ONE_ON_ONES > John > 16 > options > 1 > label
+[Service.ONE_ON_ONES.John.16.options.1.label]
+USE HIM AND SAY HE IS FAMILY
+
+# Service > ONE_ON_ONES > John > 16 > options > 1 > reply
+[Service.ONE_ON_ONES.John.16.options.1.reply]
+Say he is family. People trust a man who admits it.
+
+# Service > ONE_ON_ONES > John > 16 > options > 2 > label
+[Service.ONE_ON_ONES.John.16.options.2.label]
+SAY NO FAMILY REFERENCES
+
+# Service > ONE_ON_ONES > John > 16 > options > 2 > reply
+[Service.ONE_ON_ONES.John.16.options.2.reply]
+No family. Ring somebody who was angry with us and stayed.
+
+# Service > ONE_ON_ONES > John > 17 > text
+[Service.ONE_ON_ONES.John.17.text]
+Garrison told me to close it by Friday. I said Friday. Which Friday? I did not ask.
+
+# Service > ONE_ON_ONES > John > 17 > options > 0 > label
+[Service.ONE_ON_ONES.John.17.options.0.label]
+ASK GARRISON WHICH FRIDAY, TOGETHER
+
+# Service > ONE_ON_ONES > John > 17 > options > 0 > reply
+[Service.ONE_ON_ONES.John.17.options.0.reply]
+We ask him now. It is the one on the calendar, but we ask anyway.
+
+# Service > ONE_ON_ONES > John > 17 > options > 1 > label
+[Service.ONE_ON_ONES.John.17.options.1.label]
+PICK THE LATER FRIDAY
+
+# Service > ONE_ON_ONES > John > 17 > options > 1 > reply
+[Service.ONE_ON_ONES.John.17.options.1.reply]
+Pick the later one. If he meant the earlier, we apologise with the signed paper.
+
+# Service > ONE_ON_ONES > John > 17 > options > 2 > label
+[Service.ONE_ON_ONES.John.17.options.2.label]
+SAY ASK HIM YOURSELF
+
+# Service > ONE_ON_ONES > John > 17 > options > 2 > reply
+[Service.ONE_ON_ONES.John.17.options.2.reply]
+That is a question for Garrison.
+
+# Service > ONE_ON_ONES > John > 18 > text
+[Service.ONE_ON_ONES.John.18.text]
+Iron Mule Demolition wants help on a Sunday. They say it is an emergency. They said that last Sunday too.
+
+# Service > ONE_ON_ONES > John > 18 > options > 0 > label
+[Service.ONE_ON_ONES.John.18.options.0.label]
+OFFER A PAID WEEKEND LINE
+
+# Service > ONE_ON_ONES > John > 18 > options > 0 > reply
+[Service.ONE_ON_ONES.John.18.options.0.reply]
+A weekend line, priced, with a number they sign. If it is an emergency, it will be worth it.
+
+# Service > ONE_ON_ONES > John > 18 > options > 1 > label
+[Service.ONE_ON_ONES.John.18.options.1.label]
+TAKE THE CALL YOURSELF THIS ONCE
+
+# Service > ONE_ON_ONES > John > 18 > options > 1 > reply
+[Service.ONE_ON_ONES.John.18.options.1.reply]
+I take Sunday. They get the speech about the line on Monday.
+
+# Service > ONE_ON_ONES > John > 18 > options > 2 > label
+[Service.ONE_ON_ONES.John.18.options.2.label]
+SAY SUNDAYS ARE CLOSED
+
+# Service > ONE_ON_ONES > John > 18 > options > 2 > reply
+[Service.ONE_ON_ONES.John.18.options.2.reply]
+Sundays are closed.
+
+# Service > ONE_ON_ONES > John > 19 > text
+[Service.ONE_ON_ONES.John.19.text]
+I have all my receipts. They are in the car. Mostly.
+
+# Service > ONE_ON_ONES > John > 19 > options > 0 > label
+[Service.ONE_ON_ONES.John.19.options.0.label]
+SET A DATE FOR THE RECEIPTS
+
+# Service > ONE_ON_ONES > John > 19 > options > 0 > reply
+[Service.ONE_ON_ONES.John.19.options.0.reply]
+Friday, on my desk, in an envelope with your name. The envelope goes to the bookkeeper, not the car.
+
+# Service > ONE_ON_ONES > John > 19 > options > 1 > label
+[Service.ONE_ON_ONES.John.19.options.1.label]
+GIVE HIM A WEEK AND A SHOEBOX
+
+# Service > ONE_ON_ONES > John > 19 > options > 1 > reply
+[Service.ONE_ON_ONES.John.19.options.1.reply]
+A week. And a shoebox. Label it.
+
+# Service > ONE_ON_ONES > John > 19 > options > 2 > label
+[Service.ONE_ON_ONES.John.19.options.2.label]
+SAY NO RECEIPT, NO REFUND
+
+# Service > ONE_ON_ONES > John > 19 > options > 2 > reply
+[Service.ONE_ON_ONES.John.19.options.2.reply]
+No receipt, no refund.
+
+
+# ======================= Service > ONE_BACK =======================
+# Service > ONE_BACK > maya_visit > text
+[Service.ONE_BACK.maya_visit.text]
+You said I could come on the next site visit. There is one Thursday. I packed a sandwich, a pen and a second pen.
+
+# Service > ONE_BACK > maya_visit > options > 0 > label
+[Service.ONE_BACK.maya_visit.options.0.label]
+TAKE HER AND HAND OVER THE LABEL MAKER
+
+# Service > ONE_BACK > maya_visit > options > 0 > reply
+[Service.ONE_BACK.maya_visit.options.0.reply]
+You carry the label maker and label whatever I point at. Bring the second pen.
+
+# Service > ONE_BACK > maya_visit > options > 1 > label
+[Service.ONE_BACK.maya_visit.options.1.label]
+TAKE HER FOR THE FIRST HOUR
+
+# Service > ONE_BACK > maya_visit > options > 1 > reply
+[Service.ONE_BACK.maya_visit.options.1.reply]
+The first hour, then you ride back with the sandwich. It is a start.
+
+# Service > ONE_BACK > maya_visit > options > 2 > label
+[Service.ONE_BACK.maya_visit.options.2.label]
+SAY NOT THIS WEEK
+
+# Service > ONE_BACK > maya_visit > options > 2 > reply
+[Service.ONE_BACK.maya_visit.options.2.reply]
+Not this week. Sorry.
+
+# Service > ONE_BACK > maya_notes > text
+[Service.ONE_BACK.maya_notes.text]
+It is Friday. I printed my notes. Three pages. One of them is about a stapler. It is a good stapler.
+
+# Service > ONE_BACK > maya_notes > options > 0 > label
+[Service.ONE_BACK.maya_notes.options.0.label]
+READ ALL THREE PAGES, RED PEN IN HAND
+
+# Service > ONE_BACK > maya_notes > options > 0 > reply
+[Service.ONE_BACK.maya_notes.options.0.reply]
+Page one is good. Page two is good and long. Page three is a stapler. I enjoyed it.
+
+# Service > ONE_BACK > maya_notes > options > 1 > label
+[Service.ONE_BACK.maya_notes.options.1.label]
+READ THE TOP HALF OF EACH
+
+# Service > ONE_BACK > maya_notes > options > 1 > reply
+[Service.ONE_BACK.maya_notes.options.1.reply]
+Top halves. The part you buried is always the answer.
+
+# Service > ONE_BACK > maya_notes > options > 2 > label
+[Service.ONE_BACK.maya_notes.options.2.label]
+SAY NEXT WEEK, IT IS BUSY
+
+# Service > ONE_BACK > maya_notes > options > 2 > reply
+[Service.ONE_BACK.maya_notes.options.2.reply]
+Next week. I have a call.
+
+# Service > ONE_BACK > maya_panel > text
+[Service.ONE_BACK.maya_panel.text]
+The candidate is in the conference room. I have eight questions. Six are about pets. Is that wrong?
+
+# Service > ONE_BACK > maya_panel > options > 0 > label
+[Service.ONE_BACK.maya_panel.options.0.label]
+CUT IT TO THREE REAL QUESTIONS
+
+# Service > ONE_BACK > maya_panel > options > 0 > reply
+[Service.ONE_BACK.maya_panel.options.0.reply]
+Keep one pet question. People answer that one honestly. Take the other two from the sheet.
+
+# Service > ONE_BACK > maya_panel > options > 1 > label
+[Service.ONE_BACK.maya_panel.options.1.label]
+LET HER ASK THE PET ONES
+
+# Service > ONE_BACK > maya_panel > options > 1 > reply
+[Service.ONE_BACK.maya_panel.options.1.reply]
+Ask them. Watch who has a dog. We may learn more than the sheet would tell us.
+
+# Service > ONE_BACK > maya_panel > options > 2 > label
+[Service.ONE_BACK.maya_panel.options.2.label]
+SAY STICK TO THE SHEET
+
+# Service > ONE_BACK > maya_panel > options > 2 > reply
+[Service.ONE_BACK.maya_panel.options.2.reply]
+Stick to the sheet.
+
+# Service > ONE_BACK > maya_desk > text
+[Service.ONE_BACK.maya_desk.text]
+Is the window desk still happening? I measured. My chair fits. My plant does not. I would like to talk about the plant.
+
+# Service > ONE_BACK > maya_desk > options > 0 > label
+[Service.ONE_BACK.maya_desk.options.0.label]
+MOVE HER TODAY, PLANT INCLUDED
+
+# Service > ONE_BACK > maya_desk > options > 0 > reply
+[Service.ONE_BACK.maya_desk.options.0.reply]
+Today. The plant gets the sill. I will find a bigger saucer.
+
+# Service > ONE_BACK > maya_desk > options > 1 > label
+[Service.ONE_BACK.maya_desk.options.1.label]
+MOVE HER FRIDAY, PLANT STAYS
+
+# Service > ONE_BACK > maya_desk > options > 1 > reply
+[Service.ONE_BACK.maya_desk.options.1.reply]
+Friday. The plant can visit.
+
+# Service > ONE_BACK > maya_desk > options > 2 > label
+[Service.ONE_BACK.maya_desk.options.2.label]
+SAY THE DESK STAYS WHERE IT IS
+
+# Service > ONE_BACK > maya_desk > options > 2 > reply
+[Service.ONE_BACK.maya_desk.options.2.reply]
+The desk stays where it is.
+
+# Service > ONE_BACK > john_numbers > text
+[Service.ONE_BACK.john_numbers.text]
+Here is your number. I want to say it is eleven. It is nine if the maybes stay maybes. One of them plays golf, so call it ten.
+
+# Service > ONE_BACK > john_numbers > options > 0 > label
+[Service.ONE_BACK.john_numbers.options.0.label]
+READ IT LINE BY LINE TOGETHER
+
+# Service > ONE_BACK > john_numbers > options > 0 > reply
+[Service.ONE_BACK.john_numbers.options.0.reply]
+Nine signed. Two maybes in pencil. We write both columns. You can still say ten out loud, but not on paper.
+
+# Service > ONE_BACK > john_numbers > options > 1 > label
+[Service.ONE_BACK.john_numbers.options.1.label]
+TAKE TEN AND LOG THE MAYBES
+
+# Service > ONE_BACK > john_numbers > options > 1 > reply
+[Service.ONE_BACK.john_numbers.options.1.reply]
+Ten, with the maybes in pencil. Thank you for the golfer.
+
+# Service > ONE_BACK > john_numbers > options > 2 > label
+[Service.ONE_BACK.john_numbers.options.2.label]
+SEND IT BACK UNTIL IT IS ONE NUMBER
+
+# Service > ONE_BACK > john_numbers > options > 2 > reply
+[Service.ONE_BACK.john_numbers.options.2.reply]
+One number. I will wait.
+
+# Service > ONE_BACK > john_game > text
+[Service.ONE_BACK.john_game.text]
+The game is Saturday. I have the receipt folder. Dr. Okafor is bringing his brother. Does a brother count as a plus one?
+
+# Service > ONE_BACK > john_game > options > 0 > label
+[Service.ONE_BACK.john_game.options.0.label]
+YES, ONE BROTHER, ON THE FORM
+
+# Service > ONE_BACK > john_game > options > 0 > reply
+[Service.ONE_BACK.john_game.options.0.reply]
+One brother, by name, on the form. If he asks about the network, he is a lead.
+
+# Service > ONE_BACK > john_game > options > 1 > label
+[Service.ONE_BACK.john_game.options.1.label]
+YES, AND GO ALONG YOURSELF
+
+# Service > ONE_BACK > john_game > options > 1 > reply
+[Service.ONE_BACK.john_game.options.1.reply]
+Come for the fourth inning. Save me a peanut.
+
+# Service > ONE_BACK > john_game > options > 2 > label
+[Service.ONE_BACK.john_game.options.2.label]
+SAY NO BROTHERS
+
+# Service > ONE_BACK > john_game > options > 2 > reply
+[Service.ONE_BACK.john_game.options.2.reply]
+No brothers. It is in the policy now.
+
+# Service > ONE_BACK > john_demo > text
+[Service.ONE_BACK.john_demo.text]
+The demo is at ten. Is there anything on the board I should not read out loud? Asking for a friend. The friend is me.
+
+# Service > ONE_BACK > john_demo > options > 0 > label
+[Service.ONE_BACK.john_demo.options.0.label]
+SCRUB THE BOARD TOGETHER
+
+# Service > ONE_BACK > john_demo > options > 0 > reply
+[Service.ONE_BACK.john_demo.options.0.reply]
+We take out the names and the word idiot. Six minutes. You show the lanes and say how fast we answer.
+
+# Service > ONE_BACK > john_demo > options > 1 > label
+[Service.ONE_BACK.john_demo.options.1.label]
+LET HIM IMPROVISE
+
+# Service > ONE_BACK > john_demo > options > 1 > reply
+[Service.ONE_BACK.john_demo.options.1.reply]
+I will improvise. Do not read me the printer one.
+
+# Service > ONE_BACK > john_demo > options > 2 > label
+[Service.ONE_BACK.john_demo.options.2.label]
+CANCEL THE DEMO
+
+# Service > ONE_BACK > john_demo > options > 2 > reply
+[Service.ONE_BACK.john_demo.options.2.reply]
+Cancel it. We show a clean board next week.
+
+# Service > ONE_BACK > john_labels > text
+[Service.ONE_BACK.john_labels.text]
+Soggy Bottom called. They counted. Four hundred cables. He says it is about that. Do we have enough tape?
+
+# Service > ONE_BACK > john_labels > options > 0 > label
+[Service.ONE_BACK.john_labels.options.0.label]
+QUOTE THE REST AS A SMALL PROJECT
+
+# Service > ONE_BACK > john_labels > options > 0 > reply
+[Service.ONE_BACK.john_labels.options.0.reply]
+Closet today, the rest a priced project. Four hundred is a number. We can sell it and we know what is in it.
+
+# Service > ONE_BACK > john_labels > options > 1 > label
+[Service.ONE_BACK.john_labels.options.1.label]
+SEND TWO TECHS WITH ALL THE TAPE
+
+# Service > ONE_BACK > john_labels > options > 1 > reply
+[Service.ONE_BACK.john_labels.options.1.reply]
+Two techs, all the tape, until five. Tell them it is a favour.
+
+# Service > ONE_BACK > john_labels > options > 2 > label
+[Service.ONE_BACK.john_labels.options.2.label]
+SAY THE LABELS WERE A FIGURE OF SPEECH
+
+# Service > ONE_BACK > john_labels > options > 2 > reply
+[Service.ONE_BACK.john_labels.options.2.reply]
+Tell them we meant the important cables.
 
 
 # ======================= Service > ONE_TEXT =======================
@@ -23951,6 +24993,200 @@ Christy
 Renewals will have to stand on their own, then.
 
 
+# ======================= SalesCampaign > LIFE =======================
+# SalesCampaign > LIFE > 0 > speaker
+[SalesCampaign.LIFE.0.speaker]
+Office life
+
+# SalesCampaign > LIFE > 0 > text
+[SalesCampaign.LIFE.0.text]
+The proposal for your best lead is not in the folder. It is not on the printer. You find it in the Sent items of an old draft, wearing the wrong logo.
+
+# SalesCampaign > LIFE > 0 > options > 0 > label
+[SalesCampaign.LIFE.0.options.0.label]
+REBUILD IT TONIGHT
+
+# SalesCampaign > LIFE > 0 > options > 0 > reply
+[SalesCampaign.LIFE.0.options.0.reply]
+It is better the second time. It always is. You do not say so out loud.
+
+# SalesCampaign > LIFE > 0 > options > 1 > label
+[SalesCampaign.LIFE.0.options.1.label]
+SEND THE OLD ONE, WITH AN APOLOGY
+
+# SalesCampaign > LIFE > 0 > options > 1 > reply
+[SalesCampaign.LIFE.0.options.1.reply]
+He says he did not notice the logo. He noticed.
+
+# SalesCampaign > LIFE > 0 > options > 2 > label
+[SalesCampaign.LIFE.0.options.2.label]
+CALL THE LOGO A NEW BRAND
+
+# SalesCampaign > LIFE > 0 > options > 2 > reply
+[SalesCampaign.LIFE.0.options.2.reply]
+Nobody asks which brand. You file it under things you will remember.
+
+# SalesCampaign > LIFE > 1 > speaker
+[SalesCampaign.LIFE.1.speaker]
+Office life
+
+# SalesCampaign > LIFE > 1 > text
+[SalesCampaign.LIFE.1.text]
+Mr. Hammerfield only ever calls at 4:55. Three weeks running. He wants a quote, a favour, or to say he is thinking about it. Your coat is on.
+
+# SalesCampaign > LIFE > 1 > options > 0 > label
+[SalesCampaign.LIFE.1.options.0.label]
+BOOK HIM A STANDING 8 AM SLOT
+
+# SalesCampaign > LIFE > 1 > options > 0 > reply
+[SalesCampaign.LIFE.1.options.0.reply]
+He arrives at 7:58. The 4:55 calls stop. The 7:55 ones start.
+
+# SalesCampaign > LIFE > 1 > options > 1 > label
+[SalesCampaign.LIFE.1.options.1.label]
+TAKE THE CALL, COAT ON
+
+# SalesCampaign > LIFE > 1 > options > 1 > reply
+[SalesCampaign.LIFE.1.options.1.reply]
+Twenty minutes. He is thinking about it. You get a name and a date.
+
+# SalesCampaign > LIFE > 1 > options > 2 > label
+[SalesCampaign.LIFE.1.options.2.label]
+LET IT RING
+
+# SalesCampaign > LIFE > 1 > options > 2 > reply
+[SalesCampaign.LIFE.1.options.2.reply]
+He leaves a voicemail that says never mind and then a second one that says call me.
+
+# SalesCampaign > LIFE > 2 > speaker
+[SalesCampaign.LIFE.2.speaker]
+Office life
+
+# SalesCampaign > LIFE > 2 > text
+[SalesCampaign.LIFE.2.text]
+A trade show lanyard hangs on your hook with somebody else's name on it. In your pocket: forty business cards from people you do not remember.
+
+# SalesCampaign > LIFE > 2 > options > 0 > label
+[SalesCampaign.LIFE.2.options.0.label]
+SORT THEM, FORTY SHORT NOTES
+
+# SalesCampaign > LIFE > 2 > options > 0 > reply
+[SalesCampaign.LIFE.2.options.0.reply]
+You remember eleven. Four write back. One is a real lead.
+
+# SalesCampaign > LIFE > 2 > options > 1 > label
+[SalesCampaign.LIFE.2.options.1.label]
+WEAR THE LANYARD AGAIN, NAME AND ALL
+
+# SalesCampaign > LIFE > 2 > options > 1 > reply
+[SalesCampaign.LIFE.2.options.1.reply]
+Somebody else's name gets you three conversations. You answer to it.
+
+# SalesCampaign > LIFE > 2 > options > 2 > label
+[SalesCampaign.LIFE.2.options.2.label]
+BIN THE CARDS
+
+# SalesCampaign > LIFE > 2 > options > 2 > reply
+[SalesCampaign.LIFE.2.options.2.reply]
+A tidy desk. A very tidy pipeline.
+
+# SalesCampaign > LIFE > 3 > speaker
+[SalesCampaign.LIFE.3.speaker]
+Office life
+
+# SalesCampaign > LIFE > 3 > text
+[SalesCampaign.LIFE.3.text]
+A flyer is under your wiper for the second week. EVERYTHING INCLUDED. The paper is nice, and the nice paper is the worrying part.
+
+# SalesCampaign > LIFE > 3 > options > 0 > label
+[SalesCampaign.LIFE.3.options.0.label]
+PHONE YOUR THREE BEST CLIENTS
+
+# SalesCampaign > LIFE > 3 > options > 0 > reply
+[SalesCampaign.LIFE.3.options.0.reply]
+Two thank you. One says the flyer is on his fridge. Not as a compliment.
+
+# SalesCampaign > LIFE > 3 > options > 1 > label
+[SalesCampaign.LIFE.3.options.1.label]
+PIN IT UP AND READ THE FINE PRINT ALOUD
+
+# SalesCampaign > LIFE > 3 > options > 1 > reply
+[SalesCampaign.LIFE.3.options.1.reply]
+There is no fine print. The crew reads it in funny voices anyway.
+
+# SalesCampaign > LIFE > 3 > options > 2 > label
+[SalesCampaign.LIFE.3.options.2.label]
+PRINT A BIGGER FLYER, SAME DAY
+
+# SalesCampaign > LIFE > 3 > options > 2 > reply
+[SalesCampaign.LIFE.3.options.2.reply]
+Yours says WE NEVER MISS. It is true for the weeks you counted.
+
+# SalesCampaign > LIFE > 4 > speaker
+[SalesCampaign.LIFE.4.speaker]
+Office life
+
+# SalesCampaign > LIFE > 4 > text
+[SalesCampaign.LIFE.4.text]
+SalesHound lists three companies called Acme and one called Akme. One is a real lead. The person who typed them in has moved on, or up.
+
+# SalesCampaign > LIFE > 4 > options > 0 > label
+[SalesCampaign.LIFE.4.options.0.label]
+MERGE THEM AND CALL THE REAL ONE
+
+# SalesCampaign > LIFE > 4 > options > 0 > reply
+[SalesCampaign.LIFE.4.options.0.reply]
+It was the Akme. It always is. You fix the spelling and tell no one.
+
+# SalesCampaign > LIFE > 4 > options > 1 > label
+[SalesCampaign.LIFE.4.options.1.label]
+CALL ALL FOUR
+
+# SalesCampaign > LIFE > 4 > options > 1 > reply
+[SalesCampaign.LIFE.4.options.1.reply]
+Three say wrong number. The fourth says it is about time.
+
+# SalesCampaign > LIFE > 4 > options > 2 > label
+[SalesCampaign.LIFE.4.options.2.label]
+LEAVE IT FOR NEXT WEEK
+
+# SalesCampaign > LIFE > 4 > options > 2 > reply
+[SalesCampaign.LIFE.4.options.2.reply]
+Next week the list has two more.
+
+# SalesCampaign > LIFE > 5 > speaker
+[SalesCampaign.LIFE.5.speaker]
+Office life
+
+# SalesCampaign > LIFE > 5 > text
+[SalesCampaign.LIFE.5.text]
+A receptionist says Mr. Wheelwright might be in. She has said that for three weeks. You have learned that she likes the donuts.
+
+# SalesCampaign > LIFE > 5 > options > 0 > label
+[SalesCampaign.LIFE.5.options.0.label]
+BRING THE DONUTS, ASK HER NAME
+
+# SalesCampaign > LIFE > 5 > options > 0 > reply
+[SalesCampaign.LIFE.5.options.0.reply]
+She is called Phyllis. She tells you he is on a boat. The right boat.
+
+# SalesCampaign > LIFE > 5 > options > 1 > label
+[SalesCampaign.LIFE.5.options.1.label]
+ASK HER TO BE HONEST ABOUT HIS DIARY
+
+# SalesCampaign > LIFE > 5 > options > 1 > reply
+[SalesCampaign.LIFE.5.options.1.reply]
+He is away for two months. You cross him off and sleep well.
+
+# SalesCampaign > LIFE > 5 > options > 2 > label
+[SalesCampaign.LIFE.5.options.2.label]
+KEEP SAYING YOU WILL JUST DROP BY
+
+# SalesCampaign > LIFE > 5 > options > 2 > reply
+[SalesCampaign.LIFE.5.options.2.reply]
+You drop by. The donuts are gone. So is he.
+
+
 # ======================= Rival > HABITS =======================
 # Rival > HABITS > R01 > name
 [Rival.HABITS.R01.name]
@@ -25699,6 +26935,134 @@ LEND HIM TO THEM ONE DAY A WEEK ($180/WK)
 # OwnerCast > CARDS > michael_offer > options > 2 > text
 [OwnerCast.CARDS.michael_offer.options.2.text]
 Thursdays he works from their office, billed by the day. They get a door with his name on it. We get an invoice with ours.
+
+# OwnerCast > CARDS > christy_net45 > speaker
+[OwnerCast.CARDS.christy_net45.speaker]
+Christy (Controller)
+
+# OwnerCast > CARDS > christy_net45 > text
+[OwnerCast.CARDS.christy_net45.text]
+Three clients pay on day forty-five. My reminders go out on day thirty-one and they are polite. Nobody reads polite. I have two ideas. One is a discount, which I dislike on principle.
+
+# OwnerCast > CARDS > christy_net45 > options > 0 > label
+[OwnerCast.CARDS.christy_net45.options.0.label]
+TWO PERCENT OFF FOR PAYING IN TEN DAYS ($40/WK)
+
+# OwnerCast > CARDS > christy_net45 > options > 0 > text
+[OwnerCast.CARDS.christy_net45.options.0.text]
+Two of the three pay in ten days. The discount costs forty a week and the cash lands five weeks sooner. Christy smiles at a discount for the first time.
+
+# OwnerCast > CARDS > christy_net45 > options > 1 > label
+[OwnerCast.CARDS.christy_net45.options.1.label]
+LET HER PHONE THEM, LEDGER OPEN
+
+# OwnerCast > CARDS > christy_net45 > options > 1 > text
+[OwnerCast.CARDS.christy_net45.options.1.text]
+She calls with the ledger open and a very even voice. They pay. Two of them stop answering Dan's friendly emails for a week.
+
+# OwnerCast > CARDS > christy_net45 > options > 2 > label
+[OwnerCast.CARDS.christy_net45.options.2.label]
+KEEP THE POLITE REMINDERS ($300 LATE)
+
+# OwnerCast > CARDS > christy_net45 > options > 2 > text
+[OwnerCast.CARDS.christy_net45.options.2.text]
+The cheques arrive when they arrive. Christy keeps a chart of how late. The chart is very detailed.
+
+# OwnerCast > CARDS > christy_card > speaker
+[OwnerCast.CARDS.christy_card.speaker]
+Christy (Controller)
+
+# OwnerCast > CARDS > christy_card > text
+[OwnerCast.CARDS.christy_card.text]
+The company card shows lunch, a phone case and one item marked MISC. Not a crime. A trend. Do you want a policy, or a conversation?
+
+# OwnerCast > CARDS > christy_card > options > 0 > label
+[OwnerCast.CARDS.christy_card.options.0.label]
+ONE PAGE POLICY, $100 LIMIT
+
+# OwnerCast > CARDS > christy_card > options > 0 > text
+[OwnerCast.CARDS.christy_card.options.0.text]
+A page, a limit, and a line for MISC that says explain. Spending drops. Dan asks if toner counts as lunch.
+
+# OwnerCast > CARDS > christy_card > options > 1 > label
+[OwnerCast.CARDS.christy_card.options.1.label]
+A WORD AT THE HUDDLE (1 HOUR OF MINE)
+
+# OwnerCast > CARDS > christy_card > options > 1 > text
+[OwnerCast.CARDS.christy_card.options.1.text]
+You say it kindly. Christy says it more kindly. Two people look at their shoes. It mostly works.
+
+# OwnerCast > CARDS > christy_card > options > 2 > label
+[OwnerCast.CARDS.christy_card.options.2.label]
+LEAVE IT, THE TRUST IS THE POINT ($200)
+
+# OwnerCast > CARDS > christy_card > options > 2 > text
+[OwnerCast.CARDS.christy_card.options.2.text]
+The next statement is two hundred higher. The phone case, Christy admits, is a nice phone case.
+
+# OwnerCast > CARDS > morgan_overtime > speaker
+[OwnerCast.CARDS.morgan_overtime.speaker]
+Morgan (Manager)
+
+# OwnerCast > CARDS > morgan_overtime > text
+[OwnerCast.CARDS.morgan_overtime.text]
+The crew is doing evenings again. Nobody complains, which is how I know it is a problem. I can put a hard stop at six, or I can keep not noticing the emails stamped seven o'clock.
+
+# OwnerCast > CARDS > morgan_overtime > options > 0 > label
+[OwnerCast.CARDS.morgan_overtime.options.0.label]
+HARD STOP AT SIX, MORGAN ENFORCES IT
+
+# OwnerCast > CARDS > morgan_overtime > options > 0 > text
+[OwnerCast.CARDS.morgan_overtime.options.0.text]
+Six o'clock is a wall. The queue is a little longer on Mondays. Maya takes a pottery class and tells everybody.
+
+# OwnerCast > CARDS > morgan_overtime > options > 1 > label
+[OwnerCast.CARDS.morgan_overtime.options.1.label]
+TIME BACK FOR EVENINGS (+$90/WK)
+
+# OwnerCast > CARDS > morgan_overtime > options > 1 > text
+[OwnerCast.CARDS.morgan_overtime.options.1.text]
+An hour off for every hour past six. Morgan keeps the tally in a spiral notebook with a rubber band.
+
+# OwnerCast > CARDS > morgan_overtime > options > 2 > label
+[OwnerCast.CARDS.morgan_overtime.options.2.label]
+LET IT RIDE THIS MONTH
+
+# OwnerCast > CARDS > morgan_overtime > options > 2 > text
+[OwnerCast.CARDS.morgan_overtime.options.2.text]
+The queue moves. Morgan stops sending the evening emails, which is worse.
+
+# OwnerCast > CARDS > morgan_reviews > speaker
+[OwnerCast.CARDS.morgan_reviews.speaker]
+Morgan (Manager)
+
+# OwnerCast > CARDS > morgan_reviews > text
+[OwnerCast.CARDS.morgan_reviews.text]
+Reviews are due. I can write all three in an afternoon, or I can sit with each of them for twenty minutes first, and they will tell their friends. The afternoon is cheaper.
+
+# OwnerCast > CARDS > morgan_reviews > options > 0 > label
+[OwnerCast.CARDS.morgan_reviews.options.0.label]
+TWENTY MINUTES EACH, IN PERSON (2 HOURS)
+
+# OwnerCast > CARDS > morgan_reviews > options > 0 > text
+[OwnerCast.CARDS.morgan_reviews.options.0.text]
+Three chairs, three coffees. Dan asks what a growth plan is. Maya has already written hers.
+
+# OwnerCast > CARDS > morgan_reviews > options > 1 > label
+[OwnerCast.CARDS.morgan_reviews.options.1.label]
+AN AFTERNOON, WRITTEN, WITH RAISES (+$80/WK)
+
+# OwnerCast > CARDS > morgan_reviews > options > 1 > text
+[OwnerCast.CARDS.morgan_reviews.options.1.text]
+A page each and a number on it. Morgan reads them out loud once and files them in the drawer.
+
+# OwnerCast > CARDS > morgan_reviews > options > 2 > label
+[OwnerCast.CARDS.morgan_reviews.options.2.label]
+SKIP IT THIS QUARTER
+
+# OwnerCast > CARDS > morgan_reviews > options > 2 > text
+[OwnerCast.CARDS.morgan_reviews.options.2.text]
+Nobody says anything. Morgan writes DEFERRED on a sticky note. It stays on her monitor.
 
 
 # ======================= Projects > TYPES =======================
