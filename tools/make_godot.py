@@ -30218,13 +30218,15 @@ func key(name: String) -> bool:
 
 # the actions of mouse clicks and Enter: parts = ["nerds", "board", id] and so on
 func act(parts: PackedStringArray) -> void:
-    if parts.size() < 3 and (parts.size() < 2 or parts[1] != "back"):
+    if parts.size() < 2:
         return  # Enter on a row with no action (or before there are rows)
     match parts[1]:
         "board":
-            open_board(parts[2])
+            if parts.size() >= 3:  # only these two carry an id
+                open_board(parts[2])
         "thread":
-            open_thread(int(parts[2]))
+            if parts.size() >= 3:
+                open_thread(int(parts[2]))
         "back":
             back()
         "reply":
