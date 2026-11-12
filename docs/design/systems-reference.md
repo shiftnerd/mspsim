@@ -490,7 +490,7 @@ Seconds a ticket may wait by priority (before the year multipliers and tier scal
 
 ### 3.8 Tickets per day (tech campaign)
 
-How many tickets can arrive on each day and the cap on the open queue (`OPEN_CAPS` ends at day 9 and holds after). Source: `scripts/msp.gd DAY_CAPS / OPEN_CAPS`. Rows: 20.
+How many tickets can arrive on each day and the cap on the open queue (`OPEN_CAPS` lists days 1 to 9; from day 10 the default of 6 applies). Source: `scripts/msp.gd DAY_CAPS / OPEN_CAPS`. Rows: 20.
 
 | day | ticket cap | open queue cap |
 | --- | --- | --- |
@@ -503,17 +503,17 @@ How many tickets can arrive on each day and the cap on the open queue (`OPEN_CAP
 | 7 | 9 | 4 |
 | 8 | 10 | 5 |
 | 9 | 11 | 5 |
-| 10 | 12 | 5 |
-| 11 | 12 | 5 |
-| 12 | 12 | 5 |
-| 13 | 12 | 5 |
-| 14 | 12 | 5 |
-| 15 | 12 | 5 |
-| 16 | 12 | 5 |
-| 17 | 12 | 5 |
-| 18 | 12 | 5 |
-| 19 | 12 | 5 |
-| 20 | 12 | 5 |
+| 10 | 12 | 6 |
+| 11 | 12 | 6 |
+| 12 | 12 | 6 |
+| 13 | 12 | 6 |
+| 14 | 12 | 6 |
+| 15 | 12 | 6 |
+| 16 | 12 | 6 |
+| 17 | 12 | 6 |
+| 18 | 12 | 6 |
+| 19 | 12 | 6 |
+| 20 | 12 | 6 |
 
 ### 3.9 Ticket pace option
 
@@ -1401,7 +1401,7 @@ The row labels of the pause menu and the SETTINGS screen, read from `_labels()`.
 
 ### 8.3 What the settings file saves (text scan)
 
-Every `section.key` written to the settings file by the scripts that use it (`user://mspsim_settings.cfg`). Source: `scripts/{game,difficulty,look,msp,sfx,controls}.gd set_value calls`. Rows: 10.
+Every `section.key` written to the settings file by the scripts that use it (`user://mspsim_settings.cfg`). Source: `scripts/{game,difficulty,look,msp,sfx,controls}.gd set_value calls`. Rows: 12.
 
 | section.key | written by |
 | --- | --- |
@@ -1412,6 +1412,8 @@ Every `section.key` written to the settings file by the scripts that use it (`us
 | display.focus_pause | game.gd |
 | display.format | game.gd |
 | display.fullscreen | game.gd |
+| display.high_contrast | game.gd |
+| display.text_large | game.gd |
 | look.acc | look.gd |
 | look.custom | look.gd |
 | pace.tech | msp.gd |
@@ -1447,8 +1449,8 @@ Counted from the file system when generated (this table changes whenever code is
 
 | what | files | lines |
 | --- | --- | --- |
-| game scripts (godot/scripts/*.gd) | 129 | 91445 |
-| tests (godot/tests/*.gd, one test each) | 399 | 71646 |
+| game scripts (godot/scripts/*.gd) | 130 | 91918 |
+| tests (godot/tests/*.gd, one test each) | 402 | 72230 |
 | scenes (godot/scenes/*.tscn) | 68 |  |
 | autoloads | 51 |  |
 | tools (tools/*.py and *.lua) | 40 |  |
@@ -1477,4 +1479,4 @@ Frames per character sheet (idle, walk, run, jump, seated life poses, toss, couc
 | head gear frames | 135 | scripts/head_gear.gd FRAMES |
 | clothes gear frames | 135 | scripts/clothes_gear.gd FRAMES |
 
-Test files: 399. Story files: 4. The shared `Strings` autoload holds the patchable player-facing text.
+Test files: 402. Story files: 4. The shared `Strings` autoload holds the patchable player-facing text.

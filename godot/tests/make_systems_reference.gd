@@ -498,8 +498,8 @@ func _tickets() -> void:
 	var oc := _kd("Msp", "OPEN_CAPS")
 	rows = []
 	for d in caps:
-		rows.append([d, caps[d], oc.get(d, oc.get(oc.keys()[oc.size() - 1]))])
-	_t("3.8 Tickets per day (tech campaign)", "How many tickets can arrive on each day and the cap on the open queue (`OPEN_CAPS` ends at day 9 and holds after).", "scripts/msp.gd DAY_CAPS / OPEN_CAPS", ["day", "ticket cap", "open queue cap"], rows)
+		rows.append([d, caps[d], oc.get(d, 6)])  # msp.gd: int(OPEN_CAPS.get(Campaign.day, 6)): from day 10 the default 6 applies
+	_t("3.8 Tickets per day (tech campaign)", "How many tickets can arrive on each day and the cap on the open queue (`OPEN_CAPS` lists days 1 to 9; from day 10 the default of 6 applies).", "scripts/msp.gd DAY_CAPS / OPEN_CAPS", ["day", "ticket cap", "open queue cap"], rows)
 	var pn: Array = _k("Msp", "PACE_NAMES")
 	rows = []
 	for i in pn.size():
