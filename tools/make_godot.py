@@ -5937,6 +5937,26 @@ write("scripts/pixelfont.gd", '''extends RefCounted
 # gdlint:disable=max-line-length,class-definitions-order
 # A 3x5 pixel font for the in-game computer and phone screens (upper case only, like the logo tagline).
 # PixelFont.draw(canvas_item, text, position, color, scale) / PixelFont.width(text, scale)
+#
+# TEXT CACHE (perf, handhelds). draw() used to issue one draw_rect per lit glyph pixel (hundreds of canvas commands for a
+# screen of text). Now each distinct (resolved text, scale) is built ONCE into a white RGBA ImageTexture from the same glyph
+# data and drawn with ONE draw_texture(tex, pos, color): the colour is the modulate, so every colour (and the shadow copy,
+# drawn a second time at an offset) shares one texture. The output is pixel-identical (tests/text_cache.gd compares both paths).
+# Interface for callers (small on purpose; a text size setting should only need `scale`):
+#   PixelFont.draw(canvas, text, pos, color, scale)   unchanged; scale is an int >= 1 and part of the cache key
+#   PixelFont.width(text, scale)                      unchanged
+#   PixelFont.cache_on                                false = the old draw_rect path (env PIXELFONT_NOCACHE=1 forces it; headless
+#                                                     runs are off by default, env PIXELFONT_CACHE=1 turns it on there)
+#   PixelFont.texture(text, scale) -> Texture2D       the cached white texture (the same one draw() uses), for the tests
+#   PixelFont.cache_entries() / cache_bytes()         what the cache holds now (bounded: see CACHE_ENTRIES / CACHE_BYTES)
+#   PixelFont.stat_rect / stat_tex / stat_hit / stat_miss   counters for tests/frame_time.gd (draw_rect calls the font issued,
+#                                                     draw_texture calls, cache hits, builds); reset by assigning 0
+# The key is the text AFTER key-token and pad-glyph resolution (keys() and _pad_line() run before the cache), so a device switch
+# needs no invalidation: the pad sprites stay inline (PadGlyphs) and only their plain text pieces come here.
+# The cache is two generations of dictionaries (scale -> {text -> texture}); when the current one is full it becomes the old
+# one and the old one is dropped (a hit in the old one is promoted). A canvas item keeps a reference to the textures of its
+# latest redraw (meta "_pf"), so an item that is not redrawn for a long time never loses its text to an eviction. Text under a
+# canvas transform that is not a plain translation falls back to draw_rect (snapping would differ).
 
 const GLYPHS := {
     "A": ["XXX", "X.X", "XXX", "X.X", "X.X"], "B": ["XX.", "X.X", "XX.", "X.X", "XX."],
@@ -6055,6 +6075,131 @@ static func _pad_line(canvas: CanvasItem, text: String, pos: Vector2, color: Col
     return true
 
 
+const CACHE_ENTRIES := 1500  # per generation (two are alive)
+const CACHE_BYTES := 3000000  # RGBA bytes per generation
+static var cache_on := _default_on()
+static var stat_rect := 0
+static var stat_tex := 0
+static var stat_hit := 0
+static var stat_miss := 0
+static var _cur := {}
+static var _old := {}
+static var _cur_n := 0
+static var _cur_bytes := 0
+static var _old_n := 0
+static var _old_bytes := 0
+static var _rot_frame := -1
+static var _glyph_imgs := {}  # scale -> {char -> Image}
+
+
+static func _default_on() -> bool:
+    if OS.get_environment("PIXELFONT_NOCACHE") != "":
+        return false
+    return OS.get_environment("PIXELFONT_CACHE") != "" or DisplayServer.get_name() != "headless"
+
+
+static func cache_entries() -> int:
+    return _cur_n + _old_n
+
+
+static func cache_bytes() -> int:
+    return _cur_bytes + _old_bytes
+
+
+static func clear_cache() -> void:
+    _cur = {}
+    _old = {}
+    _cur_n = 0
+    _cur_bytes = 0
+    _old_n = 0
+    _old_bytes = 0
+
+
+static func _glyph_image(ch: String, scale: int) -> Image:
+    if not _glyph_imgs.has(scale):
+        _glyph_imgs[scale] = {}
+    var per: Dictionary = _glyph_imgs[scale]
+    if per.has(ch):
+        return per[ch]
+    var img := Image.create_empty(3 * scale, 5 * scale, false, Image.FORMAT_RGBA8)
+    var rows: Array = GLYPHS.get(ch, GLYPHS["?"])
+    for r in 5:
+        var row: String = rows[r]
+        for c in 3:
+            if row[c] == "X":
+                img.fill_rect(Rect2i(c * scale, r * scale, scale, scale), Color.WHITE)
+    per[ch] = img
+    return img
+
+
+static func _build(text: String, scale: int) -> ImageTexture:
+    var img := Image.create_empty(width(text, scale), 5 * scale, false, Image.FORMAT_RGBA8)
+    var x := 0
+    for ch in text.to_upper().replace('"', "'"):
+        img.blit_rect(_glyph_image(ch, scale), Rect2i(0, 0, 3 * scale, 5 * scale), Vector2i(x, 0))
+        x += 4 * scale
+    return ImageTexture.create_from_image(img)
+
+
+static func texture(text: String, scale := 1) -> Texture2D:
+    if text == "" or scale < 1:
+        return null
+    var d = _cur.get(scale)
+    if d != null:
+        var hit = d.get(text)
+        if hit != null:
+            stat_hit += 1
+            return hit
+    var od = _old.get(scale)
+    var tex: ImageTexture = od.get(text) if od != null else null
+    if tex == null:
+        stat_miss += 1
+        tex = _build(text, scale)
+    else:
+        stat_hit += 1
+        od.erase(text)
+        _old_n -= 1
+        _old_bytes -= tex.get_width() * tex.get_height() * 4
+    var bytes := tex.get_width() * tex.get_height() * 4
+    var frame := Engine.get_process_frames()
+    if (_cur_n >= CACHE_ENTRIES or _cur_bytes >= CACHE_BYTES) and frame != _rot_frame:
+        _old = _cur
+        _old_n = _cur_n
+        _old_bytes = _cur_bytes
+        _cur = {}
+        _cur_n = 0
+        _cur_bytes = 0
+        _rot_frame = frame
+    if not _cur.has(scale):
+        _cur[scale] = {}
+    _cur[scale][text] = tex
+    _cur_n += 1
+    _cur_bytes += bytes
+    return tex
+
+
+# true when the text was drawn as one texture. The per-canvas record is [frame, plain translation?, textures kept alive].
+static func _draw_cached(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale: int) -> bool:
+    var frame := Engine.get_process_frames()
+    var rec = canvas.get_meta("_pf") if canvas.has_meta("_pf") else null
+    if rec == null or rec[0] != frame:
+        var t := canvas.get_global_transform_with_canvas()
+        rec = [frame, t.x == Vector2.RIGHT and t.y == Vector2.DOWN, [], t.origin]
+        canvas.set_meta("_pf", rec)
+    if not rec[1]:
+        return false
+    var tex := texture(text, scale)
+    if tex == null:
+        return false
+    rec[2].append(tex)
+    # the old path's rects were snapped to the screen pixel one corner at a time (round half down, after the canvas offset);
+    # the same snap on the texture's corner keeps a fractional position (a centred text, a camera) on the same pixels
+    var o: Vector2 = rec[3]
+    canvas.draw_texture(tex, (pos + o - Vector2(0.5, 0.5)).ceil() - o, color)
+    stat_tex += 1
+    return true
+
+
 static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, scale := 1) -> void:
     text = keys(text)  # a token that reached the font unresolved (the wrap helpers resolve first, so the line breaks are right)
     if _pad_line(canvas, text, pos, color, scale):
@@ -6072,6 +6217,8 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
             "rect": tf * Rect2(pos + Vector2(lead, 0), sz),
             "vp": canvas.get_viewport().get_visible_rect(),
         })
+    if cache_on and text != "" and scale >= 1 and _draw_cached(canvas, text, pos, color, scale):
+        return
     var x := pos.x
     for ch in text.to_upper().replace('"', "'"):
         var rows: Array = GLYPHS.get(ch, GLYPHS["?"])
@@ -6080,6 +6227,7 @@ static func draw(canvas: CanvasItem, text: String, pos: Vector2, color: Color, s
             for c in 3:
                 if row[c] == "X":
                     canvas.draw_rect(Rect2(x + c * scale, pos.y + r * scale, scale, scale), color)
+                    stat_rect += 1
         x += 4.0 * scale
 ''')
 
@@ -73148,7 +73296,72 @@ static func _quad(c: CanvasItem, p1: Vector2, p2: Vector2, thick: float, col: Co
 
 
 # one 14-segment cell at (x, y) w by h px: lit segments in `col`, the others as a faint ghost
+static var fast_digits := true  # tests/text_cache.gd turns it off to compare with the slow path
+static var _seg_cache := {}  # (char, w, h) -> the segments of one cell at the origin, in drawing order: [kind, shape, lit]
+
+
+# perf: the geometry of a cell does not depend on where it stands, so it is built once (the same arithmetic as the slow path
+# below, at the origin) and a repaint only adds the cell's offset. Only used for whole-pixel x and y, where that is exact.
+static func _seg_build(ch: String, w: float, h: float) -> Array:
+    var x := 0.0
+    var y := 0.0
+    var lit: String = GLYPHS.get(ch.to_upper(), "")
+    var t := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
+    var mid := y + floorf(h * 0.5)
+    var cx := x + floorf(w * 0.5)
+    var my := mid - floorf(t * 0.5)
+    var hv := maxf(1.0, mid - y - 2.0)
+    var rects := {
+        "a": Rect2(x + 1, y, w - 2, t), "d": Rect2(x + 1, y + h - t, w - 2, t),
+        "f": Rect2(x, y + 1, t, hv), "b": Rect2(x + w - t, y + 1, t, hv),
+        "e": Rect2(x, mid + 1, t, hv), "c": Rect2(x + w - t, mid + 1, t, hv),
+        "g": Rect2(x + 1, my, maxf(1.0, cx - x - 1), t), "h": Rect2(cx + 1, my, maxf(1.0, x + w - 1 - cx - 1), t),
+        "i": Rect2(cx - floorf(t * 0.5), y + t + 1, t, maxf(1.0, mid - y - t - 2)),
+        "l": Rect2(cx - floorf(t * 0.5), mid + 2, t, maxf(1.0, y + h - t - 1 - mid - 2)),
+    }
+    var diag := {
+        "j": [Vector2(x + t + 1, y + t + 1), Vector2(cx - 1, mid - 1)], "k": [Vector2(x + w - t - 1, y + t + 1), Vector2(cx + 2, mid - 1)],
+        "m": [Vector2(x + t + 1, y + h - t - 1), Vector2(cx - 1, mid + 2)], "n": [Vector2(x + w - t - 1, y + h - t - 1), Vector2(cx + 2, mid + 2)],
+    }
+    var out := []
+    for s in SEGS:
+        var on := lit.contains(s)
+        if rects.has(s):
+            out.append([0, rects[s], on])
+        elif h >= 9.0:
+            var p1: Vector2 = diag[s][0]
+            var p2: Vector2 = diag[s][1]
+            var d := p2 - p1
+            if d.length() < 0.5:
+                continue
+            var n := Vector2(-d.y, d.x).normalized() * maxf(1.0, t * 0.9) * 0.5
+            out.append([1, PackedVector2Array([p1 + n, p2 + n, p2 - n, p1 - n]), on])
+        elif on:
+            out.append([2, Rect2(diag[s][0].lerp(diag[s][1], 0.5).floor(), Vector2(1, 1)), true])
+    return out
+
+
 static func digit(c: CanvasItem, ch: String, x: float, y: float, w: float, h: float, col: Color, dp := false) -> void:
+    if fast_digits and x == floorf(x) and y == floorf(y) and ch.length() == 1:
+        var key := Vector3(w, h, float(ch.unicode_at(0)))
+        var segs: Array = _seg_cache.get(key, [])
+        if segs.is_empty() and not _seg_cache.has(key):
+            segs = _seg_build(ch, w, h)
+            _seg_cache[key] = segs
+        var off := Vector2(x, y)
+        var ghost := Color(col.r, col.g, col.b, 0.12)
+        for sg in segs:
+            var colr := col if sg[2] else ghost
+            if sg[0] == 1:
+                var pts: PackedVector2Array = sg[1]
+                c.draw_primitive(PackedVector2Array([pts[0] + off, pts[1] + off, pts[2] + off, pts[3] + off]), PackedColorArray([colr, colr, colr, colr]), PackedVector2Array())
+            else:
+                var r: Rect2 = sg[1]
+                c.draw_rect(Rect2(r.position + off, r.size), colr)
+        if dp:
+            var tt := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
+            c.draw_rect(Rect2(x + w, y + h - maxf(tt, 2.0), 2, maxf(tt, 2.0)), col)
+        return
     var lit: String = GLYPHS.get(ch.to_upper(), "")
     var ghost := Color(col.r, col.g, col.b, 0.12)
     var t := 1.0 if h < 14.0 else (2.0 if h < 24.0 else 3.0)
