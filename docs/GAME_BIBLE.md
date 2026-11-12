@@ -3,6 +3,8 @@
 *A readable overview of the game for anyone who wants to review the story and design. No code needed. Line-by-line text is in
 `godot/story/STORY.md` (generated, read-only) and can be changed in `godot/story/strings.txt` (plain text). See `godot/story/README.md`.*
 
+> **Current source of truth: [`docs/design/game-design-document.md`](design/game-design-document.md) (GDD v1.0, 2026-11-12).** This bible is kept as the flavour companion (voice, cast, the 20-day story). Where it disagrees with the GDD, the GDD wins. Stale parts, for the agent that fixes them: section 3 (the cast table omits Jen, Michael, Christy in tech, Adam, Quinn, Sam, Terry and others); section 5 (outings are named on days 5 and 15 only, the code has days 5, 10, 15 plus lunch breaks on days 3, 7, 12, 17); section 11 ("not built yet" lists items that are built: the Rodent Nation sessions and the owner trip in the venue); no section covers Year 2, Year 3 or their 16 endings; section 4 step 5 and section 7 do not give win and failure rules (see GDD section 3). The Christy line in the cast table is also off (the code seats her in the tech campaign).
+
 *Looking for how to play, not the story? The spoiler-free [instruction manual](manual/README.md) covers the controls, menus and places.*
 
 ---
