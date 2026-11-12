@@ -171,7 +171,8 @@ siding shifts trust (+/-) and desk outcomes; pleasing both is possible but costs
 ### 4.6 Metrics, win/fail, endings
 Daily scorecard grade (SLA 35, FCR 20, FRT 15, backlog age 10, utilisation band 10, morale 10); Morgan's confidence moves with it, the cost per ticket against Morgan's cap, client mood and retention; **fail** at confidence 0 or if both owners' trust < 20.
 Endings (day 20 with Morgan and both owners, `Review`): **OPERATIONS MANAGER** (both trust >= 60; a raise, the board moves to a hire), **THE OWNERS' RIGHT HAND** (side with Alan: technical director) or **THE GROWTH MANAGER** (side with Garrison: a bigger role, tougher SLAs promised),
-**THE ROLL-UP** (a bigger MSP wants the company; the owners split; your due-diligence scorecard decides; IDEAS 45), **IN-HOUSE IT AT A CLIENT / A BIGGER MSP** (45+), **STAY ON PROBATION** (below 45).
+**ACCEPT SUMMIT'S ROLL-UP** or **DECLINE THE ROLL-UP** (a bigger MSP wants the company; offered with the Leave row from reputation 45 when the due-diligence audit tier is 1 or more; `ServiceArc.extra_offers`), **LEAVE FOR AN IN-HOUSE IT JOB** (reputation 45+), **STAY ON PROBATION** (always on offer).
+As built (verified 2026-11-12 against `Service.review_offers`, `Service.REVIEW.endings`): ops needs both trusts >= 55 and reputation >= 60; alan or garrison needs that owner's trust >= 55 (and the higher of the two) and reputation >= 60. Year 3 adds RUN OPERATIONS, BECOME A PARTNER and TAKE THE JOB ACROSS TOWN (`Yeartwo`); Year 2 has no service ending.
 
 ### 4.7 Story beats (20 days; engines named)
 | Day | Beat | Engine | Decision / conflict |
@@ -224,7 +225,7 @@ DEAL: PIEDMONT PEDIATRICS  12 USERS  PAIN: HIPAA, XP  RIVAL: BYTEBROTHERS   C CA
 ```
 ### 5.4 Metrics, win/fail, endings
 Quota (quarterly MRR, tier-scaled), commission from `VIC_PLANS` with clawback on churn inside 90 days; book quality (client mood, 90-day churn, hidden promise gap); pipeline health; **Garrison's trust** is the fail meter with **Alan's trust** as the margin check (reuse `Social.rel`, `Campaign.rep` for Morgan); PIP after two missed quarters; fired at 0.
-Endings: SALES DIRECTOR / EQUITY OFFER (Garrison backs you; Alan signs off only if churn is low), TAKE YOUR BOOK TO BYTEBROTHERS, THE ROLL-UP (earn-out tied to retention), STAY.
+Endings as built (`SalesCampaign.offers`): **BECOME SALES DIRECTOR** (both quarters hit, or the first missed with 90 percent of the two targets signed; client mood 60+; Garrison gives the team, Alan signs off on the margin), **STAY ON AS ACCOUNT MANAGER**, **JOIN THE ROLL-UP (SUMMIT)** (earn-out tied to retention; needs the Summit beat and a clean due diligence), **TAKE YOUR BOOK TO BYTEBROTHERS** (after 3 or more deals won, unless their approach was exposed or declined; the only offer if you gave notice at week 18) and **CLEAN OUT YOUR DESK** (two missed quarters, the PIP; `SalesCampaign.pip_failed`). There is no "equity offer" in Year 1; the equity idea became the Year 3 ending TAKE A SHARE OF THE SALES SIDE (`y3_stake`), next to TAKE GARRISON'S CHAIR (`y3_director`) and LET WES TAKE THE CHAIR (`y3_wes`).
 ### 5.5 Story beats (20 weeks)
 | Wk | Beat | Engine | Decision |
 |---|---|---|---|
@@ -382,11 +383,11 @@ Risks: a third step on tight narrow formats; perks from day 1 need balance runs 
 - **An owner stepping in costs no reputation** in the tech campaign: the last-resort help is free (a report row and a short banter line only).
 - **Canon text pass** (Alan and Garrison cast as owners in dialogue, tips, Lynk, vignettes): done, see CLAUDE.md "Canon: the owners".
 
-**Still open**
-1. Owner base crew after the re-base: Dan + Maya + Sam + partner 0.5 hands-on. Is that the intended size, or should the owners keep working tickets at full speed in the owner campaign?
-2. Day lengths: Service 6 min/day, Sales and Owner 4 min/week; acceptable?
-3. Hires (Sam and a second) need runtime NPCs with desks: fixed list or random from `Owner.NAMES`?
-4. Placeholder parody names: SalesHound CRM, ConnectWhy Dispatch, ConnectWhy Knowledge, "Summit Managed Holdings".
-5. Should the tech campaign's day-6 Growth helper pick still offer Alan at 60% availability, or only Dan and Maya?
-6. Does the Sales campaign need an "office walk-in" scene for prospects without sites, or may prospects reuse the six site types?
-7. Morgan's desk and daily routine (see Decided).
+**Still open (ANSWERED BY DEFAULT: ROADMAP H7 says the game runs on the defaults as built; the answer to each is what the code does today, in brackets)**
+1. Owner base crew after the re-base: Dan + Maya + Sam + partner 0.5 hands-on. Is that the intended size, or should the owners keep working tickets at full speed in the owner campaign? [Answered by default: the game runs on the crew size as built (owner crew pace 0.6 in `MODE_DEFS`).]
+2. Day lengths: Service 6 min/day, Sales and Owner 4 min/week; acceptable? [Answered: yes, `MODE_DEFS` day_len 360 / 240 / 240; DAY LENGTH short / normal / long scales them.]
+3. Hires (Sam and a second) need runtime NPCs with desks: fixed list or random from `Owner.NAMES`? [Answered by default: as built (`World.CREW_CAST` has Sam and Terry; hires come from `Crew.HIRE_SHEETS`).]
+4. Placeholder parody names: SalesHound CRM, ConnectWhy Dispatch, ConnectWhy Knowledge, "Summit Managed Holdings". [Answered: kept (Summit Managed Holdings is the roll-up buyer in three campaigns).]
+5. Should the tech campaign's day-6 Growth helper pick still offer Alan at 60% availability, or only Dan and Maya? [Answered: the default as built stands.]
+6. Does the Sales campaign need an "office walk-in" scene for prospects without sites, or may prospects reuse the six site types? [Answered: prospects reuse the six site types.]
+7. Morgan's desk and daily routine (see Decided). [Answered: Morgan is a real cast member with a desk (`World.CAST`).]
