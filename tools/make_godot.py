@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt", "expo_pat",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt", "expo_pat", "expo_vic",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
@@ -25561,7 +25561,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -26618,6 +26618,7 @@ const THREADS := [
                 "by": "GrizzleAdmin",
                 "text": "It is a computer in somebody else's building. Treat it like one."
             },
+            {"by": "SpinUp_Vic", "text": "Do not buy hardware for it. Spin up a VM on the host you already have, snapshot before every upgrade, and keep the backups off the host."},
         ],
         "answer":
         "Fine, as long as only the agent port is open to the internet, admin goes through a VPN, and the backups are tested.",
@@ -53831,6 +53832,16 @@ const FORUM := [
         ],
     },
     {
+        "id": "vic", "speaker": "SpinUp_Vic (forum regular)",
+        "text": "Vic. Whatever is on that old box, it should be a virtual machine. One host, six servers, one power bill. Just spin up a VM. I say it at the registration desk and I say it at lunch.",
+        "options": [
+            {"id": "host", "label": "ASK ABOUT CONSOLIDATING", "skill": "servers", "xp": 4, "text": "'One strong host, plenty of memory, one virtual machine per job.' He draws six little boxes inside a big one and adds the power bill under it. (+4 servers XP)"},
+            {"id": "snap", "label": "ASK ABOUT SNAPSHOTS", "skill": "security", "xp": 3, "text": "'A snapshot is an undo button, not a backup. Keep the real backups off the host.' He says it twice, the second time more quietly. (+3 security XP)"},
+            {"id": "thread", "label": "UPVOTE 'JUST SPIN UP A VM'", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his reply in the cloud thread. He answers with a link to the same reply, in case you missed it. (+3 forum karma)", "text_free": "You upvote his reply in the cloud thread. He answers with a link to the same reply."},
+            {"id": "box", "label": "TELL HIM IT IS A REAL BOX", "skill": "", "xp": 0, "social": 1, "text": "He takes it personally for a full second, then buys you a coffee and offers to come look at it. Your coworkers hear you made a friend. (coworkers like you a little more)", "text_free": "He takes it personally for a full second, then buys you a coffee."},
+        ],
+    },
+    {
         "id": "dot", "speaker": "DNS_Dot (forum regular)",
         "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
         "options": [
@@ -53918,6 +53929,7 @@ const CROWD := {
         {"who": "expo_attb", "role": "att:4", "x": 150, "facing": "right", "routine": ["walk:100", "wait:3", "walk:270", "wait:3"]},
         {"who": "expo_attc", "role": "att:5", "x": 238, "facing": "left", "routine": ["wait:5", "talk:3"]},
         {"who": "expo_pip", "role": "forum:pip", "x": 205, "facing": "right", "routine": ["wait:4", "talk:3", "wait:2", "say:2"]}, {"who": "expo_dot", "role": "forum:dot", "x": 115, "facing": "right", "routine": ["wait:4", "say:2", "wait:3"]},
+        {"who": "expo_vic", "role": "forum:vic", "x": 183, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
     ],
 }
 

@@ -282,6 +282,7 @@ func _init() -> void:
 	# the R28 batch after Walt: [file, role id, handle, room, door x list, skill of the first option, first option's xp]
 	var more := [
 		["expo_pat", "pat", "PaperJam_Pat", "resort_hall", [41, 73, 143, 213, 283], "servers"],
+		["expo_vic", "vic", "SpinUp_Vic", "vendor_hall", [327], "servers"],
 	]
 	for m in more:
 		var who2: String = m[0]

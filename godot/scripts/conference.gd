@@ -801,6 +801,16 @@ const DEFAULT_FORUM := [
 		],
 	},
 	{
+		"id": "vic", "speaker": "SpinUp_Vic (forum regular)",
+		"text": "Vic. Whatever is on that old box, it should be a virtual machine. One host, six servers, one power bill. Just spin up a VM. I say it at the registration desk and I say it at lunch.",
+		"options": [
+			{"id": "host", "label": "ASK ABOUT CONSOLIDATING", "skill": "servers", "xp": 4, "text": "'One strong host, plenty of memory, one virtual machine per job.' He draws six little boxes inside a big one and adds the power bill under it. (+4 servers XP)"},
+			{"id": "snap", "label": "ASK ABOUT SNAPSHOTS", "skill": "security", "xp": 3, "text": "'A snapshot is an undo button, not a backup. Keep the real backups off the host.' He says it twice, the second time more quietly. (+3 security XP)"},
+			{"id": "thread", "label": "UPVOTE 'JUST SPIN UP A VM'", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his reply in the cloud thread. He answers with a link to the same reply, in case you missed it. (+3 forum karma)", "text_free": "You upvote his reply in the cloud thread. He answers with a link to the same reply."},
+			{"id": "box", "label": "TELL HIM IT IS A REAL BOX", "skill": "", "xp": 0, "social": 1, "text": "He takes it personally for a full second, then buys you a coffee and offers to come look at it. Your coworkers hear you made a friend. (coworkers like you a little more)", "text_free": "He takes it personally for a full second, then buys you a coffee."},
+		],
+	},
+	{
 		"id": "dot", "speaker": "DNS_Dot (forum regular)",
 		"text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
 		"options": [
@@ -1155,6 +1165,13 @@ const CROWD := {
 			"x": 205,
 			"facing": "right",
 			"routine": ["wait:4", "talk:3", "wait:2", "say:2"]}, {"who": "expo_dot", "role": "forum:dot", "x": 115, "facing": "right", "routine": ["wait:4", "say:2", "wait:3"]
+		},
+		{
+			"who": "expo_vic",
+			"role": "forum:vic",
+			"x": 183,
+			"facing": "right",
+			"routine": ["wait:5", "talk:3", "wait:3"]
 		},
 	],
 }

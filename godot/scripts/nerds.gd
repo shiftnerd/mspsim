@@ -43,7 +43,7 @@ const POSTERS := {
 	"bytes_n_bagels": "MEMBER",
 	"dbl_click_dave": "MEMBER",
 	"packet_pam": "REGULAR",
-	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR",
+	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR",
 	"ShadowPoint_Brad": "VENDOR",
 	"WebWoot_Dee": "VENDOR",
 	"SoftSwipe_Rex": "VENDOR",
@@ -1106,6 +1106,7 @@ const DEFAULT_THREADS := [
 				"by": "GrizzleAdmin",
 				"text": "It is a computer in somebody else's building. Treat it like one."
 			},
+			{"by": "SpinUp_Vic", "text": "Do not buy hardware for it. Spin up a VM on the host you already have, snapshot before every upgrade, and keep the backups off the host."},
 		],
 		"answer":
 		"Fine, as long as only the agent port is open to the internet, admin goes through a VPN, and the backups are tested.",
