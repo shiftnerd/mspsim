@@ -795,6 +795,7 @@ func go_title() -> void:
 	for screen in [Computer, Phone]:
 		if screen.is_open:
 			screen.close()
+	Cards.clear_all()  # a card that was open or waiting (it came up over a pause) must not follow the run to the title
 	ui_open = false
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
@@ -21179,6 +21180,13 @@ func pick(index: int) -> void:
     _show_next()
 
 
+# the run is over (QUIT TO TITLE): drop the open card and every card waiting behind it, without answering them
+func clear_all() -> void:
+    _queue.clear()
+    is_open = false
+    _canvas.visible = false
+
+
 # the next queued card whose reason still holds (a John complaint for a ticket that closed meanwhile is dropped)
 func _show_next() -> void:
     while not _queue.is_empty() and not is_open and not DayReport.is_open:
@@ -29628,7 +29636,7 @@ func selected_action() -> String:
 
 
 func _ensure_rows() -> void:
-    if _rows.is_empty():
+    if _rows.is_empty() and c != null:  # the rows are laid out with the Computer's text helpers: no Computer yet (a key before the first paint) means no rows
         _build()
         _first_selectable()
 
@@ -29729,7 +29737,7 @@ func key(name: String) -> bool:
                 scroll(page)
             else:
                 _move_sel(page)
-                if str(_rows[sel].act) == "":
+                if sel >= 0 and sel < _rows.size() and str(_rows[sel].act) == "":
                     _first_selectable_from(sel)
             return true
         "enter":
@@ -29747,6 +29755,8 @@ func key(name: String) -> bool:
 
 # the actions of mouse clicks and Enter: parts = ["nerds", "board", id] and so on
 func act(parts: PackedStringArray) -> void:
+    if parts.size() < 3 and (parts.size() < 2 or parts[1] != "back"):
+        return  # Enter on a row with no action (or before there are rows)
     match parts[1]:
         "board":
             open_board(parts[2])

@@ -303,6 +303,7 @@ func go_title() -> void:
 	for screen in [Computer, Phone]:
 		if screen.is_open:
 			screen.close()
+	Cards.clear_all()  # a card that was open or waiting (it came up over a pause) must not follow the run to the title
 	ui_open = false
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 

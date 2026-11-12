@@ -131,6 +131,13 @@ func pick(index: int) -> void:
 	_show_next()
 
 
+# the run is over (QUIT TO TITLE): drop the open card and every card waiting behind it, without answering them
+func clear_all() -> void:
+	_queue.clear()
+	is_open = false
+	_canvas.visible = false
+
+
 # the next queued card whose reason still holds (a John complaint for a ticket that closed meanwhile is dropped)
 func _show_next() -> void:
 	while not _queue.is_empty() and not is_open and not DayReport.is_open:

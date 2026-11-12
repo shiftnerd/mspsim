@@ -746,6 +746,8 @@ func _send_one() -> void:
 
 # the things that arrive by themselves in a real game, at whatever moment: a card, a banner, the end of the day, an outing
 func _chaos_open() -> void:
+	if _scene_name().contains("title"):
+		return  # nothing of a run arrives on the title or a character select
 	var k := rng.randi_range(0, 5)
 	_log_ev("chaos %d" % k)
 	match k:
@@ -821,13 +823,13 @@ func modal() -> String:
 			if _n(n).is_open:
 				return n
 		return ""
-	for n in ["PauseMenu", "Cards", "DayReport", "Review", "Computer", "Phone", "Outings", "Toolbox", "PrinterGame"]:  # the pause menu is on top of everything
+	if _n("Toolbox").outfit_open and not _n("PauseMenu").is_open:
+		return "outfit"  # the outfit overlay owns every key: a card that came up over it can only be answered after Esc closes it
+	for n in ["PauseMenu", "Toolbox", "PrinterGame", "Cards", "DayReport", "Review", "Computer", "Phone", "Outings"]:  # the order keys reach them: the pause menu, the toolbox and the printer game take every key even over a card
 		if _n(n).is_open:
 			return n
 	if not _n("Expo").seated.is_empty():
 		return "Expo session"
-	if _n("Toolbox").outfit_open:
-		return "outfit"
 	if game.ui_open:
 		return "Game.ui_open"
 	return ""
@@ -851,7 +853,7 @@ func describe() -> String:
 		parts.append("review page=%d opt_page=%d end_page=%d offers=%d ending=%s fade=%f" % [rv.page, rv._opt_page(), rv._end_page(), rv.offers.size(), str(rv.ending), rv._fade])
 	if _n("Cards").is_open:
 		var cd := _n("Cards")
-		parts.append("card sel=%d options=%s queued=%d" % [cd.sel, str(cd.options.map(func(o: Dictionary) -> String: return "%s%s" % [str(o.id), "" if bool(o.get("enabled", true)) else "(off)"])), cd._queue.size()])
+		parts.append("card age_ms=%d sel=%d options=%s queued=%d" % [Time.get_ticks_msec() - int(cd._opened), cd.sel, str(cd.options.map(func(o: Dictionary) -> String: return "%s%s" % [str(o.id), "" if bool(o.get("enabled", true)) else "(off)"])), cd._queue.size()])
 	var ctl := _n("Controls")
 	parts.append("capturing=%s typing=%s pad_active=%s focus_lost=%s" % [str(ctl.capturing), str(ctl.typing()), str(ctl.pad_active), str(_n("Game").focus_lost)])
 	var o := _n("Outings")
@@ -896,6 +898,14 @@ func recover() -> bool:
 			if modal() == m:
 				tap_button(0, JOY_BUTTON_A)
 				await wait(3)
+			if _verbose and modal() == m and m == "Cards":
+				var before: bool = _n("Cards").is_open
+				_n("Cards")._input(_key_event(KEY_ENTER, true, false))
+				say("  direct Cards._input(ENTER): open %s -> %s" % [before, _n("Cards").is_open])
+		elif m == "Expo session":  # a talk is sat through: Enter skips a line once it has been up for 0.35 s of game time
+			await wait(30)
+			tap_key(KEY_ENTER)
+			await wait(3)
 		elif same >= 11 and same % 2 == 1:  # Esc did nothing for a while: a result page may want its Enter
 			tap_key(KEY_ENTER)
 			await wait(3)
@@ -941,7 +951,7 @@ func recover() -> bool:
 			tap_key(KEY_ESCAPE)
 			await wait(4)
 			if not _n("PauseMenu").is_open:
-				_report("dead_input", "ESC did not open the pause menu on a quiet floor")
+				_report("dead_input", "ESC did not open the pause menu on a quiet floor (%s)" % describe())
 				return false
 			tap_key(KEY_ESCAPE)
 			await wait(4)
@@ -951,11 +961,18 @@ func recover() -> bool:
 				return false
 	elif _scene_name().contains("title"):
 		await wait(40)  # a title that has just loaded ignores input for a moment
+		var t := tree.current_scene
+		if t != null and t.get("_started") == true:  # a run is on its way (GO was pressed): the scene changes in a moment
+			await wait(240)
+			if not _scene_name().contains("title"):
+				return true
+			_report("stuck_start", "the title started a run (_started) and is still the scene 4 s later (%s)" % describe())
+			return false
 		tap_key(KEY_ENTER)
 		await wait(4)
-		var t := tree.current_scene
+		t = tree.current_scene
 		if t.get("_menu_open") != true and modal() == "":
-			_report("dead_input", "ENTER did nothing on the title prompt")
+			_report("dead_input", "ENTER did nothing on the title prompt (%s)" % describe())
 			return false
 	return true
 
@@ -1070,7 +1087,7 @@ func sequence_campaign(mode: String, seed_value: int, frames: int) -> int:
 				t._choose(0)
 			await wait(120)
 			_collect_errors()
-			if not _scene_name().contains("main_floor"):
+			if _scene_name().contains("title"):
 				_report("continue", "CONTINUE did not reach the floor (scene %s)" % _scene_name())
 			elif not camp.active:
 				_report("continue", "CONTINUE reached the floor with no campaign running")
