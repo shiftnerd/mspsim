@@ -90,7 +90,7 @@ jobs:
         with:
           path: ~/.local/share/godot/export_templates
           key: godot-templates-linux-${{ env.GODOT_VERSION }}
-      - name: Download the Linux export templates (only on a cache miss: the whole file is 1.2 GB, only the Linux templates are kept)
+      - name: "Download the Linux export templates (only on a cache miss; the whole file is 1.2 GB and only the Linux templates are kept)"
         if: steps.tpl.outputs.cache-hit != 'true'
         run: |
           curl -fsSL -o templates.tpz "https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_export_templates.tpz"
