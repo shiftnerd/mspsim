@@ -43,7 +43,7 @@ const POSTERS := {
 	"bytes_n_bagels": "MEMBER",
 	"dbl_click_dave": "MEMBER",
 	"packet_pam": "REGULAR",
-	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
+	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR",
 	"ShadowPoint_Brad": "VENDOR",
 	"WebWoot_Dee": "VENDOR",
 	"SoftSwipe_Rex": "VENDOR",
@@ -341,6 +341,7 @@ const DEFAULT_THREADS := [
 				"text":
 				"Seconded. Twenty seven of our forty printers were running one cheap driver. Replaced it and no more morning deaths."
 			},
+			{"by": "PaperJam_Pat", "text": "Check the toner before the driver. A printer that reports low toner in the middle of a job is asking for attention. New cartridge, new pickup roller, then blame the spooler."},
 		],
 		"answer":
 		"Clear the spool folder, stop and start the service, then remove the old 32 bit driver. Mine was a copier from 2009.",

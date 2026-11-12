@@ -279,5 +279,52 @@ func _init() -> void:
 		for post in th.get("posts", []):
 			walt_posts += 1 if str(post.by) == "WSUS_Walt" else 0
 	_check(nerds.POSTERS.has("WSUS_Walt") and walt_posts >= 1, "Walt has a forum title and a post")
+	# the R28 batch after Walt: [file, role id, handle, room, door x list, skill of the first option, first option's xp]
+	var more := [
+		["expo_pat", "pat", "PaperJam_Pat", "resort_hall", [41, 73, 143, 213, 283], "servers"],
+	]
+	for m in more:
+		var who2: String = m[0]
+		var id2: String = m[1]
+		var handle: String = m[2]
+		var frames2: SpriteFrames = load("res://characters/%s.tres" % who2)
+		_check(frames2 != null, "%s has a SpriteFrames" % who2)
+		for side in ["right", "left"]:
+			var sheet2 := Image.load_from_file(ProjectSettings.globalize_path("res://assets/characters/%s_%s.png" % [who2, side]))
+			_check(sheet2 != null and sheet2.get_width() == 135 * 64 and sheet2.get_height() == 80, "%s %s sheet is 135 frames of 64x80" % [who2, side])
+		var role: String = "forum:" + id2
+		_check(spots.has(role) and spots[role][0] == m[3], "%s stands in %s" % [handle, m[3]])
+		for door in m[4]:
+			_check(absf(float(spots[role][1]) - float(door)) >= 25.0, "%s is clear of the door at x %d" % [handle, door])
+		for entry in cf.CROWD[spots[role][0]]:
+			if str(entry.role) != role and not entry.has("seat") and not str(entry.routine).contains("walk"):
+				_check(absf(float(entry.x) - float(spots[role][1])) >= 14.0, "%s does not stand in %s" % [handle, entry.role])
+		var def2: Dictionary = cf.forum_def(id2)
+		_check(not def2.is_empty() and def2.options.size() == 4, "%s has a chat with four options" % id2)
+		var pays2 := {"skill": 0, "karma": 0, "social": 0}
+		for o in def2.get("options", []):
+			pays2.skill += 1 if str(o.get("skill", "")) != "" and int(o.get("xp", 0)) > 0 else 0
+			pays2.karma += 1 if int(o.get("karma", 0)) > 0 else 0
+			pays2.social += 1 if int(o.get("social", 0)) > 0 else 0
+			_check(str(o.text) != "" and str(o.label) == str(o.label).to_upper(), "%s / %s has a label in capitals and a text" % [id2, o.id])
+		_check(pays2.skill == 2 and pays2.karma == 1 and pays2.social == 1, "%s pays like the others: two skills, karma, a social point" % id2)
+		cf.reset()
+		var x0: int = int(sk.xp[m[5]])
+		cf.npc_use(_fake(role), null)
+		_check(cards.is_open and cards.speaker.begins_with(handle), "E opens %s's card" % handle)
+		cards.pick(0)
+		_check(int(sk.xp[m[5]]) == x0 + 4, "%s's first answer is +4 %s XP" % [handle, m[5]])
+		cards.pick(0)
+		cf.reset()
+		k0 = nerds.karma
+		cf.npc_use(_fake(role), null)
+		cards.pick(2)
+		_check(nerds.karma == k0 + 3, "%s's thread option is +3 karma" % handle)
+		cards.pick(0)
+		var posts2 := 0
+		for th in nerds.THREADS:
+			for post in th.get("posts", []):
+				posts2 += 1 if str(post.by) == handle else 0
+		_check(nerds.POSTERS.get(handle, "") == "REGULAR" and posts2 >= 1, "%s has a forum title and a post" % handle)
 	print("failures=", failures)
 	quit(1 if failures > 0 else 0)

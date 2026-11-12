@@ -102,6 +102,12 @@ local CHARS = {
     shoes = {"#3A3A44", "#2A2A33"}, lips = "#B8505A", glasses = true, blouse = "#F2F2EA",
   },
 
+  expo_pat = {       -- PaperJam_Pat (LabRat Nerds forum, the printer whisperer with opinions about toner): long plum hair, a cyan cardigan over a yellow blouse (toner colours), brown trousers, teal shoes, no glasses
+    skin = {"#E8B08C", "#CC8C68", "#A8684A"}, hair = {"#6A2E6A", "#8E4A8E", "#4A1E4A"}, style = "long",
+    shirt = {"#3AA8C8", "#2A86A4", "#F0D040"}, pants = {"#6A5A4A", "#524536", "#3C3226"}, bottom = "trousers",
+    shoes = {"#2E8A8A", "#226868"}, lips = "#B8505A", blouse = "#F0D040",
+  },
+
   expo_regdesk = {   -- the check-in desk: blonde-brown bun, navy blazer over a white blouse, trousers, conference-teal lanyard and badge
     skin = {"#E8A87C", "#C98458", "#A8643C"}, hair = {"#B88A52", "#D8AC6E", "#8A6234"}, style = "bun",
     shirt = {"#2E3A58", "#222C44", "#F2F2EA"}, pants = {"#2E323C", "#22262E", "#181B22"}, bottom = "trousers",

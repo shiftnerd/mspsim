@@ -791,6 +791,16 @@ const DEFAULT_FORUM := [
 		],
 	},
 	{
+		"id": "pat", "speaker": "PaperJam_Pat (forum regular)",
+		"text": "Pat. Printers. I do not fix them, I listen to them. Yours is not broken, it is sulking, and I can tell you which toner it hates. Stop buying the cheap cartridges. I will know.",
+		"options": [
+			{"id": "toner", "label": "ASK ABOUT THE TONER", "skill": "servers", "xp": 4, "text": "'The right cartridge, the roller changed every fifty thousand pages, and never the spooler first.' She draws the paper path on a napkin, with the jam spots marked. (+4 servers XP)"},
+			{"id": "jam", "label": "ASK HOW TO CLEAR A JAM", "skill": "people", "xp": 3, "text": "'Open it slowly, pull the paper the way it travels, and tell the user it was the paper.' It is never kind to say it was them. Say it kindly anyway. (+3 customer XP)"},
+			{"id": "thread", "label": "UPVOTE HER SPOOLER ANSWER", "skill": "", "xp": 0, "karma": 3, "text": "You upvote her answer in the spooler thread. She replies with the model number of every printer she has ever loved. (+3 forum karma)", "text_free": "You upvote her answer in the spooler thread. She replies with a list of model numbers."},
+			{"id": "testpage", "label": "PRINT HER A TEST PAGE", "skill": "", "xp": 0, "social": 1, "text": "She holds it up to the light, nods, and tapes it to your badge like a good report card. Your coworkers ask what you did to earn it. (coworkers like you a little more)", "text_free": "She holds it up to the light and nods."},
+		],
+	},
+	{
 		"id": "dot", "speaker": "DNS_Dot (forum regular)",
 		"text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
 		"options": [
@@ -899,6 +909,13 @@ const CROWD := {
 			"x": 224,
 			"facing": "left",
 			"routine": ["wait:5", "talk:4", "wait:3", "say:2"]
+		},
+		{
+			"who": "expo_pat",
+			"role": "forum:pat",
+			"x": 250,
+			"facing": "left",
+			"routine": ["wait:5", "say:2", "wait:4"]
 		},
 	],
 	"ballroom":

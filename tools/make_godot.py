@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt", "expo_pat",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
@@ -25561,7 +25561,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -25853,6 +25853,7 @@ const THREADS := [
                 "text":
                 "Seconded. Twenty seven of our forty printers were running one cheap driver. Replaced it and no more morning deaths."
             },
+            {"by": "PaperJam_Pat", "text": "Check the toner before the driver. A printer that reports low toner in the middle of a job is asking for attention. New cartridge, new pickup roller, then blame the spooler."},
         ],
         "answer":
         "Clear the spool folder, stop and start the service, then remove the old 32 bit driver. Mine was a copier from 2009.",
@@ -53820,6 +53821,16 @@ const FORUM := [
         ],
     },
     {
+        "id": "pat", "speaker": "PaperJam_Pat (forum regular)",
+        "text": "Pat. Printers. I do not fix them, I listen to them. Yours is not broken, it is sulking, and I can tell you which toner it hates. Stop buying the cheap cartridges. I will know.",
+        "options": [
+            {"id": "toner", "label": "ASK ABOUT THE TONER", "skill": "servers", "xp": 4, "text": "'The right cartridge, the roller changed every fifty thousand pages, and never the spooler first.' She draws the paper path on a napkin, with the jam spots marked. (+4 servers XP)"},
+            {"id": "jam", "label": "ASK HOW TO CLEAR A JAM", "skill": "people", "xp": 3, "text": "'Open it slowly, pull the paper the way it travels, and tell the user it was the paper.' It is never kind to say it was them. Say it kindly anyway. (+3 customer XP)"},
+            {"id": "thread", "label": "UPVOTE HER SPOOLER ANSWER", "skill": "", "xp": 0, "karma": 3, "text": "You upvote her answer in the spooler thread. She replies with the model number of every printer she has ever loved. (+3 forum karma)", "text_free": "You upvote her answer in the spooler thread. She replies with a list of model numbers."},
+            {"id": "testpage", "label": "PRINT HER A TEST PAGE", "skill": "", "xp": 0, "social": 1, "text": "She holds it up to the light, nods, and tapes it to your badge like a good report card. Your coworkers ask what you did to earn it. (coworkers like you a little more)", "text_free": "She holds it up to the light and nods."},
+        ],
+    },
+    {
         "id": "dot", "speaker": "DNS_Dot (forum regular)",
         "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
         "options": [
@@ -53865,6 +53876,7 @@ const CROWD := {
         {"who": "expo_attd", "role": "att:2", "x": 280, "facing": "left", "routine": ["wait:4", "say:2"]},
         {"who": "expo_rita", "role": "forum:rita", "x": 90, "facing": "right", "routine": ["talk:4", "wait:3", "say:2"]}, {"who": "expo_tony", "role": "forum:tony", "x": 178, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
         {"who": "expo_priest", "role": "forum:priest", "x": 224, "facing": "left", "routine": ["wait:5", "talk:4", "wait:3", "say:2"]},
+        {"who": "expo_pat", "role": "forum:pat", "x": 250, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
     ],
     "ballroom": [
         {"who": "expo_atta", "role": "att:0", "x": 77, "facing": "right", "seat": "Seat1", "routine": ["wait:8"]},

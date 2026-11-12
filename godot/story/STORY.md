@@ -1502,12 +1502,18 @@ or the owner (owner campaign, 20 weeks).
   - **ASK ABOUT THE REBOOT** `[Expo.FORUM.6.options.1.label]`: 'Tell them it is coming, tell them when, tell them twice.' A reboot with a warning is maintenance. Without one it is an outage. (+3 customer XP) `[Expo.FORUM.6.options.1.text]`
   - **UPVOTE HIS FRIDAY RULE** `[Expo.FORUM.6.options.2.label]`: You upvote his never-on-a-Friday post. He replies with the date of every Friday patch that ever went wrong, from memory. (+3 forum karma) `[Expo.FORUM.6.options.2.text]`
   - **ADMIT TO A FRIDAY PATCH** `[Expo.FORUM.6.options.3.label]`: He puts a hand on your shoulder like a doctor. 'Tell me everything.' Your coworkers hear about the confession before you are back at the booth. (coworkers like you a little more) `[Expo.FORUM.6.options.3.text]`
-- **DNS_Dot (forum regular)** `[Expo.FORUM.7.speaker]`
-  - Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet. `[Expo.FORUM.7.text]`
-  - **ASK WHY IT IS ALWAYS DNS** `[Expo.FORUM.7.options.0.label]`: 'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP) `[Expo.FORUM.7.options.0.text]`
-  - **ASK ABOUT THE LABEL MAKER** `[Expo.FORUM.7.options.1.label]`: 'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP) `[Expo.FORUM.7.options.1.text]`
-  - **MARK HER ANSWER AS SOLVED** `[Expo.FORUM.7.options.2.label]`: You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma) `[Expo.FORUM.7.options.2.text]`
-  - **LET HER LABEL YOUR BADGE** `[Expo.FORUM.7.options.3.label]`: The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more) `[Expo.FORUM.7.options.3.text]`
+- **PaperJam_Pat (forum regular)** `[Expo.FORUM.7.speaker]`
+  - Pat. Printers. I do not fix them, I listen to them. Yours is not broken, it is sulking, and I can tell you which toner it hates. Stop buying the cheap cartridges. I will know. `[Expo.FORUM.7.text]`
+  - **ASK ABOUT THE TONER** `[Expo.FORUM.7.options.0.label]`: 'The right cartridge, the roller changed every fifty thousand pages, and never the spooler first.' She draws the paper path on a napkin, with the jam spots marked. (+4 servers XP) `[Expo.FORUM.7.options.0.text]`
+  - **ASK HOW TO CLEAR A JAM** `[Expo.FORUM.7.options.1.label]`: 'Open it slowly, pull the paper the way it travels, and tell the user it was the paper.' It is never kind to say it was them. Say it kindly anyway. (+3 customer XP) `[Expo.FORUM.7.options.1.text]`
+  - **UPVOTE HER SPOOLER ANSWER** `[Expo.FORUM.7.options.2.label]`: You upvote her answer in the spooler thread. She replies with the model number of every printer she has ever loved. (+3 forum karma) `[Expo.FORUM.7.options.2.text]`
+  - **PRINT HER A TEST PAGE** `[Expo.FORUM.7.options.3.label]`: She holds it up to the light, nods, and tapes it to your badge like a good report card. Your coworkers ask what you did to earn it. (coworkers like you a little more) `[Expo.FORUM.7.options.3.text]`
+- **DNS_Dot (forum regular)** `[Expo.FORUM.8.speaker]`
+  - Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet. `[Expo.FORUM.8.text]`
+  - **ASK WHY IT IS ALWAYS DNS** `[Expo.FORUM.8.options.0.label]`: 'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP) `[Expo.FORUM.8.options.0.text]`
+  - **ASK ABOUT THE LABEL MAKER** `[Expo.FORUM.8.options.1.label]`: 'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP) `[Expo.FORUM.8.options.1.text]`
+  - **MARK HER ANSWER AS SOLVED** `[Expo.FORUM.8.options.2.label]`: You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma) `[Expo.FORUM.8.options.2.text]`
+  - **LET HER LABEL YOUR BADGE** `[Expo.FORUM.8.options.3.label]`: The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more) `[Expo.FORUM.8.options.3.text]`
 
 ### Instant messages from coworkers (Lync)
 
