@@ -21227,7 +21227,7 @@ func waiting() -> int:
 # Esc picks the option whose id is "leave" (conversations)
 func _pick_leave() -> void:
     for i in options.size():
-        if str(options[i].id) in ["leave", "__none"]:
+        if str(options[i].id) in ["leave", "__none", "close"]:  # "close": the Free Play menu's CLOSE row, so Esc / B leave it too
             pick(i)
             return
 

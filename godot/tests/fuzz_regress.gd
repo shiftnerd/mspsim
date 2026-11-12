@@ -90,6 +90,15 @@ func _run() -> void:
 	root.get_node("Game").go_title()
 	await _wait(30)
 	ok(not cards.is_open and cards._queue.is_empty(), "going to the title drops the open card and the waiting ones")
+	# 7. Esc / B on the Free Play menu card did nothing (its way out is a CLOSE row, not a "leave" one): the fuzzer's recovery looped
+	#    through the card's rows for ever (sequence:campaign:tech, seed 1100)
+	cards.ask("Free Play", "MENU", [{"label": "MUTATOR", "id": "mutator"}, {"label": "CLOSE", "id": "close"}], func(_id: String) -> void: pass)
+	ok(cards.is_open, "the menu card is open")
+	var esc := InputEventKey.new()
+	esc.keycode = KEY_ESCAPE
+	esc.pressed = true
+	cards._input(esc)
+	ok(not cards.is_open, "Esc closes a card that has a CLOSE row")
 	# 5. keys in the NERDS forum before its first paint: the rows are built with the Computer's helpers and there was none yet
 	#    (forum_view.gd:229 / 277 / 316, floor:computer:nerds, seed 100)
 	var fv: Object = load("res://scripts/forum_view.gd").new()

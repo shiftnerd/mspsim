@@ -779,7 +779,12 @@ func _step() -> void:
 		_pending_focus_in = -1
 		_log_ev("focus in")
 		_n("Game").notification(MainLoop.NOTIFICATION_APPLICATION_FOCUS_IN)
-	for i in rng.randi_range(0, 3):
+	_keep_off_quit()
+	var n := rng.randi_range(0, 3)
+	var t := tree.current_scene
+	if t != null and t.get("_menu_open") == true:
+		n = mini(n, 1)  # one event a frame on the title menu: a Down and an Enter in the same frame would reach the QUIT row, which ends the run
+	for i in n:
 		_send_one()
 
 
@@ -897,6 +902,9 @@ func recover() -> bool:
 			await wait(3)
 			if modal() == m:
 				tap_button(0, JOY_BUTTON_A)
+				await wait(3)
+			if modal() == m and m == "Cards":
+				tap_key(KEY_ESCAPE)  # a card with a leave / close row answers Esc
 				await wait(3)
 			if _verbose and modal() == m and m == "Cards":
 				var before: bool = _n("Cards").is_open
