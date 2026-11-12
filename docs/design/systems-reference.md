@@ -318,18 +318,18 @@ The expo crowd per scene, by role. Source: `scripts/conference.gd CROWD`. Rows: 
 
 | scene | people | roles |
 | --- | --- | --- |
-| resort_lobby | 6 | checkin=1, att=2, forum=3 |
-| resort_hall | 5 | att=2, forum=3 |
+| resort_lobby | 7 | checkin=1, att=2, forum=4 |
+| resort_hall | 6 | att=2, forum=4 |
 | ballroom | 3 | att=3 |
 | breakout_a | 5 | speaker=1, att=2, audience=2 |
 | breakout_b | 5 | speaker=1, att=2, audience=2 |
 | breakout_c | 5 | speaker=1, att=2, audience=2 |
 | breakout_d | 5 | speaker=1, att=2, audience=2 |
-| vendor_hall | 7 | vendor=3, att=2, forum=2 |
+| vendor_hall | 8 | vendor=3, att=2, forum=3 |
 
 ### 2.6 Forum characters at the expo
 
-The forum people met at the expo, each with a choice card. Source: `scripts/conference.gd FORUM`. Rows: 8.
+The forum people met at the expo, each with a choice card. Source: `scripts/conference.gd FORUM`. Rows: 11.
 
 | id | speaker | options |
 | --- | --- | --- |
@@ -340,6 +340,9 @@ The forum people met at the expo, each with a choice card. Source: `scripts/conf
 | rita | RegexRita (forum regular) | 4 |
 | tony | TapeTony (forum regular) | 4 |
 | walt | WSUS_Walt (forum regular) | 4 |
+| pat | PaperJam_Pat (forum regular) | 4 |
+| vic | SpinUp_Vic (forum regular) | 4 |
+| gus | PatchPanel_Gus (forum regular) | 4 |
 | dot | DNS_Dot (forum regular) | 4 |
 
 ### 2.7 Outing guests and visitors
@@ -365,10 +368,10 @@ Sprite files per folder (a person is a left and a right file). Counted from the 
 | --- | --- | --- | --- |
 | staff | 38 | 38 | 19 |
 | clients | 44 | 44 | 22 |
-| expo | 48 | 48 | 24 |
+| expo | 54 | 54 | 27 |
 | custom | 20 | 20 | 10 |
 
-Total character stills: 150.
+Total character stills: 156.
 
 ## 3. Tickets and fixes
 
@@ -582,9 +585,9 @@ Every deck of cards or beats. `schedule` is how the deck is placed. The total ad
 | --- | --- | --- | --- | --- |
 | Owner cards | weekly decision cards of the owner campaign | 53 | 19 week slots, 72 placements | owner.gd DEFAULT_CARDS |
 | Owner ops leads | client leads the owner can chase | 10 |  | owner_ops.gd DEFAULT_LEADS |
-| Owner cast cards | Jen and Michael decision cards | 6 | 6 weeks | owner_cast.gd DEFAULT_CARDS |
+| Owner cast cards | Jen and Michael decision cards | 10 | 10 weeks | owner_cast.gd DEFAULT_CARDS |
 | Partner beats | partner meetings (owner) | 4 | weeks 5, 9, 13, 17 | partner.gd BEATS |
-| Vignettes | story scenes of the tech campaign | 33 | 20 days, 53 placements | story.gd DEFAULT_VIGNETTES |
+| Vignettes | story scenes of the tech campaign | 41 | 20 days, 53 placements | story.gd DEFAULT_VIGNETTES |
 | Postmortems | end-of-ticket story reviews | 4 |  | story.gd DEFAULT_POSTMORTEMS |
 | Random events | the shared event deck (tech, owner or both) | 41 |  | events.gd DEFAULT_DECK |
 | Seasonal cards | holiday, tax and end-of-support cards | 8 | 4 seasons | seasons.gd DEFAULT_CARDS |
@@ -598,19 +601,19 @@ Every deck of cards or beats. `schedule` is how the deck is placed. The total ad
 | Service beats | story beats of the service campaign | 7 | 15 days | service.gd DEFAULT_BEATS |
 | Service incidents | incident cards | 6 |  | service.gd DEFAULT_INCIDENTS |
 | Service arc cards | annual arc (Heartbleed wave, resets, promotion) | 13 |  | service_arc.gd DEFAULT_ARC |
-| Service 1:1 deck: Maya | one-to-one conversations with this person | 10 |  | service.gd DEFAULT_ONE_ON_ONES |
+| Service 1:1 deck: Maya | one-to-one conversations with this person | 20 |  | service.gd DEFAULT_ONE_ON_ONES |
 | Service 1:1 deck: Tech | one-to-one conversations with this person | 28 |  | service.gd DEFAULT_ONE_ON_ONES |
-| Service 1:1 deck: John | one-to-one conversations with this person | 10 |  | service.gd DEFAULT_ONE_ON_ONES |
+| Service 1:1 deck: John | one-to-one conversations with this person | 20 |  | service.gd DEFAULT_ONE_ON_ONES |
 | Sales beats | story beats of the sales campaign | 31 | 16 scheduled weeks | sales_campaign.gd DEFAULT_BEAT_TEXT |
 | Year 2 beats | second-year beats, all modes | 7 |  | yeartwo.gd DEFAULT_YEAR2 |
 | Year 3 beats | third-year beats, all modes | 12 |  | yeartwo.gd DEFAULT_YEAR3 |
-| Expo forum cards | forum people at the trade expo | 8 |  | conference.gd FORUM |
+| Expo forum cards | forum people at the trade expo | 11 |  | conference.gd FORUM |
 | Expo vendors | vendor booth cards | 5 |  | conference.gd + trip_variety.gd |
 | Expo chats | hallway chat cards | 9 |  | conference.gd + trip_variety.gd |
 | Nerd forum boards | boards of the in-game forum | 18 |  | nerds.gd DEFAULT_BOARDS |
 | Nerd forum threads | threads of the in-game forum | 81 |  | nerds.gd DEFAULT_THREADS |
 
-Total cards and beats counted above: 514. The owner campaign's live deck (`Owner.CARDS`) merges the owner, cast and rival cards at start-up: 91 cards in all, so those rows overlap with it.
+Total cards and beats counted above: 549. The owner campaign's live deck (`Owner.CARDS`) merges the owner, cast and rival cards at start-up: 95 cards in all, so those rows overlap with it.
 
 ### 4.2 Year 2 text blocks
 
@@ -1444,23 +1447,24 @@ Counted from the file system when generated (this table changes whenever code is
 
 | what | files | lines |
 | --- | --- | --- |
-| game scripts (godot/scripts/*.gd) | 129 | 90657 |
-| tests (godot/tests/*.gd, one test each) | 395 | 70241 |
+| game scripts (godot/scripts/*.gd) | 129 | 91445 |
+| tests (godot/tests/*.gd, one test each) | 399 | 71646 |
 | scenes (godot/scenes/*.tscn) | 68 |  |
 | autoloads | 51 |  |
 | tools (tools/*.py and *.lua) | 40 |  |
 
 ### 9.4 Game art (Godot PNGs)
 
-Image files per asset folder, directly inside it and in its sub-folders. Source: `godot/assets/<folder>/*.png (file system)`. Rows: 6.
+Image files per asset folder, directly inside it and in its sub-folders. Source: `godot/assets/<folder>/*.png (file system)`. Rows: 7.
 
 | folder | PNGs | PNGs in sub-folders |
 | --- | --- | --- |
 | accessories | 38 | 0 |
-| characters | 150 | 0 |
+| characters | 156 | 0 |
 | clothes | 58 | 0 |
 | props | 238 | 0 |
 | sets | 69 | 0 |
+| tiles | 0 | 0 |
 | ui | 39 | 0 |
 
 ### 9.5 Character sheet frames
@@ -1473,4 +1477,4 @@ Frames per character sheet (idle, walk, run, jump, seated life poses, toss, couc
 | head gear frames | 135 | scripts/head_gear.gd FRAMES |
 | clothes gear frames | 135 | scripts/clothes_gear.gd FRAMES |
 
-Test files: 395. Story files: 4. The shared `Strings` autoload holds the patchable player-facing text.
+Test files: 399. Story files: 4. The shared `Strings` autoload holds the patchable player-facing text.
