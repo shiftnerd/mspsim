@@ -12434,6 +12434,10 @@ Tag the voice VLAN on the phone port, leave data untagged as the native VLAN. Th
 [Nerds.THREADS.6.posts.2.text]
 Check the switch supports it on the same port. Some cheap ones only do one tagged VLAN per access port.
 
+# Nerds > THREADS > 6 > posts > 3 > text
+[Nerds.THREADS.6.posts.3.text]
+Label the switch port and the wall plate with the same number. Phones on orange cable, desks on blue. In two years you will thank me, or somebody will.
+
 # Nerds > THREADS > 6 > answer
 [Nerds.THREADS.6.answer]
 Make each port a trunk with data untagged and voice tagged, so the phone tags itself and passes the PC through.
@@ -18652,50 +18656,98 @@ He takes it personally for a full second, then buys you a coffee.
 
 # Expo > FORUM > 9 > speaker
 [Expo.FORUM.9.speaker]
-DNS_Dot (forum regular)
+PatchPanel_Gus (forum regular)
 
 # Expo > FORUM > 9 > text
 [Expo.FORUM.9.text]
-Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.
+Gus. Cable. Cat5e, Cat6, patch panels and the little coloured tags. I wear fourteen badges because every site gave me one, and I have lost the argument with the lanyard. Show me your closet and I will tell you who you are.
 
 # Expo > FORUM > 9 > options > 0 > label
 [Expo.FORUM.9.options.0.label]
-ASK WHY IT IS ALWAYS DNS
+ASK ABOUT THE PATCH PANEL
 
 # Expo > FORUM > 9 > options > 0 > text
 [Expo.FORUM.9.options.0.text]
-'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP)
+'Punch down in order, label both ends, test every run. Orange for the phones, blue for the desks.' He hands you a punch-down tool and watches your first one. (+4 networking XP)
 
 # Expo > FORUM > 9 > options > 1 > label
 [Expo.FORUM.9.options.1.label]
-ASK ABOUT THE LABEL MAKER
+ASK ABOUT THE BADGES
 
 # Expo > FORUM > 9 > options > 1 > text
 [Expo.FORUM.9.options.1.text]
-'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP)
+'This one opens the dock, this one the server room, and this one I cannot identify.' Nobody asked for any of them back. You learn to ask for a visitor badge first. (+3 customer XP)
 
 # Expo > FORUM > 9 > options > 2 > label
 [Expo.FORUM.9.options.2.label]
-MARK HER ANSWER AS SOLVED
+UPVOTE HIS CABLING TIP
 
 # Expo > FORUM > 9 > options > 2 > text
 [Expo.FORUM.9.options.2.text]
-You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma)
+You upvote his tip in the VLAN thread. He replies with a photo of a closet that was labelled correctly, and it is beautiful. (+3 forum karma)
 
 # Expo > FORUM > 9 > options > 2 > text_free
 [Expo.FORUM.9.options.2.text_free]
-You mark her answer as the one that fixed it. It was DNS.
+You upvote his tip in the VLAN thread. He replies with a photo of a labelled closet.
 
 # Expo > FORUM > 9 > options > 3 > label
 [Expo.FORUM.9.options.3.label]
-LET HER LABEL YOUR BADGE
+COUNT HIS BADGES
 
 # Expo > FORUM > 9 > options > 3 > text
 [Expo.FORUM.9.options.3.text]
-The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more)
+Fourteen. He lets you hold the one for the roof. Your coworkers ask how you got access to the roof. (coworkers like you a little more)
 
 # Expo > FORUM > 9 > options > 3 > text_free
 [Expo.FORUM.9.options.3.text_free]
+Fourteen. He lets you hold the one for the roof.
+
+# Expo > FORUM > 10 > speaker
+[Expo.FORUM.10.speaker]
+DNS_Dot (forum regular)
+
+# Expo > FORUM > 10 > text
+[Expo.FORUM.10.text]
+Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.
+
+# Expo > FORUM > 10 > options > 0 > label
+[Expo.FORUM.10.options.0.label]
+ASK WHY IT IS ALWAYS DNS
+
+# Expo > FORUM > 10 > options > 0 > text
+[Expo.FORUM.10.options.0.text]
+'Because the name is the first thing every program asks for and the last thing anybody checks.' She shows you how to ask a server for a name by hand. It takes ten seconds. (+4 networking XP)
+
+# Expo > FORUM > 10 > options > 1 > label
+[Expo.FORUM.10.options.1.label]
+ASK ABOUT THE LABEL MAKER
+
+# Expo > FORUM > 10 > options > 1 > text
+[Expo.FORUM.10.options.1.text]
+'A label is a note to the next tech, and the next tech is usually you, tired.' Both ends of every cable, the date on every change. (+3 customer XP)
+
+# Expo > FORUM > 10 > options > 2 > label
+[Expo.FORUM.10.options.2.label]
+MARK HER ANSWER AS SOLVED
+
+# Expo > FORUM > 10 > options > 2 > text
+[Expo.FORUM.10.options.2.text]
+You go back to your old thread and mark her answer as the one that fixed it. It was DNS. She adds one to the counter in her signature. (+3 forum karma)
+
+# Expo > FORUM > 10 > options > 2 > text_free
+[Expo.FORUM.10.options.2.text_free]
+You mark her answer as the one that fixed it. It was DNS.
+
+# Expo > FORUM > 10 > options > 3 > label
+[Expo.FORUM.10.options.3.label]
+LET HER LABEL YOUR BADGE
+
+# Expo > FORUM > 10 > options > 3 > text
+[Expo.FORUM.10.options.3.text]
+The label says 'ASK ME, I TESTED IT FIRST'. Three people at the booth read it out loud before lunch. (coworkers like you a little more)
+
+# Expo > FORUM > 10 > options > 3 > text_free
+[Expo.FORUM.10.options.3.text_free]
 The label says 'ASK ME, I TESTED IT FIRST'.
 
 

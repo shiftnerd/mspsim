@@ -811,6 +811,16 @@ const DEFAULT_FORUM := [
 		],
 	},
 	{
+		"id": "gus", "speaker": "PatchPanel_Gus (forum regular)",
+		"text": "Gus. Cable. Cat5e, Cat6, patch panels and the little coloured tags. I wear fourteen badges because every site gave me one, and I have lost the argument with the lanyard. Show me your closet and I will tell you who you are.",
+		"options": [
+			{"id": "panel", "label": "ASK ABOUT THE PATCH PANEL", "skill": "networking", "xp": 4, "text": "'Punch down in order, label both ends, test every run. Orange for the phones, blue for the desks.' He hands you a punch-down tool and watches your first one. (+4 networking XP)"},
+			{"id": "badges", "label": "ASK ABOUT THE BADGES", "skill": "people", "xp": 3, "text": "'This one opens the dock, this one the server room, and this one I cannot identify.' Nobody asked for any of them back. You learn to ask for a visitor badge first. (+3 customer XP)"},
+			{"id": "thread", "label": "UPVOTE HIS CABLING TIP", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his tip in the VLAN thread. He replies with a photo of a closet that was labelled correctly, and it is beautiful. (+3 forum karma)", "text_free": "You upvote his tip in the VLAN thread. He replies with a photo of a labelled closet."},
+			{"id": "count", "label": "COUNT HIS BADGES", "skill": "", "xp": 0, "social": 1, "text": "Fourteen. He lets you hold the one for the roof. Your coworkers ask how you got access to the roof. (coworkers like you a little more)", "text_free": "Fourteen. He lets you hold the one for the roof."},
+		],
+	},
+	{
 		"id": "dot", "speaker": "DNS_Dot (forum regular)",
 		"text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
 		"options": [
@@ -888,6 +898,13 @@ const CROWD := {
 			"x": 160,
 			"facing": "left",
 			"routine": ["wait:5", "say:2", "wait:4"]
+		},
+		{
+			"who": "expo_gus",
+			"role": "forum:gus",
+			"x": 66,
+			"facing": "right",
+			"routine": ["wait:5", "talk:3", "wait:3"]
 		},
 	],
 	"resort_hall":

@@ -43,7 +43,7 @@ const POSTERS := {
 	"bytes_n_bagels": "MEMBER",
 	"dbl_click_dave": "MEMBER",
 	"packet_pam": "REGULAR",
-	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR",
+	"LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR", "PatchPanel_Gus": "REGULAR",
 	"ShadowPoint_Brad": "VENDOR",
 	"WebWoot_Dee": "VENDOR",
 	"SoftSwipe_Rex": "VENDOR",
@@ -495,6 +495,7 @@ const DEFAULT_THREADS := [
 				"text":
 				"Check the switch supports it on the same port. Some cheap ones only do one tagged VLAN per access port."
 			},
+			{"by": "PatchPanel_Gus", "text": "Label the switch port and the wall plate with the same number. Phones on orange cable, desks on blue. In two years you will thank me, or somebody will."},
 		],
 		"answer":
 		"Make each port a trunk with data untagged and voice tagged, so the phone tags itself and passes the PC through.",

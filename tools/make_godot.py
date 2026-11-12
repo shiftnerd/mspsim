@@ -22,7 +22,7 @@ EXTRA_CHARACTERS = ["expo_vendg", "expo_vendp", "expo_vendo", "expo_atta", "expo
                     "client_dentrec_a", "client_dentasst", "client_dentrec_b", "client_denthyg_b", "client_dentdoc_b", "client_vetrec_a",
                     "client_vettech_a", "client_vetrec_b", "client_vettech_b", "client_vetdoc_b", "client_paralegal_b", "client_agent_a",
                     "client_agent_b", "client_designer_b", "client_designer_a", "client_attorney_b", "client_foreman_a",
-                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt", "expo_pat", "expo_vic",
+                    "expo_attd", "expo_atte", "expo_attf", "expo_vendh", "expo_vendi", "expo_vendj", "expo_regdesk", "expo_priest", "expo_grizzle", "expo_pip", "expo_ray", "expo_rita", "expo_tony", "expo_dot", "expo_walt", "expo_pat", "expo_vic", "expo_gus",
                     # the second cast (photos in C:/sns): the senior tech, the office manager, a tech, the controller (John is in CHARACTERS)
                     "office_adam", "office_jen", "office_michael", "office_christy", "office_pell", "office_trent",
                     # the Year 3 people: the new hire, the buyer from Summit, the headhunter (tools/make_fem.lua, make_men.lua)
@@ -25561,7 +25561,7 @@ const POSTERS := {
     "bytes_n_bagels": "MEMBER",
     "dbl_click_dave": "MEMBER",
     "packet_pam": "REGULAR",
-    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR",
+    "LAN_lord": "GURU", "TapeTony": "REGULAR", "DNS_Dot": "REGULAR", "WSUS_Walt": "REGULAR", "PaperJam_Pat": "REGULAR", "SpinUp_Vic": "REGULAR", "PatchPanel_Gus": "REGULAR",
     "ShadowPoint_Brad": "VENDOR",
     "WebWoot_Dee": "VENDOR",
     "SoftSwipe_Rex": "VENDOR",
@@ -26007,6 +26007,7 @@ const THREADS := [
                 "text":
                 "Check the switch supports it on the same port. Some cheap ones only do one tagged VLAN per access port."
             },
+            {"by": "PatchPanel_Gus", "text": "Label the switch port and the wall plate with the same number. Phones on orange cable, desks on blue. In two years you will thank me, or somebody will."},
         ],
         "answer":
         "Make each port a trunk with data untagged and voice tagged, so the phone tags itself and passes the PC through.",
@@ -53842,6 +53843,16 @@ const FORUM := [
         ],
     },
     {
+        "id": "gus", "speaker": "PatchPanel_Gus (forum regular)",
+        "text": "Gus. Cable. Cat5e, Cat6, patch panels and the little coloured tags. I wear fourteen badges because every site gave me one, and I have lost the argument with the lanyard. Show me your closet and I will tell you who you are.",
+        "options": [
+            {"id": "panel", "label": "ASK ABOUT THE PATCH PANEL", "skill": "networking", "xp": 4, "text": "'Punch down in order, label both ends, test every run. Orange for the phones, blue for the desks.' He hands you a punch-down tool and watches your first one. (+4 networking XP)"},
+            {"id": "badges", "label": "ASK ABOUT THE BADGES", "skill": "people", "xp": 3, "text": "'This one opens the dock, this one the server room, and this one I cannot identify.' Nobody asked for any of them back. You learn to ask for a visitor badge first. (+3 customer XP)"},
+            {"id": "thread", "label": "UPVOTE HIS CABLING TIP", "skill": "", "xp": 0, "karma": 3, "text": "You upvote his tip in the VLAN thread. He replies with a photo of a closet that was labelled correctly, and it is beautiful. (+3 forum karma)", "text_free": "You upvote his tip in the VLAN thread. He replies with a photo of a labelled closet."},
+            {"id": "count", "label": "COUNT HIS BADGES", "skill": "", "xp": 0, "social": 1, "text": "Fourteen. He lets you hold the one for the roof. Your coworkers ask how you got access to the roof. (coworkers like you a little more)", "text_free": "Fourteen. He lets you hold the one for the roof."},
+        ],
+    },
+    {
         "id": "dot", "speaker": "DNS_Dot (forum regular)",
         "text": "Dot. Whatever your problem is, it is DNS. I say that in every thread and I am right more often than is fair. I also label things. You are not labelled yet.",
         "options": [
@@ -53881,6 +53892,7 @@ const CROWD := {
         {"who": "expo_grizzle", "role": "forum:grizzle", "x": 182, "facing": "left", "routine": ["wait:6", "say:2", "wait:4"]},
         {"who": "expo_ray", "role": "forum:ray", "x": 140, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
         {"who": "expo_walt", "role": "forum:walt", "x": 160, "facing": "left", "routine": ["wait:5", "say:2", "wait:4"]},
+        {"who": "expo_gus", "role": "forum:gus", "x": 66, "facing": "right", "routine": ["wait:5", "talk:3", "wait:3"]},
     ],
     "resort_hall": [
         {"who": "expo_tina", "role": "att:3", "x": 140, "facing": "right", "routine": ["walk:60", "wait:3", "walk:250", "wait:2"]},

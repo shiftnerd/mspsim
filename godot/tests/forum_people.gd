@@ -283,6 +283,7 @@ func _init() -> void:
 	var more := [
 		["expo_pat", "pat", "PaperJam_Pat", "resort_hall", [41, 73, 143, 213, 283], "servers"],
 		["expo_vic", "vic", "SpinUp_Vic", "vendor_hall", [327], "servers"],
+		["expo_gus", "gus", "PatchPanel_Gus", "resort_lobby", [37, 100, 263, 301], "networking"],
 	]
 	for m in more:
 		var who2: String = m[0]
