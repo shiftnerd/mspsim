@@ -191,7 +191,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		_mouse = event.position
 		for h in _hits:
-			if h.r.has_point(_mouse):
+			if h.r.has_point(_mouse) and int(h.i) < options.size() and bool(options[int(h.i)].get("enabled", true)):  # a greyed-out row is not selectable (Enter would do nothing)
 				sel = int(h.i)
 		_canvas.queue_redraw()
 	elif (

@@ -299,6 +299,11 @@ func click_at(ui_point: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
 
 func go_title() -> void:
 	busy = false
+	# a pause that came from losing focus can sit on top of an open phone or computer: they must not follow you to the title
+	for screen in [Computer, Phone]:
+		if screen.is_open:
+			screen.close()
+	ui_open = false
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 

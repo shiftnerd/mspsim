@@ -791,6 +791,11 @@ func click_at(ui_point: Vector2, button := MOUSE_BUTTON_LEFT) -> void:
 
 func go_title() -> void:
 	busy = false
+	# a pause that came from losing focus can sit on top of an open phone or computer: they must not follow you to the title
+	for screen in [Computer, Phone]:
+		if screen.is_open:
+			screen.close()
+	ui_open = false
 	get_tree().change_scene_to_file("res://scenes/title.tscn")
 
 
@@ -21234,7 +21239,7 @@ func _input(event: InputEvent) -> void:
     if event is InputEventMouseMotion:
         _mouse = event.position
         for h in _hits:
-            if h.r.has_point(_mouse):
+            if h.r.has_point(_mouse) and int(h.i) < options.size() and bool(options[int(h.i)].get("enabled", true)):  # a greyed-out row is not selectable (Enter would do nothing)
                 sel = int(h.i)
         _canvas.queue_redraw()
     elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -60309,6 +60314,8 @@ func _click(at: Vector2) -> void:
             set_page(int(r[2]))
         "sw":
             create_row = floori(float(r[2]) / 100.0)
+            if create_row < 0 or create_row >= _page_rows().size():
+                return  # a click on the last frame's swatch after the page turned: that row is not on this page
             Look.set_swatch(str(_page_rows()[create_row].id), int(r[2]) % 100)
             _refresh_look()
         "row":
@@ -61590,6 +61597,8 @@ func _close_select() -> void:
 
 
 func _on_select_done(result: Dictionary, id: String) -> void:
+    if _select == null:
+        return  # a second GO in the same frame (a double click, Enter twice): the run is already starting
     _select.queue_free()
     _select = null
     _start(id, str(result.summary))

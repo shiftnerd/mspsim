@@ -683,6 +683,8 @@ func _close_select() -> void:
 
 
 func _on_select_done(result: Dictionary, id: String) -> void:
+	if _select == null:
+		return  # a second GO in the same frame (a double click, Enter twice): the run is already starting
 	_select.queue_free()
 	_select = null
 	_start(id, str(result.summary))
