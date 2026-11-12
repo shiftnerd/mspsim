@@ -137,7 +137,7 @@ Reputation 0 at any time in a Normal or Hard run is "REPUTATION GONE. YOU ARE FI
 Every campaign (tech, owner, service, sales) can be played a second and a third time at the same desk, after you have finished it once. The carry-over (skills, standard, habits,
 medals) comes with you and the world gets a notch harder. Year 3 opens after you finish a Year 2 run of that mode; there is no Year 4 (`Yeartwo.YEAR` 2, `LAST_YEAR` 3).
 
-- **Year 2** (a "New Game Plus", calendar NOV 2014 to OCT 2015): SLA clocks run 15 percent tighter, more printer and security tickets (and more of them P1), three newer clients are on the books
+- **Year 2** (a "New Game Plus"; the calendar moves on a year, NOV 2014 to OCT 2015, and Year 3 stays on that calendar, so the game never leaves the era it is written in; Year 1 reads NOV 2013 to OCT 2014): SLA clocks run 15 percent tighter, more printer and security tickets (and more of them P1), three newer clients are on the books
   from day one (ten client slots), one tier more mutators, and the year's big jobs move by a day or two. Beat cards: tech has two (Tony Marsh of Iron Mule offers you a job, and Morgan
   asks you to run the desk for a week), owner two (a merger offer on week 10 and a licensing offer on week 15), service one (a recruiter asks for names) and sales two (ByteBrothers poaches you,
   Garrison puts Wes under you). Only tech and owner have their own Year 2 endings (tech: DEPARTMENT HEAD, LET IRON MULE BUY OUT YOUR CONTRACT; owner: MERGE WITH TRI-COUNTY TECH GROUP, LICENSE THE PIXEL IT NAME).
