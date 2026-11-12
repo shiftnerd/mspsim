@@ -173,7 +173,7 @@ const DEFAULT_CARDS := {
 			},
 			{
 				"label": "KEEP THE POLITE REMINDERS ($300 LATE)",
-				"fx": {"cash": -300, "mood_all": 1},
+				"need": 300, "fx": {"cash": -300, "mood_all": 1},
 				"text": "The cheques arrive when they arrive. Christy keeps a chart of how late. The chart is very detailed."
 			},
 		],
@@ -197,7 +197,7 @@ const DEFAULT_CARDS := {
 			},
 			{
 				"label": "LEAVE IT, THE TRUST IS THE POINT ($200)",
-				"fx": {"cash": -200, "mood_all": 1, "trust": {"Alan": -1, "Garrison": 1}},
+				"need": 200, "fx": {"cash": -200, "mood_all": 1, "trust": {"Alan": -1, "Garrison": 1}},
 				"text": "The next statement is two hundred higher. The phone case, Christy admits, is a nice phone case."
 			},
 		],
