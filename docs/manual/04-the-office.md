@@ -18,7 +18,7 @@ The building is a **side-on strip**: you walk left and right, rooms are joined b
 | **Several things** within reach | Press `Tab` to move the arrow to the next one. |
 | A **chair** | Press `E` to sit. Move to stand up. |
 
-In the wider shapes the whole room fits on screen. In the narrow portrait shapes (`v`, `vclose`) the camera follows you instead.
+In the `wide` shape the whole room fits on screen. In the other shapes (`h`, `deck`, and the portrait `v` and `vclose`) the camera follows you instead.
 
 > **TIP:** The arrow over a thing is a promise. If it is not there, `E` will not do anything. If it is there and `E` does nothing,
 > somebody else is using it.

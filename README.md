@@ -2,7 +2,7 @@
 
 ```
 +--------------------------------------------------------------------+
-|  PIXEL IT PARTNERS INTERACTIVE                         PRIVATE BETA|
+|  PIXEL IT PARTNERS INTERACTIVE                         IN PROGRESS| 
 |                                                                    |
 |      __  __  ____  ____  ____  ___  __  __                        |
 |     |  \/  |/ ___||  _ \/ ___||_ _||  \/  |                       |
@@ -17,12 +17,12 @@
 |                       INSTRUCTION MANUAL                           |
 |                                                                    |
 |  +--------------------------------------------------------------+  |
-|  | RATED E FOR EVERYONE                                         |  |
+|  | RATED E FOR EVERYONE  (a joke box: no board rated this)      |  |
 |  | Mild IT Jargon, Cartoon Nerf Violence,                       |  |
 |  | Coffee Machine Opinions                                      |  |
 |  +--------------------------------------------------------------+  |
 |                                                                    |
-|   1 OR 2 PLAYERS            SAVES: 3 SLOTS PER CAMPAIGN            |
+|   1 PLAYER (CO-OP: EARLY)   SAVES: 3 SLOTS PER CAMPAIGN            |
 |   DESIGNED FOR GODOT 4.7.2     PIXELS: DRAWN BY CODE, MOSTLY       |
 +--------------------------------------------------------------------+
 ```
@@ -38,7 +38,7 @@ sometimes from a van, and still find time for a foam dart war by the copier.
 Please read this manual before you play. Or do not. Nobody reads these. But the controls are on page 2, and
 there is a coffee machine you will want to find.
 
-> **NOTE:** MSPSim is **private and in progress**. It is not for sale, not shipped, and some screens in this manual may be a
+> **NOTE:** MSPSim is **in progress**. It is not for sale, not shipped, and some screens in this manual may be a
 > little newer (or older) than the game on your machine. Where a page and the game disagree, believe the game and tell us.
 
 ---
@@ -86,7 +86,7 @@ there is a coffee machine you will want to find.
 | **Make your own person** | Hair, clothes, shoes, hats and glasses, saved in preset slots. |
 | **A career** | 72 medals and a collection that carry over between runs. |
 | **Three levels and seeds** | Easy (cozy), Normal and Hard. A seed replays the same year; there is a seed of the day. |
-| **Keyboard, gamepad or touch** | The whole game plays on a gamepad. A second player can join on one. A 16:10 shape fits a Steam Deck. |
+| **Keyboard, gamepad or touch** | The whole game plays on a gamepad. A 16:10 shape fits a Steam Deck. Couch co-op for a second player is an early version (start it with `-- --coop`). Everything is English only. |
 
 ---
 
@@ -218,7 +218,7 @@ The complete instruction manual lives in [`docs/manual/`](docs/manual/README.md)
 |---|---|
 | [1. Getting Started](docs/manual/01-getting-started.md) | Launching, the title screen, difficulty (including cozy Easy), seeds, save slots, the pause menu |
 | [2. Controls](docs/manual/02-controls.md) | Every key and button, seated and standing |
-| [3. Game Modes](docs/manual/03-game-modes.md) | Tech, Owner, Service, Sales, Free Play and Career |
+| [3. Game Modes](docs/manual/03-game-modes.md) | Tech, Owner, Service, Sales, Free Play, Quick Play, Career, Year 2 and Year 3 |
 | [4. The Office](docs/manual/04-the-office.md) | A guided tour and a map of the building |
 | [5. Your Computer and Phone](docs/manual/05-your-computer-and-phone.md) | The apps, the HUD counters, how the screens work |
 | [6. After Work](docs/manual/06-after-work.md) | Bowling, karaoke, the escape room and the rest |
@@ -243,8 +243,10 @@ you will not be missing anything. (Okay, you will be missing the warranty. It is
 | `godot/tests/` | The headless test suite and the screenshot scripts. |
 | `tools/` | Lua scripts for Aseprite (all art is drawn by code and Aseprite pixels), the script generator and the test runner. |
 | `docs/GAME_BIBLE.md` | The pitch, the cast and the design. Written for reviewers. Contains story: **spoilers**. |
+| `docs/design/README.md` | **Design documents**: the game design document, the systems and content reference (every number counted from the code), the design checklist and the gap audit. |
 | `docs/ROADMAP.md` | What is built and what is next. |
-| `CLAUDE.md` | The long technical notes (art pipeline, scene generation, systems). |
+| `docs/dev/` | The build notes: one file per area (`systems.md`, `campaigns-1.md` to `campaigns-5.md`, `tools-tests.md`, and a `notes-*.md` per batch of work). Grep it for the system you touch. |
+| `CLAUDE.md` | The short project rules (art pipeline, Godot rules, tool gotchas) and an index of `docs/dev/`. |
 
 ### Tests
 
